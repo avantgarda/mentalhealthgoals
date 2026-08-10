@@ -5,15 +5,23 @@ import type { Page } from '@/payload-types'
 import { ArchiveBlock } from '@/blocks/ArchiveBlock/Component'
 import { CallToActionBlock } from '@/blocks/CallToAction/Component'
 import { ContentBlock } from '@/blocks/Content/Component'
+import { EventDetailsBlockComponent } from '@/blocks/EventDetails/Component'
 import { FormBlock } from '@/blocks/Form/Component'
 import { MediaBlock } from '@/blocks/MediaBlock/Component'
+import { PeopleBlockComponent } from '@/blocks/People/Component'
+import { StatsBlockComponent } from '@/blocks/Stats/Component'
+import { WorkstreamsBlockComponent } from '@/blocks/Workstreams/Component'
 
 const blockComponents = {
   archive: ArchiveBlock,
   content: ContentBlock,
   cta: CallToActionBlock,
+  eventDetails: EventDetailsBlockComponent,
   formBlock: FormBlock,
   mediaBlock: MediaBlock,
+  peopleBlock: PeopleBlockComponent,
+  stats: StatsBlockComponent,
+  workstreamsBlock: WorkstreamsBlockComponent,
 }
 
 export const RenderBlocks: React.FC<{

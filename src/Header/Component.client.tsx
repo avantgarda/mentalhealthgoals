@@ -30,10 +30,18 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ data }) => {
   }, [headerTheme])
 
   return (
-    <header className="container relative z-20   " {...(theme ? { 'data-theme': theme } : {})}>
-      <div className="py-8 flex justify-between">
-        <Link href="/">
-          <Logo loading="eager" priority="high" className="invert dark:invert-0" />
+    <header
+      className={[
+        'relative z-20',
+        // When rendered over a dark hero, the header needs its own dark background on
+        // small screens where the hero image does not extend up behind it
+        theme === 'dark' ? 'bg-brand-deep lg:bg-transparent' : '',
+      ].join(' ')}
+      {...(theme ? { 'data-theme': theme } : {})}
+    >
+      <div className="container py-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between text-foreground">
+        <Link href="/" className="shrink-0">
+          <Logo loading="eager" priority="high" />
         </Link>
         <HeaderNav data={data} />
       </div>

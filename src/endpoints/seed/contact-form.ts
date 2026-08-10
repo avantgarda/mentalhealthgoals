@@ -14,7 +14,7 @@ export const contactForm: RequiredDataFromCollectionSlug<'forms'> = {
               format: 0,
               mode: 'normal',
               style: '',
-              text: 'The contact form has been submitted successfully.',
+              text: 'Thank you — your message has been received. The Alliance Management Team will be in touch.',
               version: 1,
             },
           ],
@@ -35,7 +35,7 @@ export const contactForm: RequiredDataFromCollectionSlug<'forms'> = {
   createdAt: '2023-01-12T21:47:41.374Z',
   emails: [
     {
-      emailFrom: '"Payload" \u003Cdemo@payloadcms.com\u003E',
+      emailFrom: '"Mental Health Goals Programme" \u003Cnoreply@mentalhealthgoals.co.uk\u003E',
       emailTo: '{{email}}',
       message: {
         root: {
@@ -50,7 +50,7 @@ export const contactForm: RequiredDataFromCollectionSlug<'forms'> = {
                   format: 0,
                   mode: 'normal',
                   style: '',
-                  text: 'Your contact form submission was successfully received.',
+                  text: 'Thank you for contacting the Mental Health Goals Programme. Your message has been received and the team will get back to you soon.',
                   version: 1,
                 },
               ],

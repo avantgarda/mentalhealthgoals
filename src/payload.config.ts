@@ -1,4 +1,4 @@
-import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
+import { postgresAdapter } from '@payloadcms/db-postgres'
 import sharp from 'sharp'
 import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
@@ -7,8 +7,10 @@ import { fileURLToPath } from 'url'
 import { Categories } from './collections/Categories'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
+import { People } from './collections/People'
 import { Posts } from './collections/Posts'
 import { Users } from './collections/Users'
+import { Workstreams } from './collections/Workstreams'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
 import { plugins } from './plugins'
@@ -57,13 +59,13 @@ export default buildConfig({
   },
   // This config helps us configure global or default features that the other editors can inherit
   editor: defaultLexical,
-  db: vercelPostgresAdapter({
+  db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
     push: process.env.NODE_ENV === 'development', // Auto-sync schema in dev, use migrations in production
   }),
-  collections: [Pages, Posts, Media, Categories, Users],
+  collections: [Pages, Posts, Media, Categories, Users, Workstreams, People],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer],
   plugins,

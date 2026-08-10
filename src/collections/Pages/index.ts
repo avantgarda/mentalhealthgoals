@@ -5,8 +5,12 @@ import { authenticatedOrPublished } from '../../access/authenticatedOrPublished'
 import { Archive } from '../../blocks/ArchiveBlock/config'
 import { CallToAction } from '../../blocks/CallToAction/config'
 import { Content } from '../../blocks/Content/config'
+import { EventDetails } from '../../blocks/EventDetails/config'
 import { FormBlock } from '../../blocks/Form/config'
 import { MediaBlock } from '../../blocks/MediaBlock/config'
+import { PeopleBlock } from '../../blocks/People/config'
+import { Stats } from '../../blocks/Stats/config'
+import { WorkstreamsBlock } from '../../blocks/Workstreams/config'
 import { hero } from '@/heros/config'
 import { slugField } from 'payload'
 import { populatePublishedAt } from '../../hooks/populatePublishedAt'
@@ -72,7 +76,17 @@ export const Pages: CollectionConfig<'pages'> = {
             {
               name: 'layout',
               type: 'blocks',
-              blocks: [CallToAction, Content, MediaBlock, Archive, FormBlock],
+              blocks: [
+                CallToAction,
+                Content,
+                MediaBlock,
+                Archive,
+                FormBlock,
+                Stats,
+                WorkstreamsBlock,
+                PeopleBlock,
+                EventDetails,
+              ],
               required: true,
               admin: {
                 initCollapsed: true,

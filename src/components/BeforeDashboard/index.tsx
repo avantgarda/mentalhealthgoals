@@ -10,17 +10,17 @@ const BeforeDashboard: React.FC = () => {
   return (
     <div className={baseClass}>
       <Banner className={`${baseClass}__banner`} type="success">
-        <h4>Welcome to your dashboard!</h4>
+        <h4>Welcome to the Mental Health Goals Programme dashboard</h4>
       </Banner>
       Here&apos;s what to do next:
       <ul className={`${baseClass}__instructions`}>
         <li>
           <SeedButton />
-          {' with a few pages, posts, and projects to jump-start your new site, then '}
+          {' to reset the site to its starter MHGP content (pages, workstreams, people and news), then '}
           <a href="/" target="_blank">
             visit your website
           </a>
-          {' to see the results.'}
+          {' to see the results. Careful: this replaces all existing content.'}
         </li>
         <li>
           {'Modify your '}

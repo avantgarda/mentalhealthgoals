@@ -31,9 +31,15 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
                 })}
                 key={index}
               >
-                {richText && <RichText data={richText} enableGutter={false} />}
+                {richText && (
+                  <RichText
+                    className={cn({ 'max-w-[70ch] mx-0': size === 'full' })}
+                    data={richText}
+                    enableGutter={false}
+                  />
+                )}
 
-                {enableLink && <CMSLink {...link} />}
+                {enableLink && <CMSLink className="mt-4" {...link} />}
               </div>
             )
           })}

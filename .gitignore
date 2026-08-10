@@ -23,3 +23,5 @@ node_modules/
 
 # Local source documents (contains OFFICIAL-marked material — keep out of the repo)
 /docs/
+
+tsconfig.tsbuildinfo
