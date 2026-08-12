@@ -35,6 +35,12 @@ const nextConfig: NextConfig = {
       }),
     ],
   },
+  // The seed reads its .webp assets from disk at runtime (src/endpoints/seed/index.ts).
+  // Next.js can't trace a computed readFileSync path, so include them explicitly —
+  // without this the admin Seed button throws "Seed asset not found" in production.
+  outputFileTracingIncludes: {
+    '/next/seed': ['./src/endpoints/seed/*.webp'],
+  },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       '.cjs': ['.cts', '.cjs'],
