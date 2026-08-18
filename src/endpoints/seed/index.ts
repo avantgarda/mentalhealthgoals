@@ -22,7 +22,9 @@ const collections: CollectionSlug[] = [
   'search',
 ]
 
-const globals: GlobalSlug[] = ['header', 'footer']
+// Only the navigation globals are cleared on reseed; site settings such as the
+// Brand global keep whatever an editor has chosen.
+const globals = ['header', 'footer'] as const satisfies readonly GlobalSlug[]
 
 // Next.js revalidation errors are normal when seeding the database without a server running
 // i.e. running `pnpm seed` locally instead of using the admin UI within an active app

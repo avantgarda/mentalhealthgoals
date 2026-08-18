@@ -116,10 +116,12 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
+    brand: Brand;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    brand: BrandSelect<false> | BrandSelect<true>;
   };
   locale: null;
   widgets: {
@@ -1927,6 +1929,22 @@ export interface Footer {
   createdAt?: string | null;
 }
 /**
+ * Choose the programme logo. The change applies across the site, including the browser tab icon and social sharing image.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand".
+ */
+export interface Brand {
+  id: number;
+  /**
+   * Used in the header, the footer, the browser tab and shared links.
+   */
+  logoVariant: 'summit' | 'sunInCol' | 'rings';
+  showTagline?: boolean | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
@@ -1968,6 +1986,17 @@ export interface FooterSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brand_select".
+ */
+export interface BrandSelect<T extends boolean = true> {
+  logoVariant?: T;
+  showTagline?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

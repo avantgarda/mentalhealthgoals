@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="96" viewBox="0 0 520 96" role="img" aria-label="Mental Health Goals — National Programme">
+  <g transform="translate(0 0)">
+    <circle cx="45.1" cy="28" r="9.5" fill="#CE7A3B"/>
+    <path d="M 16 73.5 L 33 37.5 L 46 63.5 L 61 29.5 L 80 73.5" fill="none" stroke="#15545B" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="112" y="47" font-family="Fraunces, 'Iowan Old Style', 'Palatino Nova', Georgia, serif" font-size="30" font-weight="600" letter-spacing="-0.3" fill="#18272B">Mental Health Goals</text>
+  <text x="113" y="68" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="500" letter-spacing="2.6" fill="#18272B" opacity="0.75">NATIONAL PROGRAMME</text>
+</svg>

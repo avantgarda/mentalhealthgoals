@@ -58,11 +58,40 @@ uses the committed migrations in `src/migrations`.
 | **People** | Leadership team cards, ordered by the `order` field |
 | **Media** | Uploads (local `public/media` in dev, Vercel Blob in production) |
 | **Header / Footer** | Navigation globals |
+| **Brand & Logo** | Global controlling which logo mark the whole site uses |
 
 Custom blocks available in the page layout builder: **Stats** (big-number tiles),
 **Workstreams** (cards or detailed list), **People** (team grid), **Event Details**
 (facts / agenda / outcomes — used on the Industry Engagement Forum page), plus the template's
 Content, Call to Action, Media, Archive and Form blocks.
+
+## Branding & the logo
+
+The site ships with three logo marks and a Payload global that decides which one
+is in use. Change it in the admin under **Globals → Brand & Logo**; the header,
+footer, browser tab icon, app icons and social sharing card all follow the same
+setting, and the field shows a live preview of each option.
+
+| Variant | Mark |
+|---|---|
+| `summit` *(default)* | **Summit M** — rising peaks forming an M, amber goal above the summit |
+| `sunInCol` | **Sun in the Col** — the same mountain with round shoulders, holding the amber sun |
+| `rings` | **Concentric Rings** — the original launch mark |
+
+Geometry lives in `src/brand/marks.ts` and colours in `src/brand/tokens.ts`.
+That module is the single source of truth: the React components in
+`src/components/Logo` and the exported files are both generated from it, so they
+cannot drift apart.
+
+```bash
+# Regenerate every static asset (favicons, app icons, avatars, OG cards, lockups)
+pnpm generate:brand
+```
+
+This writes ~18 files per variant into `public/brand/<variant>/` — see
+[`public/brand/README.md`](public/brand/README.md) for the full inventory, clear-space
+and minimum-size rules, and a note on converting lockup type to outlines
+before sending artwork to print.
 
 ## Deploying to Vercel
 
@@ -92,6 +121,7 @@ Content, Call to Action, Media, Archive and Form blocks.
 | `pnpm build:deploy` | Migrate then build (Vercel build command) |
 | `pnpm seed` | Reset content to the MHGP starter seed |
 | `pnpm generate:types` | Regenerate `src/payload-types.ts` after schema changes |
+| `pnpm generate:brand` | Regenerate all logo asset files in `public/brand` |
 | `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields |
 | `pnpm lint` | ESLint |
 

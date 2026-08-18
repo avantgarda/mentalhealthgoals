@@ -7,13 +7,15 @@ import React, { useEffect, useState } from 'react'
 import type { Header } from '@/payload-types'
 
 import { Logo } from '@/components/Logo/Logo'
+import type { BrandSettings } from '@/brand/getBrand'
 import { HeaderNav } from './Nav'
 
 interface HeaderClientProps {
+  brand: BrandSettings
   data: Header
 }
 
-export const HeaderClient: React.FC<HeaderClientProps> = ({ data }) => {
+export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
   /* Storing the value in a useState to avoid hydration errors */
   const [theme, setTheme] = useState<string | null>(null)
   const { headerTheme, setHeaderTheme } = useHeaderTheme()
@@ -41,7 +43,12 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ data }) => {
     >
       <div className="container py-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between text-foreground">
         <Link href="/" className="shrink-0">
-          <Logo loading="eager" priority="high" />
+          <Logo
+            loading="eager"
+            priority="high"
+            showTagline={brand.showTagline}
+            variant={brand.variant}
+          />
         </Link>
         <HeaderNav data={data} />
       </div>
