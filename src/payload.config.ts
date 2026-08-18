@@ -11,6 +11,7 @@ import { People } from './collections/People'
 import { Posts } from './collections/Posts'
 import { Users } from './collections/Users'
 import { Workstreams } from './collections/Workstreams'
+import { Brand } from './brand/config'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
 import { plugins } from './plugins'
@@ -67,7 +68,7 @@ export default buildConfig({
   }),
   collections: [Pages, Posts, Media, Categories, Users, Workstreams, People],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer],
+  globals: [Header, Footer, Brand],
   plugins,
   secret: process.env.PAYLOAD_SECRET,
   sharp,

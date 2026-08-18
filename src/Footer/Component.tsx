@@ -1,3 +1,4 @@
+import { getBrandSettings } from '@/brand/getBrand'
 import { getCachedGlobal } from '@/utilities/getGlobals'
 import Link from 'next/link'
 import React from 'react'
@@ -8,6 +9,7 @@ import { Logo } from '@/components/Logo/Logo'
 
 export async function Footer() {
   const footerData = await getCachedGlobal('footer', 1)()
+  const brand = await getBrandSettings()
 
   const navItems = footerData?.navItems || []
 
@@ -17,7 +19,7 @@ export async function Footer() {
         <div className="flex flex-col gap-8 md:flex-row md:justify-between md:items-start">
           <div className="max-w-md flex flex-col gap-4">
             <Link className="flex items-center" href="/">
-              <Logo />
+              <Logo showTagline={brand.showTagline} variant={brand.variant} />
             </Link>
             <p className="text-sm leading-relaxed opacity-70">
               A UK Government-backed national programme transforming mental health research —
