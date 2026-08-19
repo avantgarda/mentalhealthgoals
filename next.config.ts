@@ -66,6 +66,17 @@ const nextConfig: NextConfig = {
         { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
       ],
     },
+    // Pre-launch: keep the draft site out of search indexes. Set SITE_NOINDEX=1
+    // in Vercel until launch; on launch day delete the env var and redeploy.
+    // Evaluated at build time, so changing the var requires a redeploy.
+    ...(process.env.SITE_NOINDEX
+      ? [
+          {
+            source: '/(.*)',
+            headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+          },
+        ]
+      : []),
   ],
   redirects,
   turbopack: {
