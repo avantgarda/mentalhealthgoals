@@ -67,7 +67,64 @@ export const contactForm: RequiredDataFromCollectionSlug<'forms'> = {
           version: 1,
         },
       },
-      subject: "You've received a new message.",
+      subject: "We've received your message",
+    },
+    // Internal notification so enquiries don't sit unseen in the CMS.
+    // CONFIRM the team inbox address with the team before go-live.
+    {
+      emailFrom: '"Mental Health Goals Programme" <noreply@mentalhealthgoals.co.uk>',
+      emailTo: 'hello@mentalhealthgoals.co.uk',
+      replyTo: '{{email}}',
+      message: {
+        root: {
+          type: 'root',
+          children: [
+            {
+              type: 'paragraph',
+              children: [
+                {
+                  type: 'text',
+                  detail: 0,
+                  format: 0,
+                  mode: 'normal',
+                  style: '',
+                  text: 'A new enquiry has been submitted through the mentalhealthgoals.co.uk contact form:',
+                  version: 1,
+                },
+              ],
+              direction: 'ltr',
+              format: '',
+              indent: 0,
+              textFormat: 0,
+              version: 1,
+            },
+            {
+              type: 'paragraph',
+              children: [
+                {
+                  type: 'text',
+                  detail: 0,
+                  format: 0,
+                  mode: 'normal',
+                  style: '',
+                  text: '{{*:table}}',
+                  version: 1,
+                },
+              ],
+              direction: 'ltr',
+              format: '',
+              indent: 0,
+              textFormat: 0,
+              version: 1,
+            },
+          ],
+          direction: 'ltr',
+          format: '',
+          indent: 0,
+          version: 1,
+        },
+      },
+      subject: 'New contact form enquiry from {{full-name}}',
     },
   ],
   fields: [
