@@ -15,12 +15,7 @@ import { fileURLToPath } from 'node:url'
 
 import sharp from 'sharp'
 
-import {
-  LOGO_VARIANTS,
-  MARKS,
-  markElementsToSVG,
-  type LogoVariant,
-} from '../src/brand/marks.js'
+import { LOGO_VARIANTS, MARKS, markElementsToSVG, type LogoVariant } from '../src/brand/marks.js'
 import { BRAND_COLORS, BRAND_NAME, BRAND_TAGLINE } from '../src/brand/tokens.js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -134,12 +129,18 @@ const writeVariant = async (variant: LogoVariant): Promise<string[]> => {
     'mark-mono-white.svg',
     markSVG(variant, { form: BRAND_COLORS.monoWhite, accent: BRAND_COLORS.monoWhite }),
   )
-  await write('lockup-horizontal.svg', lockupHorizontalSVG(variant, { ...onLight, text: BRAND_COLORS.ink }))
+  await write(
+    'lockup-horizontal.svg',
+    lockupHorizontalSVG(variant, { ...onLight, text: BRAND_COLORS.ink }),
+  )
   await write(
     'lockup-horizontal-on-dark.svg',
     lockupHorizontalSVG(variant, { ...onDark, text: BRAND_COLORS.reversed }),
   )
-  await write('lockup-stacked.svg', lockupStackedSVG(variant, { ...onLight, text: BRAND_COLORS.ink }))
+  await write(
+    'lockup-stacked.svg',
+    lockupStackedSVG(variant, { ...onLight, text: BRAND_COLORS.ink }),
+  )
 
   // Favicon master: mark reversed out of a rounded deep tile, which holds up
   // against both light and dark browser chrome far better than a bare mark.

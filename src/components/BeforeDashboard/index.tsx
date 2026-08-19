@@ -16,7 +16,9 @@ const BeforeDashboard: React.FC = () => {
       <ul className={`${baseClass}__instructions`}>
         <li>
           <SeedButton />
-          {' to reset the site to its starter MHGP content (pages, workstreams, people and news), then '}
+          {
+            ' to reset the site to its starter MHGP content (pages, workstreams, people and news), then '
+          }
           <a href="/" target="_blank">
             visit your website
           </a>

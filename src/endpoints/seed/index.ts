@@ -487,7 +487,9 @@ export const seed = async ({
           richText: root(
             heading('h3', text('Meet the team')),
             paragraph(
-              text('The leadership team spans clinical trials, neuroscience, philosophy, public health and lived experience.'),
+              text(
+                'The leadership team spans clinical trials, neuroscience, philosophy, public health and lived experience.',
+              ),
             ),
           ),
           links: [
@@ -544,7 +546,9 @@ export const seed = async ({
           richText: root(
             heading('h3', text('Want to work with a workstream?')),
             paragraph(
-              text('The Alliance Management Team will route you to the right people, data and infrastructure.'),
+              text(
+                'The Alliance Management Team will route you to the right people, data and infrastructure.',
+              ),
             ),
           ),
           links: [
@@ -794,7 +798,8 @@ export const seed = async ({
             { label: 'Date', value: '8 October 2026' },
             {
               label: 'Venue',
-              value: 'Bush House, King’s College London — Strand Campus, 30 Aldwych, London WC2B 4BG',
+              value:
+                'Bush House, King’s College London — Strand Campus, 30 Aldwych, London WC2B 4BG',
             },
             {
               label: 'Audience',
@@ -818,7 +823,10 @@ export const seed = async ({
               time: '10:50',
               item: 'Industry roundtable — strengths and challenges of running SMI and neurodegeneration trials in the UK',
             },
-            { time: '12:00', item: 'Building earlier strategic partnerships — moving industry engagement upstream' },
+            {
+              time: '12:00',
+              item: 'Building earlier strategic partnerships — moving industry engagement upstream',
+            },
             { time: '12:45', item: 'Working lunch & MHGP capabilities showcase' },
             {
               time: '13:15',
@@ -957,9 +965,7 @@ export const seed = async ({
               size: 'half',
               richText: root(
                 heading('h3', text('Prof. Mitul Mehta')),
-                paragraph(
-                  text('Lead, Alliance Management Team'),
-                ),
+                paragraph(text('Lead, Alliance Management Team')),
                 paragraph(link('mitul.mehta@kcl.ac.uk', 'mailto:mitul.mehta@kcl.ac.uk')),
               ),
             },
@@ -1040,10 +1046,7 @@ export const seed = async ({
             'Six national workstreams — the Alliance Management Team, Innovative Trials Hub, Lived Experience Industry Partnership, Digital Innovation, Data Observatory and Multi-omics — connect discovery to delivery across King’s College London, Oxford, Manchester, Swansea, Cardiff, Belfast, Edinburgh and Cambridge.',
           ),
         ),
-        paragraph(
-          link('Read more about the programme', '/about'),
-          text('.'),
-        ),
+        paragraph(link('Read more about the programme', '/about'), text('.')),
       ),
       meta: {
         title: 'A £50 million commitment to transform mental health research',

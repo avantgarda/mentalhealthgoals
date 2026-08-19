@@ -50,15 +50,15 @@ uses the committed migrations in `src/migrations`.
 
 ## Content model
 
-| Type | What it's for |
-|---|---|
-| **Pages** | Layout-builder pages (hero + blocks). Home, About, Workstreams, For industry, Patients & public, People, Industry Engagement Forum, Contact |
-| **Posts** | News & events, listed at `/posts` |
-| **Workstreams** | The six national workstreams — edit these and the workstream grids update everywhere |
-| **People** | Leadership team cards, ordered by the `order` field |
-| **Media** | Uploads (local `public/media` in dev, Vercel Blob in production) |
-| **Header / Footer** | Navigation globals |
-| **Brand & Logo** | Global controlling which logo mark the whole site uses |
+| Type                | What it's for                                                                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pages**           | Layout-builder pages (hero + blocks). Home, About, Workstreams, For industry, Patients & public, People, Industry Engagement Forum, Contact |
+| **Posts**           | News & events, listed at `/posts`                                                                                                           |
+| **Workstreams**     | The six national workstreams — edit these and the workstream grids update everywhere                                                        |
+| **People**          | Leadership team cards, ordered by the `order` field                                                                                         |
+| **Media**           | Uploads (local `public/media` in dev, Vercel Blob in production)                                                                            |
+| **Header / Footer** | Navigation globals                                                                                                                          |
+| **Brand & Logo**    | Global controlling which logo mark the whole site uses                                                                                      |
 
 Custom blocks available in the page layout builder: **Stats** (big-number tiles),
 **Workstreams** (cards or detailed list), **People** (team grid), **Event Details**
@@ -72,11 +72,11 @@ is in use. Change it in the admin under **Globals → Brand & Logo**; the header
 footer, browser tab icon, app icons and social sharing card all follow the same
 setting, and the field shows a live preview of each option.
 
-| Variant | Mark |
-|---|---|
-| `summit` *(default)* | **Summit M** — rising peaks forming an M, amber goal above the summit |
-| `sunInCol` | **Sun in the Col** — the same mountain with round shoulders, holding the amber sun |
-| `rings` | **Concentric Rings** — the original launch mark |
+| Variant              | Mark                                                                               |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| `summit` _(default)_ | **Summit M** — rising peaks forming an M, amber goal above the summit              |
+| `sunInCol`           | **Sun in the Col** — the same mountain with round shoulders, holding the amber sun |
+| `rings`              | **Concentric Rings** — the original launch mark                                    |
 
 Geometry lives in `src/brand/marks.ts` and colours in `src/brand/tokens.ts`.
 That module is the single source of truth: the React components in
@@ -114,16 +114,16 @@ before sending artwork to print.
 
 ## Useful scripts
 
-| Script | What it does |
-|---|---|
-| `pnpm dev` | Dev server with HMR |
-| `pnpm build` / `pnpm start` | Production build / serve |
-| `pnpm build:deploy` | Migrate then build (Vercel build command) |
-| `pnpm seed` | Reset content to the MHGP starter seed |
-| `pnpm generate:types` | Regenerate `src/payload-types.ts` after schema changes |
-| `pnpm generate:brand` | Regenerate all logo asset files in `public/brand` |
-| `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields |
-| `pnpm lint` | ESLint |
+| Script                               | What it does                                           |
+| ------------------------------------ | ------------------------------------------------------ |
+| `pnpm dev`                           | Dev server with HMR                                    |
+| `pnpm build` / `pnpm start`          | Production build / serve                               |
+| `pnpm build:deploy`                  | Migrate then build (Vercel build command)              |
+| `pnpm seed`                          | Reset content to the MHGP starter seed                 |
+| `pnpm generate:types`                | Regenerate `src/payload-types.ts` after schema changes |
+| `pnpm generate:brand`                | Regenerate all logo asset files in `public/brand`      |
+| `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields   |
+| `pnpm lint`                          | ESLint                                                 |
 
 ## Notes
 

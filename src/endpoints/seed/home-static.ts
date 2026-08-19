@@ -17,8 +17,7 @@ export const homeStatic: RequiredDataFromCollectionSlug<'pages'> = {
     ),
   },
   meta: {
-    description:
-      'A UK Government-backed national programme transforming mental health research.',
+    description: 'A UK Government-backed national programme transforming mental health research.',
     title: 'Mental Health Goals Programme',
   },
   title: 'Home',

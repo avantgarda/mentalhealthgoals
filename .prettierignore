@@ -11,4 +11,11 @@
 **/temp
 **/docs/**
 tsconfig.json
-
+.next
+public
+pnpm-lock.yaml
+src/migrations
+src/app/(payload)/admin/importMap.js
+next-env.d.ts
+test-results
+playwright-report

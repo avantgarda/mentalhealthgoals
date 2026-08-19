@@ -37,8 +37,7 @@ export async function Footer() {
 
         <div className="flex flex-col gap-4 border-t border-white/15 pt-6 text-xs opacity-60 md:flex-row md:items-center md:justify-between">
           <p>
-            © {new Date().getFullYear()} Mental Health Goals Programme ·
-            mentalhealthgoals.co.uk
+            © {new Date().getFullYear()} Mental Health Goals Programme · mentalhealthgoals.co.uk
           </p>
           <ThemeSelector />
         </div>

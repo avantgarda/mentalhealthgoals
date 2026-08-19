@@ -42,11 +42,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           sizes="32x32"
           type="image/png"
         />
-        <link
-          href={brandAssetPath(brand.variant, 'favicon.svg')}
-          rel="icon"
-          type="image/svg+xml"
-        />
+        <link href={brandAssetPath(brand.variant, 'favicon.svg')} rel="icon" type="image/svg+xml" />
         <link
           href={brandAssetPath(brand.variant, 'apple-touch-icon.png')}
           rel="apple-touch-icon"

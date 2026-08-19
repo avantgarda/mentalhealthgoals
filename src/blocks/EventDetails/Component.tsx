@@ -26,7 +26,9 @@ export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
 
       {agenda && agenda.length > 0 && (
         <div>
-          {agendaHeading && <h2 className="text-2xl md:text-3xl font-semibold mb-6">{agendaHeading}</h2>}
+          {agendaHeading && (
+            <h2 className="text-2xl md:text-3xl font-semibold mb-6">{agendaHeading}</h2>
+          )}
           <div className="flex flex-col divide-y divide-border border-y border-border">
             {agenda.map((row, i) => (
               <div key={i} className="py-4 flex gap-6 items-baseline">
@@ -49,7 +51,10 @@ export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
           )}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {outcomes.map((outcome, i) => (
-              <div key={i} className="rounded-xl border border-border bg-card p-6 flex flex-col gap-2">
+              <div
+                key={i}
+                className="rounded-xl border border-border bg-card p-6 flex flex-col gap-2"
+              >
                 <span className="font-display text-xl text-brand-accent-text">
                   {String(i + 1).padStart(2, '0')}
                 </span>
