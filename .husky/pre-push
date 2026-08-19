@@ -1,0 +1,3 @@
+# Checks before anything reaches the remote (~30s; migrations check needs
+# local Postgres running). The full suite (tests, build, e2e) runs in CI.
+pnpm typecheck && pnpm check:types-drift && pnpm check:migrations

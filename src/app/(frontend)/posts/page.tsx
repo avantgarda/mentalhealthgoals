@@ -7,6 +7,7 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import React from 'react'
 import PageClient from './page.client'
+import { POSTS_PER_PAGE } from '@/utilities/constants'
 
 export const dynamic = 'force-static'
 export const revalidate = 600
@@ -17,7 +18,7 @@ export default async function Page() {
   const posts = await payload.find({
     collection: 'posts',
     depth: 1,
-    limit: 12,
+    limit: POSTS_PER_PAGE,
     overrideAccess: false,
     select: {
       title: true,
@@ -40,7 +41,7 @@ export default async function Page() {
         <PageRange
           collection="posts"
           currentPage={posts.page}
-          limit={12}
+          limit={POSTS_PER_PAGE}
           totalDocs={posts.totalDocs}
         />
       </div>

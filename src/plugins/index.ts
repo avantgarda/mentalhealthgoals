@@ -15,7 +15,10 @@ import { Page, Post } from '@/payload-types'
 import { getServerSideURL } from '@/utilities/getURL'
 
 const generateTitle: GenerateTitle<Post | Page> = ({ doc }) => {
-  return doc?.title ? `${doc.title} | Mental Health Goals Programme` : 'Mental Health Goals Programme'
+  // Keep the stored meta title bare — generateMeta appends
+  // "| Mental Health Goals Programme" at render time, so adding it here
+  // would double the suffix in the browser tab and search results.
+  return doc?.title || 'Mental Health Goals Programme'
 }
 
 const generateURL: GenerateURL<Post | Page> = ({ doc }) => {

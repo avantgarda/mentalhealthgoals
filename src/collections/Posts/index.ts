@@ -226,7 +226,8 @@ export const Posts: CollectionConfig<'posts'> = {
       autosave: {
         interval: 100, // We set this interval for optimal live preview
       },
-      schedulePublish: true,
+      // Off for the same reason as Pages — see the comment there (F11).
+      schedulePublish: false,
     },
     maxPerDoc: 50,
   },

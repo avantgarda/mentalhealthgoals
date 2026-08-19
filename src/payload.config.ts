@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { resendAdapter } from '@payloadcms/email-resend'
 import sharp from 'sharp'
 import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
@@ -67,6 +68,19 @@ export default buildConfig({
     push: process.env.NODE_ENV === 'development', // Auto-sync schema in dev, use migrations in production
   }),
   collections: [Pages, Posts, Media, Categories, Users, Workstreams, People],
+  // Without an adapter Payload writes emails to the console — fine in dev,
+  // but production (password resets, contact-form notifications) needs Resend.
+  // The mentalhealthgoals.co.uk domain must be verified in Resend before
+  // emails will send from it.
+  ...(process.env.RESEND_API_KEY
+    ? {
+        email: resendAdapter({
+          defaultFromAddress: 'noreply@mentalhealthgoals.co.uk',
+          defaultFromName: 'Mental Health Goals Programme',
+          apiKey: process.env.RESEND_API_KEY,
+        }),
+      }
+    : {}),
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer, Brand],
   plugins,

@@ -1,3 +1,5 @@
+import type { ServerProps } from 'payload'
+
 import { Banner } from '@payloadcms/ui/elements/Banner'
 import React from 'react'
 
@@ -6,7 +8,9 @@ import './index.scss'
 
 const baseClass = 'before-dashboard'
 
-const BeforeDashboard: React.FC = () => {
+const BeforeDashboard: React.FC<ServerProps> = ({ user }) => {
+  const isAdmin = user?.role === 'admin'
+
   return (
     <div className={baseClass}>
       <Banner className={`${baseClass}__banner`} type="success">
@@ -14,14 +18,18 @@ const BeforeDashboard: React.FC = () => {
       </Banner>
       Here&apos;s what to do next:
       <ul className={`${baseClass}__instructions`}>
-        <li>
-          <SeedButton />
-          {' to reset the site to its starter MHGP content (pages, workstreams, people and news), then '}
-          <a href="/" target="_blank">
-            visit your website
-          </a>
-          {' to see the results. Careful: this replaces all existing content.'}
-        </li>
+        {isAdmin && (
+          <li>
+            <SeedButton />
+            {
+              ' to reset the site to its starter MHGP content (pages, workstreams, people and news), then '
+            }
+            <a href="/" target="_blank">
+              visit your website
+            </a>
+            {' to see the results. Careful: this replaces all existing content.'}
+          </li>
+        )}
         <li>
           {'Modify your '}
           <a

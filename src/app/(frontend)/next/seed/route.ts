@@ -12,7 +12,8 @@ export async function POST(): Promise<Response> {
   // Authenticate by passing request headers
   const { user } = await payload.auth({ headers: requestHeaders })
 
-  if (!user) {
+  // Seeding replaces ALL content (including form submissions) — admins only
+  if (!user || user.role !== 'admin') {
     return new Response('Action forbidden.', { status: 403 })
   }
 

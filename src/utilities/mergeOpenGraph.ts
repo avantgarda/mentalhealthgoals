@@ -6,7 +6,9 @@ const defaultOpenGraph: Metadata['openGraph'] = {
   description: 'A UK Government-backed national programme transforming mental health research.',
   images: [
     {
-      url: `${getServerSideURL()}/website-template-OG.webp`,
+      // Static default (this module is synchronous); generateMeta and the root
+      // layout pass the current brand variant's card, so this is rarely used.
+      url: `${getServerSideURL()}/brand/summit/og.png`,
     },
   ],
   siteName: 'Mental Health Goals Programme',

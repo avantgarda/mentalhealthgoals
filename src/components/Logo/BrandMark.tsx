@@ -1,12 +1,7 @@
 import clsx from 'clsx'
 import React from 'react'
 
-import {
-  DEFAULT_LOGO_VARIANT,
-  MARKS,
-  MARK_VIEWBOX,
-  type LogoVariant,
-} from '@/brand/marks'
+import { DEFAULT_LOGO_VARIANT, MARKS, MARK_VIEWBOX, type LogoVariant } from '@/brand/marks'
 
 interface Props {
   className?: string

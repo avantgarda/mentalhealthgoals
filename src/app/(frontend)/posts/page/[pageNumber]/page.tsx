@@ -8,6 +8,7 @@ import { getPayload } from 'payload'
 import React from 'react'
 import PageClient from './page.client'
 import { notFound } from 'next/navigation'
+import { POSTS_PER_PAGE } from '@/utilities/constants'
 
 export const revalidate = 600
 
@@ -28,10 +29,15 @@ export default async function Page({ params: paramsPromise }: Args) {
   const posts = await payload.find({
     collection: 'posts',
     depth: 1,
-    limit: 12,
+    limit: POSTS_PER_PAGE,
     page: sanitizedPageNumber,
     overrideAccess: false,
   })
+
+  // Out-of-range page numbers 404 instead of rendering an empty listing
+  if (sanitizedPageNumber < 1 || (posts.totalPages > 0 && sanitizedPageNumber > posts.totalPages)) {
+    notFound()
+  }
 
   return (
     <div className="pt-24 pb-24">
@@ -46,7 +52,7 @@ export default async function Page({ params: paramsPromise }: Args) {
         <PageRange
           collection="posts"
           currentPage={posts.page}
-          limit={12}
+          limit={POSTS_PER_PAGE}
           totalDocs={posts.totalDocs}
         />
       </div>
@@ -76,7 +82,7 @@ export async function generateStaticParams() {
     overrideAccess: false,
   })
 
-  const totalPages = Math.ceil(totalDocs / 10)
+  const totalPages = Math.ceil(totalDocs / POSTS_PER_PAGE)
 
   const pages: { pageNumber: string }[] = []
 

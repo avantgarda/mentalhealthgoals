@@ -29,6 +29,9 @@ export const ArchiveBlock: React.FC<
     const fetchedPosts = await payload.find({
       collection: 'posts',
       depth: 1,
+      draft: false,
+      // Apply read access control so unpublished posts never leak into listings
+      overrideAccess: false,
       limit,
       ...(flattenedCategories && flattenedCategories.length > 0
         ? {

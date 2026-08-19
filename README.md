@@ -27,6 +27,7 @@ createdb mentalhealthgoals
 #    DATABASE_URL=postgresql://<user>@localhost:5432/mentalhealthgoals
 #    PAYLOAD_SECRET=<any long random string>
 #    NEXT_PUBLIC_SERVER_URL=http://localhost:3000
+#    SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD=<your admin login — required by the seed>
 
 # 4. Seed the database with the starter MHGP content
 pnpm seed
@@ -42,23 +43,46 @@ The site runs at [http://localhost:3000](http://localhost:3000) and the admin pa
 
 `pnpm seed` **replaces all content** with the starter MHGP content: 8 pages, 6 workstreams,
 the leadership team, two news posts, the contact form, and header/footer navigation. It also
-creates the admin user (email/password from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env`)
-if it doesn't already exist. The same seed can be run from the admin dashboard's "Seed" button.
+creates the admin user (email/password from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env` —
+required, there are no defaults) if it doesn't already exist. The same seed can be run from the
+admin dashboard's "Seed" button (admins only).
+
+The script refuses to run against a non-local database — seed a deployed site from the
+dashboard's Seed button instead (see Deploying below).
 
 In development the database schema is kept in sync automatically (Drizzle push mode). Production
 uses the committed migrations in `src/migrations`.
 
+### Users & roles
+
+Users have a **role**: `admin` (manage users, run the seed) or `editor` (manage content only).
+The first account ever created is automatically an admin; accounts created after that default to
+editor unless an admin grants the admin role.
+
+### Email
+
+Payload sends email (password resets, contact-form notifications) through
+[Resend](https://resend.com) when `RESEND_API_KEY` is set; without it, emails are written to the
+server console — fine for dev, not for production. The `mentalhealthgoals.co.uk` domain must be
+verified in Resend (DNS records) before mail will send from it. The seeded contact form notifies
+`hello@mentalhealthgoals.co.uk` — **confirm the team inbox address before go-live**.
+
+Scheduled publishing is disabled: on Vercel nothing runs Payload's jobs queue, so scheduled
+publishes would silently never fire. To enable it, add a `vercel.json` cron hitting
+`/api/payload-jobs/run` (Vercel Pro for minute-level schedules), set `schedulePublish: true` on
+Pages/Posts, and create the migration it asks for.
+
 ## Content model
 
-| Type | What it's for |
-|---|---|
-| **Pages** | Layout-builder pages (hero + blocks). Home, About, Workstreams, For industry, Patients & public, People, Industry Engagement Forum, Contact |
-| **Posts** | News & events, listed at `/posts` |
-| **Workstreams** | The six national workstreams — edit these and the workstream grids update everywhere |
-| **People** | Leadership team cards, ordered by the `order` field |
-| **Media** | Uploads (local `public/media` in dev, Vercel Blob in production) |
-| **Header / Footer** | Navigation globals |
-| **Brand & Logo** | Global controlling which logo mark the whole site uses |
+| Type                | What it's for                                                                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pages**           | Layout-builder pages (hero + blocks). Home, About, Workstreams, For industry, Patients & public, People, Industry Engagement Forum, Contact |
+| **Posts**           | News & events, listed at `/posts`                                                                                                           |
+| **Workstreams**     | The six national workstreams — edit these and the workstream grids update everywhere                                                        |
+| **People**          | Leadership team cards, ordered by the `order` field                                                                                         |
+| **Media**           | Uploads (local `public/media` in dev, Vercel Blob in production)                                                                            |
+| **Header / Footer** | Navigation globals                                                                                                                          |
+| **Brand & Logo**    | Global controlling which logo mark the whole site uses                                                                                      |
 
 Custom blocks available in the page layout builder: **Stats** (big-number tiles),
 **Workstreams** (cards or detailed list), **People** (team grid), **Event Details**
@@ -72,11 +96,11 @@ is in use. Change it in the admin under **Globals → Brand & Logo**; the header
 footer, browser tab icon, app icons and social sharing card all follow the same
 setting, and the field shows a live preview of each option.
 
-| Variant | Mark |
-|---|---|
-| `summit` *(default)* | **Summit M** — rising peaks forming an M, amber goal above the summit |
-| `sunInCol` | **Sun in the Col** — the same mountain with round shoulders, holding the amber sun |
-| `rings` | **Concentric Rings** — the original launch mark |
+| Variant              | Mark                                                                               |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| `summit` _(default)_ | **Summit M** — rising peaks forming an M, amber goal above the summit              |
+| `sunInCol`           | **Sun in the Col** — the same mountain with round shoulders, holding the amber sun |
+| `rings`              | **Concentric Rings** — the original launch mark                                    |
 
 Geometry lives in `src/brand/marks.ts` and colours in `src/brand/tokens.ts`.
 That module is the single source of truth: the React components in
@@ -103,27 +127,52 @@ before sending artwork to print.
 4. **Set the remaining environment variables** (Project → Settings → Environment Variables):
    - `PAYLOAD_SECRET` — a long random string (generate with `openssl rand -hex 24`)
    - `NEXT_PUBLIC_SERVER_URL` — `https://mentalhealthgoals.co.uk`
-   - `CRON_SECRET` / `PREVIEW_SECRET` — random strings (scheduled publishing & draft preview)
+   - `CRON_SECRET` / `PREVIEW_SECRET` — random strings (jobs endpoint & draft preview)
+   - `RESEND_API_KEY` — from Resend, once the domain is verified there (email sending)
 5. **Set the build command** to `pnpm build:deploy` (Project → Settings → Build & Development).
-   This runs the database migrations before building.
-6. **Deploy**, then run the seed once against production if you want the starter content there:
-   set the production `DATABASE_URL` in your local `.env` temporarily and run `pnpm seed`.
+   This runs the database migrations before building — **production builds only**: preview
+   deployments currently share the production `DATABASE_URL`, so the script skips migrations
+   when `VERCEL_ENV=preview` to stop branch migrations mutating the live schema. (The better
+   long-term setup is a separate preview database — e.g. Neon's preview-branching integration —
+   which would also stop preview deployments reading/writing production content at runtime.)
+6. **Deploy**, then create the first admin account at `https://mentalhealthgoals.co.uk/admin`
+   (the first user is automatically an admin) and press the dashboard's **Seed** button to load
+   the starter content. Don't point a local `.env` at the production database — the local seed
+   script runs in dev mode and would sync schema outside migrations (it refuses by default).
 7. **Point the domain**: Project → Settings → Domains → add `mentalhealthgoals.co.uk` and follow
    the DNS instructions from your registrar (A record to `76.76.21.21` or CNAME to
    `cname.vercel-dns.com` for `www`).
 
 ## Useful scripts
 
-| Script | What it does |
-|---|---|
-| `pnpm dev` | Dev server with HMR |
-| `pnpm build` / `pnpm start` | Production build / serve |
-| `pnpm build:deploy` | Migrate then build (Vercel build command) |
-| `pnpm seed` | Reset content to the MHGP starter seed |
-| `pnpm generate:types` | Regenerate `src/payload-types.ts` after schema changes |
-| `pnpm generate:brand` | Regenerate all logo asset files in `public/brand` |
-| `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields |
-| `pnpm lint` | ESLint |
+| Script                               | What it does                                                    |
+| ------------------------------------ | --------------------------------------------------------------- |
+| `pnpm dev`                           | Dev server with HMR                                             |
+| `pnpm build` / `pnpm start`          | Production build / serve                                        |
+| `pnpm build:deploy`                  | Migrate then build (Vercel build command)                       |
+| `pnpm seed`                          | Reset content to the MHGP starter seed                          |
+| `pnpm generate:types`                | Regenerate `src/payload-types.ts` after schema changes          |
+| `pnpm generate:brand`                | Regenerate all logo asset files in `public/brand`               |
+| `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields            |
+| `pnpm lint` / `pnpm typecheck`       | ESLint / TypeScript                                             |
+| `pnpm format` / `pnpm format:check`  | Prettier write / verify                                         |
+| `pnpm test:int` / `pnpm test:e2e`    | Vitest integration tests / Playwright e2e (port 3210)           |
+| `pnpm check:types-drift`             | Fail if `payload-types.ts` is stale                             |
+| `pnpm check:migrations`              | Fail if the Payload config has schema changes with no migration |
+
+## Quality gates
+
+Three layers keep the foundations sound:
+
+1. **pre-commit** (husky + lint-staged): ESLint `--fix` and Prettier run on staged files.
+2. **pre-push**: `pnpm typecheck` and `pnpm check:types-drift` — fast, no database needed.
+3. **CI** (GitHub Actions, on every PR and push to main): lint + format check, typecheck,
+   types drift, integration tests, **migration parity** (committed migrations must reproduce
+   the exact schema the Payload config defines), a full production build mirroring Vercel's
+   `build:deploy`, and the Playwright e2e suite — each against a fresh Postgres.
+
+If you change collections or fields: run `pnpm payload migrate:create <name>` and
+`pnpm generate:types`, and commit both — CI fails otherwise.
 
 ## Notes
 
