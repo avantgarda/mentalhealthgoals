@@ -130,7 +130,11 @@ before sending artwork to print.
    - `CRON_SECRET` / `PREVIEW_SECRET` — random strings (jobs endpoint & draft preview)
    - `RESEND_API_KEY` — from Resend, once the domain is verified there (email sending)
 5. **Set the build command** to `pnpm build:deploy` (Project → Settings → Build & Development).
-   This runs the database migrations before building.
+   This runs the database migrations before building — **production builds only**: preview
+   deployments currently share the production `DATABASE_URL`, so the script skips migrations
+   when `VERCEL_ENV=preview` to stop branch migrations mutating the live schema. (The better
+   long-term setup is a separate preview database — e.g. Neon's preview-branching integration —
+   which would also stop preview deployments reading/writing production content at runtime.)
 6. **Deploy**, then create the first admin account at `https://mentalhealthgoals.co.uk/admin`
    (the first user is automatically an admin) and press the dashboard's **Seed** button to load
    the starter content. Don't point a local `.env` at the production database — the local seed
