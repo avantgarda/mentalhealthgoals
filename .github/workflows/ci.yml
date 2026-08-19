@@ -115,7 +115,9 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: sudo apt-get update -q && sudo apt-get install -y -q postgresql-client
+      # The runner image ships PostgreSQL client tools — assert rather than
+      # apt-install (apt on runners can hang indefinitely and eat the timeout)
+      - run: pg_dump --version && psql --version
       - run: pnpm check:migrations
         env:
           MIGRATION_CHECK_BASE_URL: postgresql://postgres:postgres@localhost:5432
@@ -182,7 +184,10 @@ jobs:
         env:
           SEED_ADMIN_EMAIL: ci-admin@example.com
           SEED_ADMIN_PASSWORD: ci-only-password
-      - run: pnpm exec playwright install --with-deps chromium
+      # No --with-deps: it apt-installs system libraries, and apt on runners
+      # can hang indefinitely. The runner image already carries Chromium's
+      # system dependencies (it ships with Chrome).
+      - run: pnpm exec playwright install chromium
       - run: pnpm test:e2e
       - uses: actions/upload-artifact@v7
         if: failure()
