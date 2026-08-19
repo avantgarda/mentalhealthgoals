@@ -51,6 +51,22 @@ const nextConfig: NextConfig = {
     return webpackConfig
   },
   reactStrictMode: true,
+  poweredByHeader: false,
+  // Vercel only sets HSTS by itself — the rest is on us. X-Frame-Options is
+  // SAMEORIGIN (not DENY) because the admin panel's live preview iframes the
+  // frontend on the same origin. A full CSP is deferred: the admin UI makes
+  // it high-maintenance for little gain on a content site.
+  headers: async () => [
+    {
+      source: '/(.*)',
+      headers: [
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+      ],
+    },
+  ],
   redirects,
   turbopack: {
     root: path.resolve(dirname),

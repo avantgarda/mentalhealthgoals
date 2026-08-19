@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    groups:
+      # Payload packages are version-locked to each other — always bump together
+      payload:
+        patterns:
+          - 'payload'
+          - '@payloadcms/*'
+      # Everything else: batch routine minor/patch bumps into one PR
+      minor-and-patch:
+        exclude-patterns:
+          - 'payload'
+          - '@payloadcms/*'
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Europe/London
