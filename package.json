@@ -27,8 +27,19 @@
     "test": "pnpm run test:int && pnpm run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
-    "generate:brand": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/generate-brand-assets.ts"
+    "generate:brand": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/generate-brand-assets.ts",
+    "prepare": "husky"
   },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{js,jsx,mjs,cjs,json,md,css,scss}": [
+      "prettier --write"
+    ]
+  },
+  "packageManager": "pnpm@10.25.0",
   "dependencies": {
     "@payloadcms/admin-bar": "3.87.1",
     "@payloadcms/db-postgres": "3.87.1",

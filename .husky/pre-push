@@ -1,0 +1,3 @@
+# Fast, DB-free checks before anything reaches the remote.
+# The full suite (tests, migration parity, build, e2e) runs in CI.
+pnpm typecheck && pnpm check:types-drift
