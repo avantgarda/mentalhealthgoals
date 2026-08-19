@@ -2,21 +2,23 @@ import type { Metadata } from 'next'
 
 import type { Media, Page, Post, Config } from '../payload-types'
 
+import { brandAssetPath, getBrandSettings } from '@/brand/getBrand'
 import { mergeOpenGraph } from './mergeOpenGraph'
 import { getServerSideURL } from './getURL'
 
-const getImageURL = (image?: Media | Config['db']['defaultIDType'] | null) => {
+const getImageURL = async (image?: Media | Config['db']['defaultIDType'] | null) => {
   const serverUrl = getServerSideURL()
-
-  let url = serverUrl + '/website-template-OG.webp'
 
   if (image && typeof image === 'object' && 'url' in image) {
     const ogUrl = image.sizes?.og?.url
 
-    url = ogUrl ? serverUrl + ogUrl : serverUrl + image.url
+    return ogUrl ? serverUrl + ogUrl : serverUrl + image.url
   }
 
-  return url
+  // No meta image set — fall back to the programme's own OG card for the
+  // currently selected logo variant.
+  const brand = await getBrandSettings()
+  return serverUrl + brandAssetPath(brand.variant, 'og.png')
 }
 
 export const generateMeta = async (args: {
@@ -24,7 +26,7 @@ export const generateMeta = async (args: {
 }): Promise<Metadata> => {
   const { doc } = args
 
-  const ogImage = getImageURL(doc?.meta?.image)
+  const ogImage = await getImageURL(doc?.meta?.image)
 
   const siteName = 'Mental Health Goals Programme'
   const title =

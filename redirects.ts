@@ -1,18 +1,7 @@
 import type { NextConfig } from 'next'
 
+// Static redirects live here (dynamic, editor-managed redirects come from the
+// Payload redirects plugin). Currently none.
 export const redirects: NextConfig['redirects'] = async () => {
-  const internetExplorerRedirect = {
-    destination: '/ie-incompatible.html',
-    has: [
-      {
-        type: 'header' as const,
-        key: 'user-agent',
-        value: '(.*Trident.*)', // all ie browsers
-      },
-    ],
-    permanent: false,
-    source: '/:path((?!ie-incompatible.html$).*)', // all pages except the incompatibility page
-  }
-
-  return [internetExplorerRedirect]
+  return []
 }

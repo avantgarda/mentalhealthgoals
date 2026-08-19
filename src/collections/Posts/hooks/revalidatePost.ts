@@ -16,16 +16,27 @@ export const revalidatePost: CollectionAfterChangeHook<Post> = ({
       payload.logger.info(`Revalidating post at path: ${path}`)
 
       revalidatePath(path)
+      // Posts appear beyond their own page: the /posts listing, Archive
+      // blocks on static pages and Related Posts sections — rebuild the lot.
+      revalidatePath('/', 'layout')
       revalidateTag('posts-sitemap', 'max')
+
+      // If the slug changed while staying published, clear the old path too
+      if (previousDoc?._status === 'published' && previousDoc.slug !== doc.slug) {
+        const oldPath = `/posts/${previousDoc.slug}`
+        payload.logger.info(`Revalidating old post at path: ${oldPath}`)
+        revalidatePath(oldPath)
+      }
     }
 
     // If the post was previously published, we need to revalidate the old path
-    if (previousDoc._status === 'published' && doc._status !== 'published') {
+    if (previousDoc?._status === 'published' && doc._status !== 'published') {
       const oldPath = `/posts/${previousDoc.slug}`
 
       payload.logger.info(`Revalidating old post at path: ${oldPath}`)
 
       revalidatePath(oldPath)
+      revalidatePath('/', 'layout')
       revalidateTag('posts-sitemap', 'max')
     }
   }
@@ -37,6 +48,7 @@ export const revalidateDelete: CollectionAfterDeleteHook<Post> = ({ doc, req: { 
     const path = `/posts/${doc?.slug}`
 
     revalidatePath(path)
+    revalidatePath('/', 'layout')
     revalidateTag('posts-sitemap', 'max')
   }
 

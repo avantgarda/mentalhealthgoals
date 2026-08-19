@@ -143,7 +143,11 @@ export const Pages: CollectionConfig<'pages'> = {
       autosave: {
         interval: 100, // We set this interval for optimal live preview
       },
-      schedulePublish: true,
+      // schedulePublish is off: on Vercel nothing runs the jobs queue, so
+      // scheduled publishes would silently never fire. To enable it, add a
+      // vercel.json cron hitting /api/payload-jobs/run (Pro plan for
+      // minute-level schedules) and turn this back on.
+      schedulePublish: false,
     },
     maxPerDoc: 50,
   },
