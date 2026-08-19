@@ -34,6 +34,11 @@ export default async function Page({ params: paramsPromise }: Args) {
     overrideAccess: false,
   })
 
+  // Out-of-range page numbers 404 instead of rendering an empty listing
+  if (sanitizedPageNumber < 1 || (posts.totalPages > 0 && sanitizedPageNumber > posts.totalPages)) {
+    notFound()
+  }
+
   return (
     <div className="pt-24 pb-24">
       <PageClient />
