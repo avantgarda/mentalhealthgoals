@@ -5,7 +5,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { contactForm as contactFormData } from './contact-form'
-import { heading, link, paragraph, root, text } from './lexical'
+import { bold, bullets, heading, link, paragraph, root, text } from './lexical'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -998,6 +998,178 @@ export const seed = async ({
         image: cardTealDoc.id,
       },
     },
+
+    // ——— Accessibility statement ———
+    // DRAFT — square-bracket placeholders must be completed and the statement
+    // reviewed by the team before go-live.
+    {
+      slug: 'accessibility',
+      _status: 'published',
+      title: 'Accessibility statement',
+      hero: {
+        type: 'lowImpact',
+        richText: root(
+          heading('h1', text('Accessibility statement')),
+          paragraph(
+            text(
+              'This accessibility statement applies to mentalhealthgoals.co.uk, the website of the Mental Health Goals Programme.',
+            ),
+          ),
+        ),
+      },
+      layout: [
+        {
+          blockType: 'content',
+          columns: [
+            {
+              size: 'full',
+              richText: root(
+                heading('h2', text('Our commitment')),
+                paragraph(
+                  text(
+                    'We want as many people as possible to be able to use this website. That means, for example, that you should be able to:',
+                  ),
+                ),
+                bullets(
+                  [text('navigate the whole site using only a keyboard')],
+                  [text('zoom in up to 300% without the text spilling off the screen')],
+                  [text('listen to the site using a screen reader')],
+                  [text('understand every image through its text alternative')],
+                ),
+                paragraph(
+                  text(
+                    'We aim to conform to the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA, in line with the Public Sector Bodies (Websites and Mobile Applications) (No. 2) Accessibility Regulations 2018.',
+                  ),
+                ),
+                heading('h2', text('Conformance status')),
+                paragraph(
+                  text(
+                    'This website has not yet undergone a full accessibility audit. We are working towards WCAG 2.2 level AA conformance and will update this statement when the audit is complete.',
+                  ),
+                ),
+                heading('h2', text('Feedback and contact')),
+                paragraph(
+                  text(
+                    'If you find a problem that is not listed here, or if you need information from this website in a different format, please contact us at ',
+                  ),
+                  link('hello@mentalhealthgoals.co.uk', 'mailto:hello@mentalhealthgoals.co.uk'),
+                  text('. We aim to respond within [X] working days.'),
+                ),
+                heading('h2', text('Enforcement procedure')),
+                paragraph(
+                  text(
+                    'The Equality and Human Rights Commission enforces the accessibility regulations. If you are not happy with how we respond to a complaint, contact the ',
+                  ),
+                  link(
+                    'Equality Advisory and Support Service (EASS)',
+                    'https://www.equalityadvisoryservice.com/',
+                    true,
+                  ),
+                  text('.'),
+                ),
+                paragraph(
+                  bold(
+                    'This statement was prepared on [date] and will be reviewed before the site launches.',
+                  ),
+                ),
+              ),
+            },
+          ],
+        },
+      ],
+      meta: {
+        title: 'Accessibility statement',
+        description: 'The accessibility statement for the Mental Health Goals Programme website.',
+        image: cardTealDoc.id,
+      },
+    },
+
+    // ——— Privacy notice ———
+    // DRAFT — the data controller, retention period and DPO details must be
+    // confirmed with KCL information compliance before go-live.
+    {
+      slug: 'privacy',
+      _status: 'published',
+      title: 'Privacy notice',
+      hero: {
+        type: 'lowImpact',
+        richText: root(
+          heading('h1', text('Privacy notice')),
+          paragraph(
+            text(
+              'How the Mental Health Goals Programme collects and uses personal information on this website.',
+            ),
+          ),
+        ),
+      },
+      layout: [
+        {
+          blockType: 'content',
+          columns: [
+            {
+              size: 'full',
+              richText: root(
+                heading('h2', text('Who we are')),
+                paragraph(
+                  text(
+                    'The Mental Health Goals Programme is a UK research programme led from King’s College London with partner institutions across the UK. For the purposes of UK data protection law, the data controller for this website is [confirm: King’s College London].',
+                  ),
+                ),
+                heading('h2', text('The information we collect')),
+                paragraph(
+                  text(
+                    'When you use the contact form we collect your name, email address, telephone number (if you provide it) and the content of your message. Our hosting providers also keep short-lived technical logs (such as IP addresses) to run and secure the service.',
+                  ),
+                ),
+                paragraph(
+                  text('This website does not use analytics, advertising or tracking cookies.'),
+                ),
+                heading('h2', text('How we use it')),
+                paragraph(
+                  text(
+                    'We use the information you send us to respond to your enquiry and, where relevant, to manage follow-up conversations about the programme. Our lawful basis is our legitimate interest in responding to enquiries sent to us. We do not sell your information or use it for marketing.',
+                  ),
+                ),
+                heading('h2', text('Where it is stored and for how long')),
+                paragraph(
+                  text(
+                    'Enquiries are stored securely with our website hosting and email providers and are accessible only to the programme team. We keep contact-form enquiries for [confirm retention period, e.g. 12 months] and then delete them.',
+                  ),
+                ),
+                heading('h2', text('Your rights')),
+                paragraph(text('Under UK data protection law you have the right to:')),
+                bullets(
+                  [text('ask for a copy of the information we hold about you')],
+                  [text('ask us to correct or delete your information')],
+                  [text('object to or restrict how we use it')],
+                  [text('complain to the Information Commissioner’s Office (ICO)')],
+                ),
+                paragraph(
+                  text('To exercise any of these rights, contact us at '),
+                  link('hello@mentalhealthgoals.co.uk', 'mailto:hello@mentalhealthgoals.co.uk'),
+                  text(
+                    ' or the King’s College London data protection team at [confirm DPO contact]. You can reach the ICO at ',
+                  ),
+                  link('ico.org.uk', 'https://ico.org.uk/', true),
+                  text('.'),
+                ),
+                paragraph(
+                  bold(
+                    'This notice was last updated on [date] and will be reviewed before the site launches.',
+                  ),
+                ),
+              ),
+            },
+          ],
+        },
+      ],
+      meta: {
+        title: 'Privacy notice',
+        description:
+          'How the Mental Health Goals Programme handles personal information on this website.',
+        image: cardTealDoc.id,
+      },
+    },
   ]
 
   const createdPages = await Promise.all(
@@ -1142,6 +1314,20 @@ export const seed = async ({
               type: 'custom' as const,
               label: 'Industry Engagement Forum',
               url: '/industry-engagement-forum',
+            },
+          },
+          {
+            link: {
+              type: 'custom' as const,
+              label: 'Accessibility',
+              url: '/accessibility',
+            },
+          },
+          {
+            link: {
+              type: 'custom' as const,
+              label: 'Privacy',
+              url: '/privacy',
             },
           },
         ],

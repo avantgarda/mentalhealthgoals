@@ -41,7 +41,7 @@ The site runs at [http://localhost:3000](http://localhost:3000) and the admin pa
 
 ### Seeding
 
-`pnpm seed` **replaces all content** with the starter MHGP content: 8 pages, 6 workstreams,
+`pnpm seed` **replaces all content** with the starter MHGP content: 10 pages, 6 workstreams,
 the leadership team, two news posts, the contact form, and header/footer navigation. It also
 creates the admin user (email/password from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env` —
 required, there are no defaults) if it doesn't already exist. The same seed can be run from the
@@ -74,15 +74,15 @@ Pages/Posts, and create the migration it asks for.
 
 ## Content model
 
-| Type                | What it's for                                                                                                                               |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Pages**           | Layout-builder pages (hero + blocks). Home, About, Workstreams, For industry, Patients & public, People, Industry Engagement Forum, Contact |
-| **Posts**           | News & events, listed at `/posts`                                                                                                           |
-| **Workstreams**     | The six national workstreams — edit these and the workstream grids update everywhere                                                        |
-| **People**          | Leadership team cards, ordered by the `order` field                                                                                         |
-| **Media**           | Uploads (local `public/media` in dev, Vercel Blob in production)                                                                            |
-| **Header / Footer** | Navigation globals                                                                                                                          |
-| **Brand & Logo**    | Global controlling which logo mark the whole site uses                                                                                      |
+| Type                | What it's for                                                                                                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Pages**           | Layout-builder pages (hero + blocks). Home, About, Workstreams, For industry, Patients & public, People, Industry Engagement Forum, Contact, Accessibility statement, Privacy notice |
+| **Posts**           | News & events, listed at `/posts`                                                                                                                                                    |
+| **Workstreams**     | The six national workstreams — edit these and the workstream grids update everywhere                                                                                                 |
+| **People**          | Leadership team cards, ordered by the `order` field                                                                                                                                  |
+| **Media**           | Uploads (local `public/media` in dev, Vercel Blob in production)                                                                                                                     |
+| **Header / Footer** | Navigation globals                                                                                                                                                                   |
+| **Brand & Logo**    | Global controlling which logo mark the whole site uses                                                                                                                               |
 
 Custom blocks available in the page layout builder: **Stats** (big-number tiles),
 **Workstreams** (cards or detailed list), **People** (team grid), **Event Details**
@@ -180,3 +180,6 @@ If you change collections or fields: run `pnpm payload migrate:create <name>` an
   documents that should not be published.
 - Site content was drafted from the MHGP brochure and programme documents. **Review all copy,
   names and contact details with the team before go-live.**
+- The **Accessibility statement** and **Privacy notice** pages are drafts containing
+  `[square-bracket placeholders]` (data controller, retention period, DPO contact, dates) that
+  must be completed — and the wording confirmed with KCL information compliance — before launch.

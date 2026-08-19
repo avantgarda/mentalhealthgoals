@@ -47,6 +47,27 @@ export const heading = (tag: 'h1' | 'h2' | 'h3' | 'h4', ...children: any[]): any
   version: 1,
 })
 
+/** Bulleted list — each argument is one list item's children. */
+export const bullets = (...items: any[][]): any => ({
+  type: 'list',
+  listType: 'bullet',
+  start: 1,
+  tag: 'ul',
+  children: items.map((children, i) => ({
+    type: 'listitem',
+    children,
+    direction: 'ltr',
+    format: '',
+    indent: 0,
+    value: i + 1,
+    version: 1,
+  })),
+  direction: 'ltr',
+  format: '',
+  indent: 0,
+  version: 1,
+})
+
 export const root = (...children: any[]): any => ({
   root: {
     type: 'root',
