@@ -65,7 +65,7 @@ Payload sends email (password resets, contact-form notifications) through
 [Resend](https://resend.com) when `RESEND_API_KEY` is set; without it, emails are written to the
 server console — fine for dev, not for production. The `mentalhealthgoals.co.uk` domain must be
 verified in Resend (DNS records) before mail will send from it. The seeded contact form notifies
-`hello@mentalhealthgoals.co.uk` — **confirm the team inbox address before go-live**.
+`enquiries@mentalhealthgoals.co.uk` — **confirm the team inbox address before go-live**.
 
 Scheduled publishing is disabled: on Vercel nothing runs Payload's jobs queue, so scheduled
 publishes would silently never fire. To enable it, add a `vercel.json` cron hitting

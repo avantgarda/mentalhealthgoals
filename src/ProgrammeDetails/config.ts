@@ -41,7 +41,7 @@ export const ProgrammeDetails: GlobalConfig = {
       name: 'email',
       type: 'email',
       label: 'General enquiries email',
-      defaultValue: 'hello@mentalhealthgoals.co.uk',
+      defaultValue: 'enquiries@mentalhealthgoals.co.uk',
     },
     {
       name: 'phone',
