@@ -115,11 +115,13 @@ export interface Config {
     header: Header;
     footer: Footer;
     brand: Brand;
+    programmeDetails: ProgrammeDetail;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     brand: BrandSelect<false> | BrandSelect<true>;
+    programmeDetails: ProgrammeDetailsSelect<false> | ProgrammeDetailsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -1819,6 +1821,28 @@ export interface Brand {
   createdAt?: string | null;
 }
 /**
+ * Contact details for the programme as a whole — shown in the site footer. People and their individual contact details live in the People collection.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "programmeDetails".
+ */
+export interface ProgrammeDetail {
+  id: number;
+  /**
+   * Used in the footer copyright line.
+   */
+  name: string;
+  organisation?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  /**
+   * One line per row — shown in the footer exactly as typed.
+   */
+  address?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
@@ -1871,6 +1895,20 @@ export interface FooterSelect<T extends boolean = true> {
 export interface BrandSelect<T extends boolean = true> {
   logoVariant?: T;
   showTagline?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "programmeDetails_select".
+ */
+export interface ProgrammeDetailsSelect<T extends boolean = true> {
+  name?: T;
+  organisation?: T;
+  email?: T;
+  phone?: T;
+  address?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
