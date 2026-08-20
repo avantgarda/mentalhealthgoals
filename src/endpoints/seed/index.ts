@@ -10,16 +10,20 @@ import { bold, bullets, heading, link, paragraph, root, text } from './lexical'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+// Cleared sequentially, dependents first — search references posts,
+// form-submissions reference forms, pages reference forms/media. Parallel
+// deletes here caused a Postgres deadlock in production (conflicting FK lock
+// order between "search" and "posts").
 const collections: CollectionSlug[] = [
-  'categories',
-  'media',
-  'pages',
+  'search',
+  'form-submissions',
   'posts',
+  'pages',
+  'forms',
   'workstreams',
   'people',
-  'forms',
-  'form-submissions',
-  'search',
+  'categories',
+  'media',
 ]
 
 // Only the navigation globals are cleared on reseed; site settings such as the
@@ -54,15 +58,15 @@ export const seed = async ({
     ),
   )
 
-  await Promise.all(
-    collections.map((collection) => payload.db.deleteMany({ collection, req, where: {} })),
-  )
+  for (const collection of collections) {
+    await payload.db.deleteMany({ collection, req, where: {} })
+  }
 
-  await Promise.all(
-    collections
-      .filter((collection) => Boolean(payload.collections[collection].config.versions))
-      .map((collection) => payload.db.deleteVersions({ collection, req, where: {} })),
-  )
+  for (const collection of collections) {
+    if (payload.collections[collection].config.versions) {
+      await payload.db.deleteVersions({ collection, req, where: {} })
+    }
+  }
 
   payload.logger.info(`— Seeding media...`)
 
