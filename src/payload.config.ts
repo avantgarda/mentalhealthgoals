@@ -15,6 +15,7 @@ import { Workstreams } from './collections/Workstreams'
 import { Brand } from './brand/config'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
+import { ProgrammeDetails } from './ProgrammeDetails/config'
 import { plugins } from './plugins'
 import { defaultLexical } from '@/fields/defaultLexical'
 import { getServerSideURL } from './utilities/getURL'
@@ -82,7 +83,7 @@ export default buildConfig({
       }
     : {}),
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer, Brand],
+  globals: [Header, Footer, Brand, ProgrammeDetails],
   plugins,
   secret: process.env.PAYLOAD_SECRET,
   sharp,

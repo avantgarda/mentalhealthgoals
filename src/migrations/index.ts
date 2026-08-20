@@ -2,6 +2,7 @@ import * as migration_20260810_154228_initial from './20260810_154228_initial';
 import * as migration_20260818_143035_brand_global from './20260818_143035_brand_global';
 import * as migration_20260819_124926_add_user_roles from './20260819_124926_add_user_roles';
 import * as migration_20260819_125503_remove_jobs_tables from './20260819_125503_remove_jobs_tables';
+import * as migration_20260820_091507_add_programme_details_global from './20260820_091507_add_programme_details_global';
 
 export const migrations = [
   {
@@ -22,6 +23,11 @@ export const migrations = [
   {
     up: migration_20260819_125503_remove_jobs_tables.up,
     down: migration_20260819_125503_remove_jobs_tables.down,
-    name: '20260819_125503_remove_jobs_tables'
+    name: '20260819_125503_remove_jobs_tables',
+  },
+  {
+    up: migration_20260820_091507_add_programme_details_global.up,
+    down: migration_20260820_091507_add_programme_details_global.down,
+    name: '20260820_091507_add_programme_details_global'
   },
 ];
