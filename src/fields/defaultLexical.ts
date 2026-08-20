@@ -3,9 +3,11 @@ import {
   BoldFeature,
   ItalicFeature,
   LinkFeature,
+  OrderedListFeature,
   ParagraphFeature,
   lexicalEditor,
   UnderlineFeature,
+  UnorderedListFeature,
   type LinkFields,
 } from '@payloadcms/richtext-lexical'
 
@@ -15,6 +17,12 @@ export const defaultLexical = lexicalEditor({
     UnderlineFeature(),
     BoldFeature(),
     ItalicFeature(),
+    // Without the list features registered, the admin editor cannot load
+    // content containing list nodes at all — it crashes with Lexical's
+    // "type not registered" error (seen on the seeded legal pages, which
+    // use bulleted lists). The frontend renderer knows lists regardless.
+    UnorderedListFeature(),
+    OrderedListFeature(),
     LinkFeature({
       enabledCollections: ['pages', 'posts'],
       fields: ({ defaultFields }) => {
