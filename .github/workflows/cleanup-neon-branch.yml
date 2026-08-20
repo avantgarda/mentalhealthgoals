@@ -1,0 +1,32 @@
+name: Cleanup Neon preview branch
+
+# The Vercel-managed Neon integration creates a database branch per preview
+# deployment but never deletes it, so merged PRs leak branches until the free
+# plan's 10-branch cap breaks preview provisioning. Delete the branch the
+# moment its PR closes — Neon's own recommended fix for this integration.
+#
+# Requires the NEON_API_KEY repository secret (create the key in the Neon
+# console: Vercel → Storage → the database → "Open in Neon" → org settings →
+# API keys). Until the secret exists, runs fail quietly (continue-on-error).
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  delete-neon-branch:
+    # Dependabot branches never get Neon previews (vercel.json ignoreCommand),
+    # and dependabot-triggered runs can't read the NEON_API_KEY secret anyway.
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete this PR's Neon preview branch
+        # Missing branch (preview never provisioned) or missing secret should
+        # not red-flag the PR — the branch cap failure mode is loud on its own.
+        continue-on-error: true
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: royal-feather-31470094
+          branch: preview/${{ github.event.pull_request.head.ref }}
+          api_key: ${{ secrets.NEON_API_KEY }}
