@@ -12,6 +12,7 @@ import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 let payload: Payload
 
 const run = Date.now()
+const bootstrapEmail = `test-bootstrap-${run}@test.local`
 const editorEmail = `test-editor-${run}@test.local`
 const adminEmail = `test-admin-${run}@test.local`
 const draftSlug = `test-draft-${run}`
@@ -27,10 +28,21 @@ describe('access control', () => {
   beforeAll(async () => {
     payload = await getPayload({ config: await config })
 
+    // On a fresh database (CI) the first-ever user is forcibly promoted to
+    // admin by the Users beforeChange hook. Create a bootstrap user first to
+    // absorb that rule, so the editor fixture below really is an editor.
+    await payload.create({
+      collection: 'users',
+      data: { name: 'Bootstrap', email: bootstrapEmail, password: 'test-pass-1', role: 'admin' },
+    })
+
     editor = await payload.create({
       collection: 'users',
       data: { name: 'Test Editor', email: editorEmail, password: 'test-pass-1', role: 'editor' },
     })
+    if (editor.role !== 'editor') {
+      throw new Error('Fixture setup failed: editor user was not created with the editor role')
+    }
     admin = await payload.create({
       collection: 'users',
       data: { name: 'Test Admin', email: adminEmail, password: 'test-pass-1', role: 'admin' },
@@ -65,7 +77,7 @@ describe('access control', () => {
     })
     await payload.delete({
       collection: 'users',
-      where: { email: { in: [editorEmail, adminEmail] } },
+      where: { email: { in: [bootstrapEmail, editorEmail, adminEmail] } },
     })
   })
 
