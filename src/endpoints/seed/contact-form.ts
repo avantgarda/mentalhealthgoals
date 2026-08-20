@@ -70,10 +70,11 @@ export const contactForm: RequiredDataFromCollectionSlug<'forms'> = {
       subject: "We've received your message",
     },
     // Internal notification so enquiries don't sit unseen in the CMS.
-    // CONFIRM the team inbox address with the team before go-live.
+    // CONTACT_NOTIFICATION_EMAIL temporarily overrides the recipient until
+    // enquiries@ is a real mailbox (M365 pending) — delete the env var then.
     {
       emailFrom: '"Mental Health Goals Programme" <noreply@mentalhealthgoals.co.uk>',
-      emailTo: 'enquiries@mentalhealthgoals.co.uk',
+      emailTo: process.env.CONTACT_NOTIFICATION_EMAIL || 'enquiries@mentalhealthgoals.co.uk',
       replyTo: '{{email}}',
       message: {
         root: {

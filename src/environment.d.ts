@@ -9,6 +9,7 @@ declare global {
       PREVIEW_SECRET: string
       RESEND_API_KEY?: string
       SITE_NOINDEX?: string
+      CONTACT_NOTIFICATION_EMAIL?: string
       BLOB_READ_WRITE_TOKEN?: string
       SEED_ADMIN_EMAIL?: string
       SEED_ADMIN_PASSWORD?: string
