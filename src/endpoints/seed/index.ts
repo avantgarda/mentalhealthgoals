@@ -1052,7 +1052,10 @@ export const seed = async ({
                   text(
                     'If you find a problem that is not listed here, or if you need information from this website in a different format, please contact us at ',
                   ),
-                  link('hello@mentalhealthgoals.co.uk', 'mailto:hello@mentalhealthgoals.co.uk'),
+                  link(
+                    'enquiries@mentalhealthgoals.co.uk',
+                    'mailto:enquiries@mentalhealthgoals.co.uk',
+                  ),
                   text('. We aim to respond within [X] working days.'),
                 ),
                 heading('h2', text('Enforcement procedure')),
@@ -1146,7 +1149,10 @@ export const seed = async ({
                 ),
                 paragraph(
                   text('To exercise any of these rights, contact us at '),
-                  link('hello@mentalhealthgoals.co.uk', 'mailto:hello@mentalhealthgoals.co.uk'),
+                  link(
+                    'enquiries@mentalhealthgoals.co.uk',
+                    'mailto:enquiries@mentalhealthgoals.co.uk',
+                  ),
                   text(
                     ' or the King’s College London data protection team at [confirm DPO contact]. You can reach the ICO at ',
                   ),

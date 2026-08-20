@@ -73,7 +73,7 @@ export const contactForm: RequiredDataFromCollectionSlug<'forms'> = {
     // CONFIRM the team inbox address with the team before go-live.
     {
       emailFrom: '"Mental Health Goals Programme" <noreply@mentalhealthgoals.co.uk>',
-      emailTo: 'hello@mentalhealthgoals.co.uk',
+      emailTo: 'enquiries@mentalhealthgoals.co.uk',
       replyTo: '{{email}}',
       message: {
         root: {
