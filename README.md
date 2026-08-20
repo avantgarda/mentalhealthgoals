@@ -180,6 +180,10 @@ If you change collections or fields: run `pnpm payload migrate:create <name>` an
   documents that should not be published.
 - Site content was drafted from the MHGP brochure and programme documents. **Review all copy,
   names and contact details with the team before go-live.**
+- A **Content-Security-Policy runs in report-only mode** (production builds only): nothing is
+  blocked, violations are POSTed to `/csp-report` and appear in the Vercel function logs (search
+  for `csp-report`). Once the logs stay quiet across real editing sessions, rename the header in
+  `next.config.ts` to `Content-Security-Policy` to enforce it.
 - The **Accessibility statement** and **Privacy notice** pages are drafts containing
   `[square-bracket placeholders]` (data controller, retention period, DPO contact, dates) that
   must be completed — and the wording confirmed with KCL information compliance — before launch.

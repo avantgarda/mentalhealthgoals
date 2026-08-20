@@ -54,8 +54,15 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Vercel only sets HSTS by itself — the rest is on us. X-Frame-Options is
   // SAMEORIGIN (not DENY) because the admin panel's live preview iframes the
-  // frontend on the same origin. A full CSP is deferred: the admin UI makes
-  // it high-maintenance for little gain on a content site.
+  // frontend on the same origin.
+  //
+  // The CSP runs in REPORT-ONLY mode: nothing is blocked, violations are
+  // POSTed to /csp-report and appear in the Vercel function logs. Once the
+  // logs stay quiet across real editing + browsing, rename the header to
+  // Content-Security-Policy to enforce it. 'unsafe-inline' is required by
+  // Next's bootstrap scripts and the admin UI's inline styles; the vercel.live
+  // entries cover Vercel's preview-deployment toolbar. Production only —
+  // dev-mode HMR uses eval and would drown the reports in noise.
   headers: async () => [
     {
       source: '/(.*)',
@@ -64,6 +71,29 @@ const nextConfig: NextConfig = {
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
         { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+        ...(process.env.NODE_ENV === 'production'
+          ? [
+              { key: 'Reporting-Endpoints', value: 'csp-endpoint="/csp-report"' },
+              {
+                key: 'Content-Security-Policy-Report-Only',
+                value: [
+                  "default-src 'self'",
+                  "script-src 'self' 'unsafe-inline' https://vercel.live",
+                  "style-src 'self' 'unsafe-inline'",
+                  "img-src 'self' blob: data:",
+                  "font-src 'self' data:",
+                  "connect-src 'self' https://vercel.live",
+                  "frame-src 'self' https://vercel.live",
+                  "worker-src 'self' blob:",
+                  "object-src 'none'",
+                  "base-uri 'self'",
+                  "form-action 'self'",
+                  'report-uri /csp-report',
+                  'report-to csp-endpoint',
+                ].join('; '),
+              },
+            ]
+          : []),
       ],
     },
     // Pre-launch: keep the draft site out of search indexes. Set SITE_NOINDEX=1
