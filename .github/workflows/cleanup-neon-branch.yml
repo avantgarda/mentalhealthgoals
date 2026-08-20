@@ -1,32 +1,61 @@
 name: Cleanup Neon preview branch
 
-# The Vercel-managed Neon integration creates a database branch per preview
-# deployment but never deletes it, so merged PRs leak branches until the free
-# plan's 10-branch cap breaks preview provisioning. Delete the branch the
-# moment its PR closes — Neon's own recommended fix for this integration.
+# Vercel's Neon integration creates a database branch per git branch for
+# preview deployments but never deletes it (its only cleanup follows Vercel's
+# months-long deployment retention), so merged work leaks branches until the
+# free plan's 10-branch cap breaks preview provisioning.
 #
-# Requires the NEON_API_KEY repository secret (create the key in the Neon
-# console: Vercel → Storage → the database → "Open in Neon" → org settings →
-# API keys). Until the secret exists, runs fail quietly (continue-on-error).
+# Delete the Neon branch when its PR closes OR when the git branch is deleted
+# — whichever happens first; the later trigger finds nothing and exits
+# cleanly. Calls the Neon API directly so every outcome is explicit:
+#   - secret missing        → red failure (loud on purpose)
+#   - no matching branch    → green no-op
+#   - API error             → red failure
+#
+# Requires the NEON_API_KEY repository secret (Neon console → organization
+# settings → API keys).
 
 on:
   pull_request:
     types: [closed]
+  delete:
+
+permissions: {}
 
 jobs:
   delete-neon-branch:
-    # Dependabot branches never get Neon previews (vercel.json ignoreCommand),
-    # and dependabot-triggered runs can't read the NEON_API_KEY secret anyway.
-    if: github.actor != 'dependabot[bot]'
+    # Dependabot branches never get Neon previews (vercel.json ignoreCommand)
+    # and dependabot-triggered runs cannot read repository secrets anyway.
+    if: >-
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name == 'pull_request' || github.event.ref_type == 'branch')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Delete this PR's Neon preview branch
-        # Missing branch (preview never provisioned) or missing secret should
-        # not red-flag the PR — the branch cap failure mode is loud on its own.
-        continue-on-error: true
-        uses: neondatabase/delete-branch-action@v3
-        with:
-          project_id: royal-feather-31470094
-          branch: preview/${{ github.event.pull_request.head.ref }}
-          api_key: ${{ secrets.NEON_API_KEY }}
+      - name: Delete the Neon branch for this git branch
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          PROJECT_ID: royal-feather-31470094
+          GIT_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event.ref }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$NEON_API_KEY" ]; then
+            echo "::error::NEON_API_KEY secret is not configured — cannot clean up Neon branch 'preview/${GIT_BRANCH}'. Create an API key in the Neon console (organization settings → API keys) and add it as a repository secret."
+            exit 1
+          fi
+
+          api="https://console.neon.tech/api/v2/projects/${PROJECT_ID}/branches"
+
+          branch_id=$(curl -sf -H "Authorization: Bearer ${NEON_API_KEY}" "$api" |
+            jq -r --arg name "preview/${GIT_BRANCH}" \
+              '.branches[] | select(.name == $name) | .id')
+
+          if [ -z "$branch_id" ]; then
+            echo "No Neon branch named 'preview/${GIT_BRANCH}' — nothing to clean up."
+            exit 0
+          fi
+
+          curl -sf -X DELETE -H "Authorization: Bearer ${NEON_API_KEY}" \
+            "${api}/${branch_id}" > /dev/null
+          echo "Deleted Neon branch 'preview/${GIT_BRANCH}' (${branch_id})"
