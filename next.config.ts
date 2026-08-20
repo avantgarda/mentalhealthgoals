@@ -80,7 +80,9 @@ const nextConfig: NextConfig = {
                   "default-src 'self'",
                   "script-src 'self' 'unsafe-inline' https://vercel.live",
                   "style-src 'self' 'unsafe-inline'",
-                  "img-src 'self' blob: data:",
+                  // gravatar: the admin panel loads user avatars from there
+                  // (first real /csp-report finding, 2026-08-20)
+                  "img-src 'self' blob: data: https://www.gravatar.com",
                   "font-src 'self' data:",
                   "connect-src 'self' https://vercel.live",
                   "frame-src 'self' https://vercel.live",
