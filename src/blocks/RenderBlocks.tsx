@@ -24,6 +24,16 @@ const blockComponents = {
   workstreamsBlock: WorkstreamsBlockComponent,
 }
 
+/** Vertical rhythm: a statement block gets more air than a list that follows a list. */
+const spacing: Partial<Record<keyof typeof blockComponents, string>> = {
+  stats: 'my-14 lg:my-20',
+  cta: 'my-16 lg:my-24',
+  content: 'my-14 lg:my-20',
+  workstreamsBlock: 'my-16 lg:my-24',
+  peopleBlock: 'my-14 lg:my-20',
+  eventDetails: 'my-14 lg:my-20',
+}
+
 export const RenderBlocks: React.FC<{
   blocks: Page['layout'][0][]
 }> = (props) => {
@@ -42,7 +52,7 @@ export const RenderBlocks: React.FC<{
 
             if (Block) {
               return (
-                <div className="my-16" key={index}>
+                <div className={spacing[blockType] ?? 'my-14 lg:my-20'} key={index}>
                   {/* @ts-expect-error there may be some mismatch between the expected types here */}
                   <Block {...block} disableInnerContainer />
                 </div>

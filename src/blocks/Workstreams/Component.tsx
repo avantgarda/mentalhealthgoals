@@ -5,6 +5,11 @@ import Link from 'next/link'
 
 import type { WorkstreamsBlockType } from '@/payload-types'
 
+/**
+ * The six workstreams as a numbered index: number · title · one line ·
+ * delivered by. The "detailed" style shows the longer description; "cards"
+ * (the name is kept for the CMS) shows the summary.
+ */
 export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async ({
   heading,
   intro,
@@ -25,71 +30,60 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
 
   if (docs.length === 0) return null
 
-  // Keep heading levels sequential: with a block heading (h2) the cards sit at
+  // Keep heading levels sequential: with a block heading (h2) the rows sit at
   // h3; without one (e.g. the workstreams listing page, under its h1) at h2.
-  const CardHeading: 'h2' | 'h3' = heading ? 'h3' : 'h2'
+  const RowHeading: 'h2' | 'h3' = heading ? 'h3' : 'h2'
+  const detailed = style === 'detailed'
 
   return (
     <div className="container">
       {(heading || intro) && (
-        <div className="max-w-2xl mb-10">
-          {heading && <h2 className="text-3xl md:text-4xl font-semibold mb-3">{heading}</h2>}
-          {intro && <p className="text-muted-foreground text-lg leading-relaxed">{intro}</p>}
+        <div className="mb-8 grid grid-cols-1 gap-4 lg:mb-10 lg:grid-cols-12 lg:gap-x-10">
+          {heading && (
+            <h2 className="display-2 lg:col-span-5" data-reveal>
+              {heading}
+            </h2>
+          )}
+          {intro && (
+            <p className="lede lg:col-span-6 lg:col-start-7 lg:self-end" data-reveal>
+              {intro}
+            </p>
+          )}
         </div>
       )}
 
-      {style === 'detailed' ? (
-        <div className="flex flex-col divide-y divide-border border-y border-border">
-          {docs.map((ws) => (
+      <ol className="border-t border-border">
+        {docs.map((ws, i) => (
+          <li data-reveal key={ws.id} style={{ transitionDelay: `${Math.min(i, 6) * 50}ms` }}>
             <Link
-              key={ws.id}
+              className="group grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-4 gap-y-2 border-b border-border py-6 transition-colors duration-[var(--dur-ui)] hover:bg-foreground/[0.03] lg:grid-cols-12 lg:gap-x-8 lg:py-7"
               href={`/workstreams/${ws.slug}`}
-              className="py-10 grid gap-4 md:grid-cols-12 group hover:bg-card/60 transition-colors"
             >
-              <div className="md:col-span-1">
-                <span aria-hidden="true" className="font-display text-3xl text-brand-accent-text">
-                  {String(ws.number).padStart(2, '0')}
-                </span>
-              </div>
-              <div className="md:col-span-7 flex flex-col gap-3">
-                <CardHeading className="text-2xl font-semibold group-hover:underline underline-offset-4">
-                  {ws.title}
-                </CardHeading>
-                <p className="text-muted-foreground leading-relaxed">
-                  {ws.description || ws.summary}
-                </p>
-              </div>
-              <div className="md:col-span-4 md:pl-8">
-                <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground block mb-1">
-                  Delivered by
-                </span>
-                <span className="text-sm">{ws.deliveredBy}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {docs.map((ws) => (
-            <Link
-              key={ws.id}
-              href={`/workstreams/${ws.slug}`}
-              className="rounded-xl border border-border bg-card p-7 flex flex-col gap-3 group hover:border-brand-accent-text transition-colors"
-            >
-              <span aria-hidden="true" className="font-display text-2xl text-brand-accent-text">
+              <span
+                aria-hidden="true"
+                className="pt-1.5 font-mono text-xs tabular-nums text-muted-foreground transition-colors duration-[var(--dur-ui)] group-hover:text-brand-accent-text lg:col-span-1"
+              >
                 {String(ws.number).padStart(2, '0')}
               </span>
-              <CardHeading className="text-lg font-semibold leading-snug group-hover:underline underline-offset-4">
-                {ws.title}
-              </CardHeading>
-              <p className="text-sm text-muted-foreground leading-relaxed flex-1">{ws.summary}</p>
-              <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-                {ws.deliveredBy}
+              <div className="lg:col-span-4">
+                <RowHeading className="display-3 group-hover:underline group-hover:decoration-1 group-hover:underline-offset-4">
+                  {ws.title}
+                </RowHeading>
+              </div>
+              <p className="col-start-2 text-[0.95rem] leading-relaxed text-muted-foreground lg:col-span-4 lg:col-start-6">
+                {detailed ? ws.description || ws.summary : ws.summary}
               </p>
+              <div className="col-start-2 flex flex-col gap-1 lg:col-span-3 lg:col-start-10 lg:items-end lg:text-right">
+                <span className="eyebrow">Delivered by</span>
+                <span className="text-sm leading-snug">{ws.deliveredBy}</span>
+                <span aria-hidden="true" className="arrow mt-1 text-muted-foreground">
+                  →
+                </span>
+              </div>
             </Link>
-          ))}
-        </div>
-      )}
+          </li>
+        ))}
+      </ol>
     </div>
   )
 }

@@ -6,10 +6,12 @@ import React, { Fragment } from 'react'
 
 import type { Post } from '@/payload-types'
 
-import { Media } from '@/components/Media'
-
 export type CardPostData = Pick<Post, 'slug' | 'categories' | 'meta' | 'title'>
 
+/**
+ * A news entry as a ruled row: category · title · standfirst · arrow. The
+ * whole row is clickable; the title carries the real link.
+ */
 export const Card: React.FC<{
   alignItems?: 'center'
   className?: string
@@ -22,7 +24,7 @@ export const Card: React.FC<{
   const { className, doc, relationTo, showCategories, title: titleFromProps } = props
 
   const { slug, categories, meta, title } = doc || {}
-  const { description, image: metaImage } = meta || {}
+  const { description } = meta || {}
 
   const hasCategories = categories && Array.isArray(categories) && categories.length > 0
   const titleToUse = titleFromProps || title
@@ -32,18 +34,14 @@ export const Card: React.FC<{
   return (
     <article
       className={cn(
-        'border border-border rounded-lg overflow-hidden bg-card hover:cursor-pointer',
+        'group grid grid-cols-1 gap-y-2 border-b border-border py-6 transition-colors duration-[var(--dur-ui)] hover:cursor-pointer hover:bg-foreground/[0.03] lg:grid-cols-12 lg:gap-x-8 lg:py-7',
         className,
       )}
       ref={card.ref}
     >
-      <div className="relative w-full ">
-        {!metaImage && <div className="">No image</div>}
-        {metaImage && typeof metaImage !== 'string' && <Media resource={metaImage} size="33vw" />}
-      </div>
-      <div className="p-4">
+      <div className="lg:col-span-2">
         {showCategories && hasCategories && (
-          <div className="uppercase text-sm mb-4">
+          <p className="eyebrow">
             {categories?.map((category, index) => {
               if (typeof category === 'object') {
                 const { title: titleFromCategory } = category
@@ -62,16 +60,34 @@ export const Card: React.FC<{
 
               return null
             })}
-          </div>
+          </p>
         )}
+      </div>
+      <div className="lg:col-span-5">
         {titleToUse && (
-          <h2 className="text-xl font-semibold leading-snug">
-            <Link href={href} ref={link.ref}>
+          <h2 className="display-3">
+            <Link
+              className="group-hover:underline group-hover:decoration-1 group-hover:underline-offset-4"
+              href={href}
+              ref={link.ref}
+            >
               {titleToUse}
             </Link>
           </h2>
         )}
-        {description && <div className="mt-2">{description && <p>{sanitizedDescription}</p>}</div>}
+      </div>
+      <div className="flex items-start justify-between gap-6 lg:col-span-5">
+        {description && (
+          <p className="text-[0.95rem] leading-relaxed text-muted-foreground">
+            {sanitizedDescription}
+          </p>
+        )}
+        <span
+          aria-hidden="true"
+          className="arrow hidden pt-1 text-muted-foreground lg:inline-block"
+        >
+          →
+        </span>
       </div>
     </article>
   )

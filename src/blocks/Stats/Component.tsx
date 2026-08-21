@@ -2,22 +2,32 @@ import React from 'react'
 
 import type { StatsBlock as StatsBlockProps } from '@/payload-types'
 
+import { CountUp } from './CountUp'
+
+/** "By the numbers": large serif numerals set inline between hairlines — no tiles. */
 export const StatsBlockComponent: React.FC<StatsBlockProps> = ({ items }) => {
   if (!items || items.length === 0) return null
 
+  const cols = Math.min(items.length, 4)
+
   return (
     <div className="container">
-      <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <ul
+        className="grid grid-cols-1 border-t border-border sm:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
+        style={{ ['--cols' as string]: cols } as React.CSSProperties}
+      >
         {items.map((item, i) => {
           return (
             <li
+              className="flex flex-col gap-3 border-b border-border py-8 sm:border-b-0 sm:border-r sm:py-10 sm:pr-8 sm:last:border-r-0 sm:[&:not(:first-child)]:pl-8"
+              data-reveal
               key={i}
-              className="rounded-xl border border-border bg-card px-8 py-10 flex flex-col gap-2"
+              style={{ transitionDelay: `${i * 70}ms` }}
             >
-              <span className="font-display text-5xl font-semibold text-brand-accent-text tracking-tight">
-                {item.value}
+              <span className="numeral text-[clamp(3rem,6vw,5.25rem)] text-foreground">
+                <CountUp value={item.value} />
               </span>
-              <span className="text-base font-medium">{item.label}</span>
+              <span className="text-base font-medium leading-snug">{item.label}</span>
               {item.sublabel && (
                 <span className="text-sm text-muted-foreground">{item.sublabel}</span>
               )}

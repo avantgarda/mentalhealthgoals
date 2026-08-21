@@ -15,18 +15,22 @@ interface Props {
   priority?: 'auto' | 'high' | 'low'
 }
 
+/**
+ * The lockup. The wordmark stays in Fraunces (the brand face, matching the
+ * generated lockup assets) even though headlines are set in the display face.
+ */
 export const Logo = (props: Props) => {
   const { className, variant = DEFAULT_LOGO_VARIANT, showTagline = true } = props
 
   return (
     <span className={clsx('flex items-center gap-2.5', className)}>
-      <BrandMark className="h-9 w-9" variant={variant} />
+      <BrandMark className="h-8 w-8" variant={variant} />
       <span className="flex flex-col leading-none">
-        <span className="font-display text-lg font-semibold tracking-tight whitespace-nowrap">
+        <span className="font-brand text-[1.05rem] font-semibold tracking-tight whitespace-nowrap">
           {BRAND_NAME}
         </span>
         {showTagline && (
-          <span className="text-[0.62rem] font-sans font-medium uppercase tracking-[0.22em] opacity-75 mt-1">
+          <span className="mt-1 font-mono text-[0.58rem] font-medium uppercase tracking-[0.22em] opacity-75">
             {BRAND_TAGLINE}
           </span>
         )}

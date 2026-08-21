@@ -29,15 +29,18 @@ export default async function Page() {
   })
 
   return (
-    <div className="pt-24 pb-24">
+    <div className="pb-24 pt-10 lg:pt-16">
       <PageClient />
-      <div className="container mb-16">
-        <div className="prose dark:prose-invert max-w-none">
-          <h1>Posts</h1>
+      <div className="container">
+        <div className="grid grid-cols-1 gap-6 border-b border-border pb-10 lg:grid-cols-12 lg:gap-x-10 lg:pb-14">
+          <h1 className="display-1 lg:col-span-7">News &amp; events</h1>
+          <p className="lede lg:col-span-5 lg:self-end">
+            Announcements, milestones and events from across the programme and its partners.
+          </p>
         </div>
       </div>
 
-      <div className="container mb-8">
+      <div className="container mb-6 mt-8">
         <PageRange
           collection="posts"
           currentPage={posts.page}
