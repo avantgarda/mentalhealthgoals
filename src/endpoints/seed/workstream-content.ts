@@ -8,6 +8,11 @@
  *  - spaces before question marks removed; apostrophes normalised to ’
  *  - the last three sheet columns (networking, tools, team members) are
  *    internal and deliberately not imported
+ *
+ * REVIEW STATUS: the sheet's own annotation (column A) reads "Have only
+ * included suggestions; respective workstream team to EDIT final." — i.e.
+ * ALL of this content is draft copy pending sign-off by each workstream
+ * team. Edit in the admin (Workstreams collection) before launch.
  */
 export const workstreamContent: Record<
   string,

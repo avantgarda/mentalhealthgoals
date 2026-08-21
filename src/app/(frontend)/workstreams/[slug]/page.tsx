@@ -119,7 +119,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
 
         <div className="max-w-3xl flex flex-col gap-14">
           <PointList heading="Primary focus" points={workstream.primaryFocus} />
-          <PointList heading="Key questions &amp; challenges" points={workstream.keyQuestions} />
+          <PointList heading={'Key questions & challenges'} points={workstream.keyQuestions} />
           <PointList
             heading="How this differs from other infrastructure"
             points={workstream.differentiators}
