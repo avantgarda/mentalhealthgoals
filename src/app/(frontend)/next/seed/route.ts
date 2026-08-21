@@ -1,9 +1,13 @@
 import { createLocalReq, getPayload } from 'payload'
 import { seed } from '@/endpoints/seed'
 import config from '@payload-config'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { headers } from 'next/headers'
 
 export const maxDuration = 60 // This function can run for a maximum of 60 seconds
+
+/** Cache tags for everything the seed replaces (nav globals + sitemaps). */
+export const SEED_CACHE_TAGS = ['global_header', 'global_footer', 'pages-sitemap', 'posts-sitemap']
 
 export async function POST(): Promise<Response> {
   const payload = await getPayload({ config })
@@ -23,6 +27,13 @@ export async function POST(): Promise<Response> {
     const payloadReq = await createLocalReq({ user }, payload)
 
     await seed({ payload, req: payloadReq })
+
+    // The seed writes with revalidation disabled (hundreds of per-document
+    // revalidations would be wasteful, and the CLI path has no Next context),
+    // so purge everything once here instead — otherwise statically rendered
+    // pages and cached globals keep serving pre-seed content until a redeploy.
+    revalidatePath('/', 'layout')
+    for (const tag of SEED_CACHE_TAGS) revalidateTag(tag, 'max')
 
     return Response.json({ success: true })
   } catch (e) {
