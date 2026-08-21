@@ -11,6 +11,9 @@ import AxeBuilder from '@axe-core/playwright'
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice']
 
 const scan = async (page: Page) => {
+  // Never scan a half-rendered page (cold dev-server compiles on CI)
+  await page.locator('#main-content').waitFor()
+
   // The suite runs against `next dev`; the dev-tools overlay (<nextjs-portal>)
   // injects itself into the page and, when it surfaces an issue badge, breaks
   // axe's skip-link exemption for the region rule. It does not exist in
@@ -66,6 +69,9 @@ test.describe('axe-core WCAG 2.2 AA scans', () => {
 
   test('404 page has no violations', async ({ page }) => {
     await page.goto('/definitely-not-a-page')
+    // On a cold CI dev server the not-found boundary compiles lazily and axe
+    // can catch an intermediate shell — wait for the real page first.
+    await expect(page.locator('#main-content h1')).toContainText('404')
     expect(await scan(page)).toEqual([])
   })
 })
