@@ -432,7 +432,7 @@ export const seed = async ({
             heading('h3', text('Industry Engagement Forum — launching October 2026')),
             paragraph(
               text(
-                'Join MHGP and global CROs, pharmaceutical and biotech partners for a day of strategic dialogue at Bush House, King’s College London.',
+                'Join MHGP and global CROs, pharmaceutical, digital and biotech partners for a day of strategic dialogue at the SGDP Centre, Denmark Hill Campus, King’s College London.',
               ),
             ),
           ),
@@ -688,7 +688,7 @@ export const seed = async ({
             heading('h3', text('Join us at the Industry Engagement Forum')),
             paragraph(
               text(
-                'A strategic dialogue between MHGP and global CROs, pharmaceutical and biotech partners, ABPI and BIA — 8 October 2026, Bush House, London.',
+                'A strategic dialogue between MHGP and global CROs, pharmaceutical and digital industry partners, biotech organisations, ABPI, ABHI and BIA — 8 October 2026, Denmark Hill Campus, King’s College London.',
               ),
             ),
           ),
@@ -806,7 +806,7 @@ export const seed = async ({
           heading('h1', text('Industry Engagement Forum')),
           paragraph(
             text(
-              'A strategic dialogue between MHGP and global CROs, pharmaceutical and biotech partners, ABPI and BIA — launching 8 October 2026 at Bush House, King’s College London.',
+              'A strategic dialogue between MHGP and global CROs, pharmaceutical and digital industry partners, biotech organisations, ABPI, ABHI and BIA — launching 8 October 2026 at the SGDP Centre, Denmark Hill Campus, King’s College London.',
             ),
           ),
         ),
@@ -820,8 +820,20 @@ export const seed = async ({
               richText: root(
                 paragraph(
                   text(
-                    'The Industry Engagement Forum (IEF) is established to promote impactful collaboration between industry partners and the programmes, initiatives and workstreams of MHGP. The launch meeting brings everyone together for a single day of strategic dialogue: demonstrating the strengths of the UK mental health research ecosystem, identifying barriers to industry collaboration, and agreeing a roadmap for accelerating the development of novel therapeutics in severe mental illness and neurodegeneration.',
+                    'The Industry Engagement Forum (IEF) is established to promote impactful collaboration between industry partners and the programmes, initiatives and workstreams of MHGP. This launch meeting will establish a strategic dialogue with industry, demonstrate the strengths of the UK mental health research ecosystem, identify barriers to collaboration, and provide input for a roadmap for accelerating novel therapeutics in severe mental illness (SMI) and neurodegeneration.',
                   ),
+                ),
+                heading('h2', text('Getting there')),
+                paragraph(
+                  text(
+                    'The SGDP Centre is on King’s College London’s Denmark Hill Campus (SE5 8AF). The fastest route is a direct train to Denmark Hill from Victoria or Blackfriars (under 15 minutes). Buses 40, 68, 468, 176 and 185 also serve the campus, and a taxi from central London is about 30 minutes. See the ',
+                  ),
+                  link(
+                    'Denmark Hill campus map',
+                    'https://www.kcl.ac.uk/visit/denmark-hill-campus',
+                    true,
+                  ),
+                  text('.'),
                 ),
               ),
             },
@@ -833,73 +845,88 @@ export const seed = async ({
             { label: 'Date', value: '8 October 2026' },
             {
               label: 'Venue',
-              value:
-                'Bush House, King’s College London — Strand Campus, 30 Aldwych, London WC2B 4BG',
+              value: 'SGDP Centre, Denmark Hill Campus, King’s College London, SE5 8AF',
             },
             {
               label: 'Audience',
-              value: 'Global CROs, pharmaceutical partners, biotech, ABPI and BIA',
+              value:
+                'Global CROs, pharmaceutical and digital industry partners, biotech organisations, ABPI, ABHI and BIA',
             },
-            { label: 'Duration', value: 'One day (five hours)' },
+            {
+              label: 'Timing',
+              value: '10:00–16:00 (business breakfast from 09:30)',
+            },
           ],
           agendaHeading: 'Agenda',
           agenda: [
-            { time: '09:00', item: 'Welcome and introductions' },
+            { time: '09:30', item: 'Business breakfast' },
             {
-              time: '09:20',
-              item: 'What is MHGP? Programme overview, vision, and how it fits national research priorities',
+              time: '10:00',
+              item: 'Session 1: Introductions and UK Landscape — Prof. Mitul Mehta on introductions and objectives; Prof. Husseini Manji on the UK landscape (strengths and challenges); then Q&A',
+            },
+            { time: '10:50', item: 'Coffee / tea break' },
+            {
+              time: '11:10',
+              item: 'Session 2: MHG Programme Overview — the new UK opportunity (Chair: Prof. Kathryn Abel). Workstream leads introduce their areas:',
+            },
+            { item: 'Industry Alliance Management Team (AMT) — Prof. Mitul Mehta' },
+            { item: 'Innovative Clinical Trials Hub (ITH) — Prof. Richard Emsley' },
+            { item: 'Lived Experience Industry Partnership (LEIP) — Dr Siân Rees' },
+            { item: 'Cohorts and -omics — Prof. James Walters / Gerome Breen' },
+            { item: 'Digital Innovations — Dr Pauline Whelan' },
+            { item: 'Data and SDEs — Prof. Ann John' },
+            { item: 'Data Observatory — Dr Matthias Pierce' },
+            {
+              time: '12:20',
+              item: 'Symbiotic partnering with industry — exploring how UK mental health research and industry can build genuinely symbiotic partnerships to accelerate progress (speaker TBC)',
+            },
+            { time: '12:40', item: 'Lunch' },
+            {
+              time: '13:20',
+              item: 'Session 3: Industry roundtable (Chair: Prof. Vaibhav Narayan) — strengths and weaknesses of conducting Phase I–III studies in SMI and neurodegeneration, and the opportunity for the UK to strengthen its position globally',
             },
             {
-              time: '09:50',
-              item: 'The UK opportunity — cohorts, data assets, NHS integration, regulatory environment and data-enabled discovery',
-            },
-            { time: '10:35', item: 'Coffee break' },
-            {
-              time: '10:50',
-              item: 'Industry roundtable — strengths and challenges of running SMI and neurodegeneration trials in the UK',
+              time: '14:10',
+              item: 'Session 4: Building earlier strategic partnerships (Chairs: Prof. Richard Emsley and Dr Siân Rees) — navigating from service provider to strategic partnership with global pharma and digital health',
             },
             {
-              time: '12:00',
-              item: 'Building earlier strategic partnerships — moving industry engagement upstream',
+              time: '15:00',
+              item: 'Industry Engagement Forum launch — Profs. Vaibhav Narayan and Mitul Mehta: review of objectives, initial next steps and priority actions',
             },
-            { time: '12:45', item: 'Working lunch & MHGP capabilities showcase' },
-            {
-              time: '13:15',
-              item: 'Strategic planning workshop — shaping the UK value proposition and delivery model',
-            },
-            { time: '14:15', item: 'Agreeing the industry engagement strategy' },
-            { time: '14:50', item: 'Closing — agreements and next steps' },
+            { time: '15:30', item: 'Next steps' },
+            { time: '15:45', item: 'Closing remarks and reflections — Trevor Jones' },
           ],
-          outcomesHeading: 'What you’ll leave with',
+          outcomesHeading: 'Outputs from this meeting',
           outcomes: [
             {
-              title: 'A UK mental health value proposition',
-              description:
-                'A shared, one-page statement of what makes the UK the partner of choice for SMI and neurodegeneration R&D.',
-            },
-            {
               title: 'An agreed SWOT analysis',
-              description: 'The UK’s position relative to other territories.',
+              description:
+                'A shared view of the strengths, weaknesses, opportunities and threats of conducting Phase I–III studies in SMI and neurodegeneration in the UK.',
             },
             {
-              title: 'A top-10 list of industry barriers',
-              description: 'Paired with practical, actionable solutions.',
+              title: 'Top 10 industry barriers and solutions',
+              description: 'A prioritised list of what blocks collaboration — and how to fix it.',
             },
             {
-              title: 'An industry engagement strategy (2027–2029)',
-              description: 'A multi-year roadmap for deepening industry partnership.',
+              title: 'Agreed priority actions and next steps',
+              description:
+                'Immediate actions, ownership and follow-up working groups, refined with live input from attendees.',
             },
+          ],
+        },
+        {
+          blockType: 'content',
+          columns: [
             {
-              title: 'A communication and engagement plan',
-              description: 'Keeping momentum after the forum closes.',
-            },
-            {
-              title: 'Named leads for CRO, pharma and biotech engagement',
-              description: 'Clear points of contact going forward.',
-            },
-            {
-              title: 'A 90-day action plan with named owners',
-              description: 'Concrete, accountable next steps.',
+              size: 'full',
+              richText: root(
+                heading('h2', text('Looking ahead')),
+                paragraph(
+                  text(
+                    'Later forum meetings will build on this launch day to develop a one-page UK mental health value proposition, an industry engagement strategy for 2027–2029, a communication and stakeholder engagement plan, named leads for CRO, pharma and biotech engagement, and a 90-day action plan with owners.',
+                  ),
+                ),
+              ),
             },
           ],
         },
@@ -928,7 +955,7 @@ export const seed = async ({
       meta: {
         title: 'Industry Engagement Forum',
         description:
-          'The MHGP Industry Engagement Forum launches 8 October 2026 at Bush House, King’s College London — agenda, audience and outcomes.',
+          'The MHGP Industry Engagement Forum launches 8 October 2026 at the SGDP Centre, Denmark Hill Campus, King’s College London — agenda, audience and outcomes.',
         image: cardAmberDoc.id,
       },
     },
@@ -1275,12 +1302,12 @@ export const seed = async ({
       content: root(
         paragraph(
           text(
-            'On 8 October 2026, the Mental Health Goals Programme will launch its Industry Engagement Forum at Bush House, King’s College London — bringing together global CROs, pharmaceutical and biotech partners, the ABPI and the BIA for a single day of strategic dialogue.',
+            'On 8 October 2026, the Mental Health Goals Programme will launch its Industry Engagement Forum at the SGDP Centre, Denmark Hill Campus, King’s College London — bringing together global CROs, pharmaceutical and digital industry partners, biotech organisations, the ABPI, ABHI and the BIA for a single day of strategic dialogue.',
           ),
         ),
         paragraph(
           text(
-            'The forum will demonstrate the strengths of the UK mental health research ecosystem, identify barriers to industry collaboration, and agree a roadmap for accelerating the development of novel therapeutics in severe mental illness and neurodegeneration.',
+            'The forum will demonstrate the strengths of the UK mental health research ecosystem, identify barriers to industry collaboration, and provide input for a roadmap for accelerating novel therapeutics in severe mental illness and neurodegeneration.',
           ),
         ),
         paragraph(
@@ -1291,7 +1318,7 @@ export const seed = async ({
       meta: {
         title: 'MHGP launches its Industry Engagement Forum',
         description:
-          'The MHGP Industry Engagement Forum launches 8 October 2026 at Bush House, King’s College London.',
+          'The MHGP Industry Engagement Forum launches 8 October 2026 at the SGDP Centre, Denmark Hill Campus, King’s College London.',
         image: cardAmberDoc.id,
       },
     },
