@@ -76,7 +76,49 @@ export default async function Page({ params: paramsPromise }: Args) {
 
       <RenderHero {...hero} />
       <RenderBlocks blocks={layout} />
+      {LEGAL_PAGE_NOUN[decodedSlug] && (
+        <PublicationDates noun={LEGAL_PAGE_NOUN[decodedSlug]} page={page} />
+      )}
     </article>
+  )
+}
+
+/**
+ * The legal pages state when they were published and last updated. Those dates
+ * come from the document itself rather than hand-typed copy, so they can never
+ * drift from reality as the pages are edited.
+ */
+const LEGAL_PAGE_NOUN: Record<string, string> = {
+  accessibility: 'statement',
+  privacy: 'notice',
+}
+
+const formatLongDate = (value: string) =>
+  new Date(value).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Europe/London',
+  })
+
+const PublicationDates: React.FC<{
+  noun: string
+  page: { publishedAt?: string | null; createdAt?: string; updatedAt?: string }
+}> = ({ noun, page }) => {
+  const publishedSource = page.publishedAt || page.createdAt
+  if (!publishedSource || !page.updatedAt) return null
+
+  const published = formatLongDate(publishedSource)
+  const updated = formatLongDate(page.updatedAt)
+
+  return (
+    <div className="container">
+      <p className="mt-4 text-sm text-muted-foreground">
+        {published === updated
+          ? `This ${noun} was published on ${published}.`
+          : `This ${noun} was published on ${published} and last updated on ${updated}.`}
+      </p>
+    </div>
   )
 }
 
