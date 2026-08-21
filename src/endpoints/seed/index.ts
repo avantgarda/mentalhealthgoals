@@ -1091,7 +1091,7 @@ export const seed = async ({
                     'enquiries@mentalhealthgoals.co.uk',
                     'mailto:enquiries@mentalhealthgoals.co.uk',
                   ),
-                  text('. We aim to respond within [X] working days.'),
+                  text('. We aim to respond within 10 working days.'),
                 ),
                 heading('h2', text('Enforcement procedure')),
                 paragraph(
@@ -1104,11 +1104,6 @@ export const seed = async ({
                     true,
                   ),
                   text('.'),
-                ),
-                paragraph(
-                  bold(
-                    'This statement was prepared on [date] and will be reviewed before the site launches.',
-                  ),
                 ),
               ),
             },
@@ -1193,11 +1188,6 @@ export const seed = async ({
                   ),
                   link('ico.org.uk', 'https://ico.org.uk/', true),
                   text('.'),
-                ),
-                paragraph(
-                  bold(
-                    'This notice was last updated on [date] and will be reviewed before the site launches.',
-                  ),
                 ),
               ),
             },
