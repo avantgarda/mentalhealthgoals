@@ -11,7 +11,14 @@ import AxeBuilder from '@axe-core/playwright'
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice']
 
 const scan = async (page: Page) => {
-  const { violations } = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()
+  // The suite runs against `next dev`; the dev-tools overlay (<nextjs-portal>)
+  // injects itself into the page and, when it surfaces an issue badge, breaks
+  // axe's skip-link exemption for the region rule. It does not exist in
+  // production, so keep it out of the scan.
+  const { violations } = await new AxeBuilder({ page })
+    .withTags(WCAG_TAGS)
+    .exclude('nextjs-portal')
+    .analyze()
 
   // Readable failure output instead of a wall of JSON
   return violations.map(
