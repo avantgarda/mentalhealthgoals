@@ -1,6 +1,7 @@
 import React from 'react'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
+import Link from 'next/link'
 
 import type { WorkstreamsBlockType } from '@/payload-types'
 
@@ -17,6 +18,7 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
     limit: 12,
     pagination: false,
     sort: 'number',
+    overrideAccess: false,
   })
 
   const docs = workstreams.docs
@@ -35,14 +37,20 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
       {style === 'detailed' ? (
         <div className="flex flex-col divide-y divide-border border-y border-border">
           {docs.map((ws) => (
-            <div key={ws.id} className="py-10 grid gap-4 md:grid-cols-12">
+            <Link
+              key={ws.id}
+              href={`/workstreams/${ws.slug}`}
+              className="py-10 grid gap-4 md:grid-cols-12 group hover:bg-card/60 transition-colors"
+            >
               <div className="md:col-span-1">
                 <span className="font-display text-3xl text-brand-accent-text">
                   {String(ws.number).padStart(2, '0')}
                 </span>
               </div>
               <div className="md:col-span-7 flex flex-col gap-3">
-                <h3 className="text-2xl font-semibold">{ws.title}</h3>
+                <h3 className="text-2xl font-semibold group-hover:underline underline-offset-4">
+                  {ws.title}
+                </h3>
                 <p className="text-muted-foreground leading-relaxed">
                   {ws.description || ws.summary}
                 </p>
@@ -53,25 +61,28 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
                 </span>
                 <span className="text-sm">{ws.deliveredBy}</span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {docs.map((ws) => (
-            <div
+            <Link
               key={ws.id}
-              className="rounded-xl border border-border bg-card p-7 flex flex-col gap-3"
+              href={`/workstreams/${ws.slug}`}
+              className="rounded-xl border border-border bg-card p-7 flex flex-col gap-3 group hover:border-brand-accent-text transition-colors"
             >
               <span className="font-display text-2xl text-brand-accent-text">
                 {String(ws.number).padStart(2, '0')}
               </span>
-              <h3 className="text-lg font-semibold leading-snug">{ws.title}</h3>
+              <h3 className="text-lg font-semibold leading-snug group-hover:underline underline-offset-4">
+                {ws.title}
+              </h3>
               <p className="text-sm text-muted-foreground leading-relaxed flex-1">{ws.summary}</p>
               <p className="text-xs text-muted-foreground/80 pt-2 border-t border-border">
                 {ws.deliveredBy}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       )}
