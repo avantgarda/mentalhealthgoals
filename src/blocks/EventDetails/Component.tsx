@@ -32,12 +32,18 @@ export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
           <div className="flex flex-col divide-y divide-border border-y border-border">
             {agenda.map((row, i) => (
               <div key={i} className="py-4 flex gap-6 items-baseline">
-                {row.time && (
-                  <span className="font-mono text-sm text-brand-accent-text shrink-0 w-14">
-                    {row.time}
-                  </span>
-                )}
-                <span className="text-sm md:text-base leading-relaxed">{row.item}</span>
+                <span className="font-mono text-sm text-brand-accent-text shrink-0 w-14">
+                  {row.time || ''}
+                </span>
+                <span
+                  className={
+                    row.time
+                      ? 'text-sm md:text-base leading-relaxed'
+                      : 'text-sm md:text-base leading-relaxed text-muted-foreground'
+                  }
+                >
+                  {row.item}
+                </span>
               </div>
             ))}
           </div>
