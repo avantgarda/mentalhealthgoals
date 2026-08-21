@@ -50,6 +50,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body>
+        <nav aria-label="Skip link">
+          <a
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:outline-2 focus:outline-ring"
+            href="#main-content"
+          >
+            Skip to main content
+          </a>
+        </nav>
         <Providers>
           <AdminBar
             adminBarProps={{
@@ -58,7 +66,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           />
 
           <Header />
-          {children}
+          <main className="focus:outline-none" id="main-content" tabIndex={-1}>
+            {children}
+          </main>
           <Footer />
         </Providers>
       </body>

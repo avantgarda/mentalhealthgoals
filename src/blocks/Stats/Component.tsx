@@ -7,10 +7,10 @@ export const StatsBlockComponent: React.FC<StatsBlockProps> = ({ items }) => {
 
   return (
     <div className="container">
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item, i) => {
           return (
-            <div
+            <li
               key={i}
               className="rounded-xl border border-border bg-card px-8 py-10 flex flex-col gap-2"
             >
@@ -21,10 +21,10 @@ export const StatsBlockComponent: React.FC<StatsBlockProps> = ({ items }) => {
               {item.sublabel && (
                 <span className="text-sm text-muted-foreground">{item.sublabel}</span>
               )}
-            </div>
+            </li>
           )
         })}
-      </div>
+      </ul>
     </div>
   )
 }

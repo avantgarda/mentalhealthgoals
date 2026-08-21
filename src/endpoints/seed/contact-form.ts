@@ -146,9 +146,11 @@ export const contactForm: RequiredDataFromCollectionSlug<'forms'> = {
       width: 100,
     },
     {
+      // A text field, not `number`: phone numbers need "+", leading zeros and
+      // spaces, and a numeric spinbutton is wrong for screen readers.
       name: 'phone',
       blockName: 'phone',
-      blockType: 'number',
+      blockType: 'text',
       label: 'Phone',
       required: false,
       width: 100,

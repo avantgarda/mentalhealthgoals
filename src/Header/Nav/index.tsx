@@ -12,7 +12,10 @@ export const HeaderNav: React.FC<{ data: HeaderType }> = ({ data }) => {
   const navItems = data?.navItems || []
 
   return (
-    <nav className="flex flex-wrap gap-x-5 gap-y-2 items-center text-sm font-medium">
+    <nav
+      aria-label="Main navigation"
+      className="flex flex-wrap gap-x-5 gap-y-2 items-center text-sm font-medium"
+    >
       {navItems.map(({ link }, i) => {
         return <CMSLink key={i} {...link} appearance="link" />
       })}

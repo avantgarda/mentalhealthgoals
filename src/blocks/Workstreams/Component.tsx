@@ -25,6 +25,10 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
 
   if (docs.length === 0) return null
 
+  // Keep heading levels sequential: with a block heading (h2) the cards sit at
+  // h3; without one (e.g. the workstreams listing page, under its h1) at h2.
+  const CardHeading: 'h2' | 'h3' = heading ? 'h3' : 'h2'
+
   return (
     <div className="container">
       {(heading || intro) && (
@@ -43,14 +47,14 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
               className="py-10 grid gap-4 md:grid-cols-12 group hover:bg-card/60 transition-colors"
             >
               <div className="md:col-span-1">
-                <span className="font-display text-3xl text-brand-accent-text">
+                <span aria-hidden="true" className="font-display text-3xl text-brand-accent-text">
                   {String(ws.number).padStart(2, '0')}
                 </span>
               </div>
               <div className="md:col-span-7 flex flex-col gap-3">
-                <h3 className="text-2xl font-semibold group-hover:underline underline-offset-4">
+                <CardHeading className="text-2xl font-semibold group-hover:underline underline-offset-4">
                   {ws.title}
-                </h3>
+                </CardHeading>
                 <p className="text-muted-foreground leading-relaxed">
                   {ws.description || ws.summary}
                 </p>
@@ -72,14 +76,14 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
               href={`/workstreams/${ws.slug}`}
               className="rounded-xl border border-border bg-card p-7 flex flex-col gap-3 group hover:border-brand-accent-text transition-colors"
             >
-              <span className="font-display text-2xl text-brand-accent-text">
+              <span aria-hidden="true" className="font-display text-2xl text-brand-accent-text">
                 {String(ws.number).padStart(2, '0')}
               </span>
-              <h3 className="text-lg font-semibold leading-snug group-hover:underline underline-offset-4">
+              <CardHeading className="text-lg font-semibold leading-snug group-hover:underline underline-offset-4">
                 {ws.title}
-              </h3>
+              </CardHeading>
               <p className="text-sm text-muted-foreground leading-relaxed flex-1">{ws.summary}</p>
-              <p className="text-xs text-muted-foreground/80 pt-2 border-t border-border">
+              <p className="text-xs text-muted-foreground pt-2 border-t border-border">
                 {ws.deliveredBy}
               </p>
             </Link>
