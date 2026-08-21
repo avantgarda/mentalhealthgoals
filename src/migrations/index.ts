@@ -4,6 +4,7 @@ import * as migration_20260819_124926_add_user_roles from './20260819_124926_add
 import * as migration_20260819_125503_remove_jobs_tables from './20260819_125503_remove_jobs_tables';
 import * as migration_20260820_091507_add_programme_details_global from './20260820_091507_add_programme_details_global';
 import * as migration_20260820_102319_update_enquiries_email_default from './20260820_102319_update_enquiries_email_default';
+import * as migration_20260821_084454_add_workstream_detail_fields from './20260821_084454_add_workstream_detail_fields';
 
 export const migrations = [
   {
@@ -34,6 +35,11 @@ export const migrations = [
   {
     up: migration_20260820_102319_update_enquiries_email_default.up,
     down: migration_20260820_102319_update_enquiries_email_default.down,
-    name: '20260820_102319_update_enquiries_email_default'
+    name: '20260820_102319_update_enquiries_email_default',
+  },
+  {
+    up: migration_20260821_084454_add_workstream_detail_fields.up,
+    down: migration_20260821_084454_add_workstream_detail_fields.down,
+    name: '20260821_084454_add_workstream_detail_fields'
   },
 ];

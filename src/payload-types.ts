@@ -887,6 +887,42 @@ export interface Workstream {
    * Lead institution(s), e.g. "King’s College London"
    */
   deliveredBy: string;
+  /**
+   * How this workstream defines its remit — shown as the lead statement on its own page.
+   */
+  boundaryStatement?: string | null;
+  /**
+   * What this workstream concentrates on.
+   */
+  primaryFocus?:
+    | {
+        point: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The questions this workstream exists to answer.
+   */
+  keyQuestions?:
+    | {
+        point: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * What distinguishes this workstream from the others and from the wider landscape.
+   */
+  differentiators?:
+    | {
+        point: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -1485,6 +1521,27 @@ export interface WorkstreamsSelect<T extends boolean = true> {
   summary?: T;
   description?: T;
   deliveredBy?: T;
+  boundaryStatement?: T;
+  primaryFocus?:
+    | T
+    | {
+        point?: T;
+        id?: T;
+      };
+  keyQuestions?:
+    | T
+    | {
+        point?: T;
+        id?: T;
+      };
+  differentiators?:
+    | T
+    | {
+        point?: T;
+        id?: T;
+      };
+  generateSlug?: T;
+  slug?: T;
   updatedAt?: T;
   createdAt?: T;
 }

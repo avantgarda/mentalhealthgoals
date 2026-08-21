@@ -25,6 +25,18 @@ test.describe('Frontend', () => {
     await expect(page.locator('h1')).toContainText(/privacy notice/i)
   })
 
+  test('serves workstream detail pages from the listing', async ({ page }) => {
+    await page.goto('/workstreams')
+    await expect(
+      page.locator('a[href="/workstreams/alliance-management-team"]').first(),
+    ).toBeVisible()
+
+    await page.goto('/workstreams/alliance-management-team')
+    await expect(page.locator('h1')).toContainText(/alliance management team/i)
+    await expect(page.getByRole('heading', { name: /primary focus/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /key questions/i })).toBeVisible()
+  })
+
   test('unknown pages return the 404 page', async ({ page }) => {
     const response = await page.goto('/definitely-not-a-page')
     expect(response?.status()).toBe(404)

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url'
 
 import { contactForm as contactFormData } from './contact-form'
 import { bold, bullets, heading, link, paragraph, root, text } from './lexical'
+import { workstreamContent } from './workstream-content'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -25,6 +26,9 @@ const collections: CollectionSlug[] = [
   'categories',
   'media',
 ]
+
+/** Payload array fields hold objects; the content module stores plain strings. */
+const toBullets = (points: string[]) => points.map((point) => ({ point }))
 
 // Only the navigation globals are cleared on reseed; site settings such as the
 // Brand global keep whatever an editor has chosen.
@@ -113,6 +117,7 @@ export const seed = async ({
     {
       number: 1,
       title: 'Alliance Management Team (AMT)',
+      slug: 'alliance-management-team',
       summary:
         'A single, simple front door bringing industry into UK mental health research and trials.',
       description:
@@ -122,6 +127,7 @@ export const seed = async ({
     {
       number: 2,
       title: 'Innovative Trials Hub (ITH)',
+      slug: 'innovative-trials-hub',
       summary: 'Designs and delivers precision psychiatry trials with industry.',
       description:
         'The ITH provides statistical and methodological expertise in the design and analysis of precision psychiatry studies, from early-phase biomarker-guided designs through adaptive Phase 2 and 3 trials — plus the infrastructure for multi-arm multi-stage platform studies delivered at scale in primary and community settings.',
@@ -130,6 +136,7 @@ export const seed = async ({
     {
       number: 3,
       title: 'Lived Experience Industry Partnership (LEIP)',
+      slug: 'lived-experience-industry-partnership',
       summary: 'Establishes patient experience as central to industry priorities.',
       description:
         'The LEIP creates a new alliance between patients and industry — joint priority setting, deliberative dialogues and communities of practice that align what patients want with what industry develops, and rebalance power between patients, research and industry.',
@@ -138,6 +145,7 @@ export const seed = async ({
     {
       number: 4,
       title: 'Digital Innovation',
+      slug: 'digital-innovation',
       summary: 'Helps digital health technology launch, adopt and scale in the NHS.',
       description:
         'The Digital Innovation workstream supports digital health technologies through launch, adoption and scale in the NHS — creating clear pathways for digital therapeutics and measurement tools to reach the people who need them.',
@@ -146,6 +154,7 @@ export const seed = async ({
     {
       number: 5,
       title: 'Data Observatory',
+      slug: 'data-observatory',
       summary: 'An industry-facing platform for trial feasibility and AI-driven analytics.',
       description:
         'The Data Observatory provides feasibility and protocol-design services over national data assets — supporting site selection, recruitment planning and AI-driven analytics within trusted research environments.',
@@ -154,6 +163,7 @@ export const seed = async ({
     {
       number: 6,
       title: 'Multi-omics',
+      slug: 'multi-omics',
       summary:
         'A world-first multi-omics resource across 20,000 deeply clinically characterised participants.',
       description:
@@ -164,13 +174,22 @@ export const seed = async ({
   ]
 
   await Promise.all(
-    workstreams.map((data) =>
-      payload.create({
+    workstreams.map((data) => {
+      const content = workstreamContent[data.slug]
+      return payload.create({
         collection: 'workstreams',
         context: { disableRevalidate: true },
-        data,
-      }),
-    ),
+        data: {
+          ...data,
+          // Pin the slug so seeded URLs match the backfill migration's
+          generateSlug: false,
+          boundaryStatement: content.boundaryStatement,
+          primaryFocus: toBullets(content.primaryFocus),
+          keyQuestions: toBullets(content.keyQuestions),
+          differentiators: toBullets(content.differentiators),
+        },
+      })
+    }),
   )
 
   payload.logger.info(`— Seeding people...`)
@@ -217,6 +236,18 @@ export const seed = async ({
       role: 'Alliance Manager, AMT',
       organisation: 'King’s College London',
       bio: 'First point of contact for companies and partners looking to work with the Mental Health Goals Programme.',
+    },
+    {
+      order: 7,
+      name: 'Eoin Gogarty',
+      role: 'Database Lead, AMT',
+      organisation: 'King’s College London',
+    },
+    {
+      order: 8,
+      name: 'Sidharth Sanjeev',
+      role: 'Research Assistant, AMT',
+      organisation: 'King’s College London',
     },
   ]
 

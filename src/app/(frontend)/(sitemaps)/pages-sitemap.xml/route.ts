@@ -29,6 +29,15 @@ const getPagesSitemap = unstable_cache(
 
     const dateFallback = new Date().toISOString()
 
+    const workstreams = await payload.find({
+      collection: 'workstreams',
+      overrideAccess: false,
+      depth: 0,
+      limit: 100,
+      pagination: false,
+      select: { slug: true, updatedAt: true },
+    })
+
     const defaultSitemap = [
       {
         loc: `${SITE_URL}/search`,
@@ -38,6 +47,12 @@ const getPagesSitemap = unstable_cache(
         loc: `${SITE_URL}/posts`,
         lastmod: dateFallback,
       },
+      ...workstreams.docs
+        .filter((ws) => Boolean(ws.slug))
+        .map((ws) => ({
+          loc: `${SITE_URL}/workstreams/${ws.slug}`,
+          lastmod: ws.updatedAt || dateFallback,
+        })),
     ]
 
     const sitemap = results.docs
