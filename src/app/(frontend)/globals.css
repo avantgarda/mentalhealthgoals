@@ -131,7 +131,12 @@
   --error: oklch(75% 0.15 25deg);
 }
 
-[data-theme='dark'] {
+/* The second selector gives the header dark-theme colors *server-side* when it
+   sits over a dark high-impact hero — the client effect that sets data-theme on
+   the header only runs after hydration, and without this the pre-hydration
+   (and JS-off) header renders light-theme text on the dark hero. */
+[data-theme='dark'],
+body:has([data-hero-theme='dark']) > header:not([data-theme]) {
   --background: oklch(21% 0.028 220deg);
   --foreground: oklch(96% 0.008 190deg);
   --card: oklch(25% 0.033 215deg);

@@ -999,7 +999,7 @@ export const seed = async ({
             {
               size: 'half',
               richText: root(
-                heading('h3', text('Prof. Mitul Mehta')),
+                heading('h2', text('Prof. Mitul Mehta')),
                 paragraph(text('Lead, Alliance Management Team')),
                 paragraph(link('mitul.mehta@kcl.ac.uk', 'mailto:mitul.mehta@kcl.ac.uk')),
               ),
@@ -1007,7 +1007,7 @@ export const seed = async ({
             {
               size: 'half',
               richText: root(
-                heading('h3', text('Eric Lynch')),
+                heading('h2', text('Eric Lynch')),
                 paragraph(text('Alliance Manager, Alliance Management Team')),
                 paragraph(link('eric.lynch@kcl.ac.uk', 'mailto:eric.lynch@kcl.ac.uk')),
               ),
@@ -1019,7 +1019,7 @@ export const seed = async ({
           enableIntro: true,
           form: contactForm.id,
           introContent: root(
-            heading('h3', text('Send us a message')),
+            heading('h2', text('Send us a message')),
             paragraph(
               text('Fill in the form below and the Alliance Management Team will get back to you.'),
             ),
@@ -1079,7 +1079,7 @@ export const seed = async ({
                 heading('h2', text('Conformance status')),
                 paragraph(
                   text(
-                    'This website has not yet undergone a full accessibility audit. We are working towards WCAG 2.2 level AA conformance and will update this statement when the audit is complete.',
+                    'This website was last self-assessed on 21 August 2026 against WCAG 2.2 level AA, using automated testing (axe-core) of every page in both light and dark colour schemes together with manual keyboard-navigation checks. No failures were found, and these checks now run automatically on every change to the site. Automated and keyboard testing cannot detect every barrier, so we treat this as a partial assessment: a fuller evaluation, including screen-reader testing, is planned, and we will update this statement as it develops.',
                   ),
                 ),
                 heading('h2', text('Feedback and contact')),

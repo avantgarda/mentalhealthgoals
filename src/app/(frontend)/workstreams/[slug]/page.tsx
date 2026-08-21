@@ -84,10 +84,10 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
             className="text-sm text-muted-foreground hover:text-foreground w-fit"
             href="/workstreams"
           >
-            ← All workstreams
+            <span aria-hidden="true">← </span>All workstreams
           </Link>
 
-          <span className="font-display text-4xl text-brand-accent-text">
+          <span aria-hidden="true" className="font-display text-4xl text-brand-accent-text">
             {String(number).padStart(2, '0')}
           </span>
 

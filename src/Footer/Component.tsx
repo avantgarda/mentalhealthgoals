@@ -47,7 +47,10 @@ export async function Footer() {
             )}
           </div>
 
-          <nav className="grid grid-cols-2 gap-x-10 gap-y-3 text-sm md:pt-2">
+          <nav
+            aria-label="Footer navigation"
+            className="grid grid-cols-2 gap-x-10 gap-y-3 text-sm md:pt-2"
+          >
             {navItems.map(({ link }, i) => {
               return <CMSLink className="text-white/85 hover:text-white" key={i} {...link} />
             })}
