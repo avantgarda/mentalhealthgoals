@@ -5,14 +5,16 @@ import React, { useEffect } from 'react'
 import type { Page } from '@/payload-types'
 
 import { CMSLink } from '@/components/Link'
-import { Ridge } from '@/components/Ridge/Ridge'
+import { CohortField } from '@/components/CohortField/CohortField'
 import RichText from '@/components/RichText'
 import { splitRichText } from '../splitRichText'
 
 /**
- * The Atlas hero: petrol ground, title and lede on the left, the ridge motif
- * rising on the right. The heading words rise in one by one and the ridge
- * draws itself when motion is on; both render complete otherwise.
+ * The Observatory hero (Direction B spike): ink ground with a faint blueprint
+ * dot-grid, title and lede on the left, and the cohort field on the right —
+ * 20,000 canvas points, one per participant, settling into the Summit M
+ * skyline. Layout is identical to the Atlas hero so the two motifs can be
+ * compared like-for-like.
  */
 export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
   const { setHeaderTheme } = useHeaderTheme()
@@ -30,11 +32,17 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
       data-hero-theme="dark"
       data-theme="dark"
     >
+      {/* blueprint dot-grid, barely there */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-[-12%] w-[88%] text-white/85 opacity-[0.28] sm:right-[-6%] sm:w-[70%] lg:right-[-2%] lg:w-[52%] lg:opacity-100"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgb(244_246_246/0.06)_1px,transparent_1px)] bg-[size:24px_24px]"
+      />
+
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-0 w-full opacity-40 lg:w-[54%] lg:opacity-100"
       >
-        <Ridge className="h-full w-full" lines={24} />
+        <CohortField className="h-full w-full" />
       </div>
 
       <div className="container relative z-10 grid min-h-[76vh] grid-cols-1 items-end gap-10 pb-14 pt-[7.5rem] lg:grid-cols-12 lg:pb-20 lg:pt-[9.5rem]">
@@ -85,6 +93,13 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
           )}
         </div>
       </div>
+
+      <p
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-5 right-5 z-10 hidden font-mono text-[0.64rem] uppercase tracking-[0.14em] text-white/45 lg:block"
+      >
+        Fig. 01 — the national cohort · 20,000 points, one per participant
+      </p>
     </div>
   )
 }

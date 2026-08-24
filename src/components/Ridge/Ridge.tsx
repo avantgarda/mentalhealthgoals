@@ -9,8 +9,10 @@ import { cn } from '@/utilities/ui'
  * on — see `.ridge` in globals.css — and rendered complete otherwise.
  */
 
-const W = 800
-const H = 600
+export const RIDGE_W = 800
+export const RIDGE_H = 600
+const W = RIDGE_W
+const H = RIDGE_H
 
 // Summit M skyline on the 96-grid (see marks.ts), mapped into the viewBox.
 const SKYLINE = [
@@ -20,12 +22,12 @@ const SKYLINE = [
   [61, 38],
   [80, 82],
 ] as const
-const GOAL = [61, 17.5] as const
-const mapX = (x: number) => 40 + x * 7.5
-const mapY = (y: number) => 20 + y * 5.3
-const FLOOR = mapY(82)
+export const GOAL = [61, 17.5] as const
+export const mapX = (x: number) => 40 + x * 7.5
+export const mapY = (y: number) => 20 + y * 5.3
+export const FLOOR = mapY(82)
 
-const skylineAt = (X: number): number => {
+export const skylineAt = (X: number): number => {
   const pts = SKYLINE.map(([x, y]) => [mapX(x), mapY(y)] as const)
   if (X <= pts[0][0]) return FLOOR
   if (X >= pts[pts.length - 1][0]) return FLOOR
