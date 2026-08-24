@@ -14,7 +14,7 @@ export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
     <div className="container flex flex-col gap-16">
       {facts && facts.length > 0 && (
         <dl
-          className="grid grid-cols-1 border-y border-border sm:grid-cols-2 lg:grid-cols-4"
+          className="grid grid-cols-1 border-t-2 border-b border-foreground border-b-border sm:grid-cols-2 lg:grid-cols-4"
           data-reveal
         >
           {facts.map((fact, i) => (
@@ -30,7 +30,7 @@ export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
       )}
 
       {agenda && agenda.length > 0 && (
-        <div className="grid grid-cols-1 gap-y-6 lg:grid-cols-12 lg:gap-x-10">
+        <div className="grid grid-cols-1 gap-y-6 border-t-2 border-foreground pt-5 lg:grid-cols-12 lg:gap-x-10">
           <div className="lg:col-span-3">
             {agendaHeading && (
               <h2 className="display-2 lg:sticky lg:top-8" data-reveal>
@@ -38,7 +38,7 @@ export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
               </h2>
             )}
           </div>
-          <ol className="border-t border-border lg:col-span-8 lg:col-start-5" data-reveal>
+          <ol className="lg:col-span-8 lg:col-start-5" data-reveal>
             {agenda.map((row, i) => (
               <li
                 className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-4 border-b border-border py-3.5"
@@ -63,7 +63,7 @@ export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
       )}
 
       {outcomes && outcomes.length > 0 && (
-        <div className="grid grid-cols-1 gap-y-6 lg:grid-cols-12 lg:gap-x-10">
+        <div className="grid grid-cols-1 gap-y-6 border-t-2 border-foreground pt-5 lg:grid-cols-12 lg:gap-x-10">
           <div className="lg:col-span-3">
             {outcomesHeading && (
               <h2 className="display-2 lg:sticky lg:top-8" data-reveal>
@@ -71,7 +71,7 @@ export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
               </h2>
             )}
           </div>
-          <ul className="border-t border-border lg:col-span-8 lg:col-start-5">
+          <ul className="lg:col-span-8 lg:col-start-5">
             {outcomes.map((outcome, i) => (
               <li
                 className="grid grid-cols-1 gap-2 border-b border-border py-6 md:grid-cols-12 md:gap-x-8"

@@ -76,7 +76,7 @@ const PointList: React.FC<{ heading: string; id: string; points?: Points }> = ({
   if (!points || points.length === 0) return null
 
   return (
-    <section className="scroll-mt-8" id={id}>
+    <section className="scroll-mt-8 border-t-2 border-foreground pt-5" id={id}>
       <h2 className="display-2 mb-6">{heading}</h2>
       <ol className="border-t border-border">
         {points.map((entry, i) => (
@@ -116,7 +116,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
     <article className="pb-24 pt-10 lg:pt-16">
       <div className="container">
         {/* Frame */}
-        <div className="grid grid-cols-1 gap-x-10 gap-y-8 border-b border-border pb-10 lg:grid-cols-12 lg:pb-14">
+        <div className="grid grid-cols-1 gap-x-10 gap-y-8 border-b-2 border-foreground pb-10 lg:grid-cols-12 lg:pb-14">
           <div className="flex flex-col gap-6 lg:col-span-3">
             <Link className="eyebrow link-line w-fit hover:text-foreground" href="/workstreams">
               <span aria-hidden="true">← </span>All workstreams

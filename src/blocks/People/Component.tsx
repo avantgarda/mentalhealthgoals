@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 
 import type { PeopleBlockType } from '@/payload-types'
 import { Media } from '@/components/Media'
+import { SectionHead } from '@/components/SectionHead'
 
 const HONORIFICS = new Set([
   'prof',
@@ -45,14 +46,9 @@ export const PeopleBlockComponent: React.FC<PeopleBlockType> = async ({ heading,
 
   return (
     <div className="container">
-      {(heading || intro) && (
-        <div className="mb-8 grid grid-cols-1 gap-4 lg:mb-10 lg:grid-cols-12 lg:gap-x-10">
-          {heading && <h2 className="display-2 lg:col-span-5">{heading}</h2>}
-          {intro && <p className="lede lg:col-span-6 lg:col-start-7 lg:self-end">{intro}</p>}
-        </div>
-      )}
+      <SectionHead heading={heading} intro={intro} />
 
-      <ul className="grid grid-cols-2 gap-x-6 gap-y-10 border-t border-border pt-8 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-8">
+      <ul className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-8">
         {docs.map((person, i) => (
           <li
             className="flex flex-col gap-3"

@@ -13,7 +13,7 @@ export const StatsBlockComponent: React.FC<StatsBlockProps> = ({ items }) => {
   return (
     <div className="container">
       <ul
-        className="grid grid-cols-1 border-t border-border sm:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
+        className="grid grid-cols-1 border-t-2 border-foreground sm:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
         style={{ ['--cols' as string]: cols } as React.CSSProperties}
       >
         {items.map((item, i) => {

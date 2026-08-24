@@ -26,41 +26,43 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
 
   if (isDoors) {
     return (
-      <div className="container">
-        <ol className="border-t border-border">
-          {columns.map((col, index) => (
-            <li
-              className="door group relative grid grid-cols-1 gap-4 border-b border-border py-7 transition-colors duration-[var(--dur-ui)] hover:bg-foreground/[0.03] lg:grid-cols-12 lg:gap-x-10 lg:py-8"
-              data-reveal
-              key={index}
-              style={{ transitionDelay: `${index * 60}ms` }}
-            >
-              <div className="lg:col-span-9">
-                {col.richText && (
-                  <RichText
-                    className="flex flex-col gap-2"
-                    data={col.richText}
-                    enableGutter={false}
-                    enableProse={false}
-                  />
-                )}
-              </div>
-              <div className="flex lg:col-span-3 lg:items-end lg:justify-end">
-                {col.link && (
-                  <CMSLink
-                    {...col.link}
-                    appearance="link"
-                    className="text-[0.95rem] font-medium after:absolute after:inset-0 after:content-['']"
-                  >
-                    <span aria-hidden="true" className="arrow ml-2">
-                      →
-                    </span>
-                  </CMSLink>
-                )}
-              </div>
-            </li>
-          ))}
-        </ol>
+      <div className="bg-card">
+        <div className="container py-10 lg:py-14">
+          <ol>
+            {columns.map((col, index) => (
+              <li
+                className="door group relative grid grid-cols-1 gap-4 border-b border-foreground/25 py-7 transition-colors duration-[var(--dur-ui)] first:border-t first:border-t-foreground/25 hover:bg-foreground/[0.04] lg:grid-cols-12 lg:gap-x-10 lg:py-8"
+                data-reveal
+                key={index}
+                style={{ transitionDelay: `${index * 60}ms` }}
+              >
+                <div className="lg:col-span-9">
+                  {col.richText && (
+                    <RichText
+                      className="flex flex-col gap-2"
+                      data={col.richText}
+                      enableGutter={false}
+                      enableProse={false}
+                    />
+                  )}
+                </div>
+                <div className="flex lg:col-span-3 lg:items-end lg:justify-end">
+                  {col.link && (
+                    <CMSLink
+                      {...col.link}
+                      appearance="link"
+                      className="text-[0.95rem] font-medium after:absolute after:inset-0 after:content-['']"
+                    >
+                      <span aria-hidden="true" className="arrow ml-2">
+                        →
+                      </span>
+                    </CMSLink>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     )
   }
@@ -75,7 +77,10 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
         <div className="grid grid-cols-1 gap-y-6 lg:grid-cols-12 lg:gap-x-10">
           <div className="lg:col-span-3">
             {label && (
-              <p className="eyebrow border-t border-border pt-3 lg:sticky lg:top-8" data-reveal>
+              <p
+                className="eyebrow border-t-2 border-foreground pt-3 lg:sticky lg:top-8"
+                data-reveal
+              >
                 {label}
               </p>
             )}
@@ -100,20 +105,17 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
 
   return (
     <div className="container">
-      <div className="grid grid-cols-4 gap-x-10 gap-y-10 lg:grid-cols-12">
+      <div className="grid grid-cols-4 gap-x-10 gap-y-10 border-t-2 border-foreground pt-8 lg:grid-cols-12">
         {columns.map((col, index) => {
           const { enableLink, link, richText, size } = col
           const narrow = size === 'oneThird'
 
           return (
             <div
-              className={cn(
-                `col-span-4 border-t border-border pt-6 lg:col-span-${colsSpanClasses[size!]}`,
-                {
-                  'md:col-span-2': size !== 'full',
-                  'aside-note': narrow,
-                },
-              )}
+              className={cn(`col-span-4 lg:col-span-${colsSpanClasses[size!]}`, {
+                'md:col-span-2': size !== 'full',
+                'aside-note': narrow,
+              })}
               data-reveal
               key={index}
               style={{ transitionDelay: `${index * 60}ms` }}

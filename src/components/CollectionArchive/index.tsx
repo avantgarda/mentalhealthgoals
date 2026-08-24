@@ -12,7 +12,7 @@ export const CollectionArchive: React.FC<Props> = (props) => {
 
   return (
     <div className={cn('container')}>
-      <div className="border-t border-border">
+      <div className="border-t-2 border-foreground">
         {posts?.map((result, index) => {
           if (typeof result === 'object' && result !== null) {
             return <Card doc={result} key={index} relationTo="posts" showCategories />

@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 import Link from 'next/link'
 
 import type { WorkstreamsBlockType } from '@/payload-types'
+import { SectionHead } from '@/components/SectionHead'
 
 /**
  * The six workstreams as a numbered index: number · title · one line ·
@@ -37,20 +38,7 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
 
   return (
     <div className="container">
-      {(heading || intro) && (
-        <div className="mb-8 grid grid-cols-1 gap-4 lg:mb-10 lg:grid-cols-12 lg:gap-x-10">
-          {heading && (
-            <h2 className="display-2 lg:col-span-5" data-reveal>
-              {heading}
-            </h2>
-          )}
-          {intro && (
-            <p className="lede lg:col-span-6 lg:col-start-7 lg:self-end" data-reveal>
-              {intro}
-            </p>
-          )}
-        </div>
-      )}
+      <SectionHead heading={heading} intro={intro} />
 
       <ol className="border-t border-border">
         {docs.map((ws, i) => (
