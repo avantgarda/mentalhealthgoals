@@ -37,18 +37,31 @@ const GROUPS = [
       'Setting the strategic direction of the programme and representing it across the UK and internationally.',
   },
   {
-    value: 'workstream-leads',
-    heading: 'Workstream leads',
+    value: 'digit',
+    heading: 'DIGIT leadership',
     intro:
-      'Each of the six workstreams is led from a partner institution, with co-leads across the UK.',
+      'The Data and Digital Industry Alliance Team delivers the Alliance Management Team, Innovative Clinical Trials Hub and Lived Experience Industry Partnership.',
   },
   {
-    value: 'alliance-team',
-    heading: 'Alliance Management Team',
-    intro: 'The team industry works with day to day — the front door into the programme.',
+    value: 'delivery',
+    heading: 'Delivery team',
+    intro: 'The people industry and partners work with day to day.',
   },
-  { value: 'collaborators', heading: 'Wider collaborators', intro: null },
+  {
+    value: 'collaborators',
+    heading: 'Working with us',
+    intro:
+      'Cohort, data and digital leads across the UK whose work the programme builds on and with.',
+  },
 ] as const
+
+/** Stable anchor for a person, so their name can be linked from anywhere on the site. */
+export const personAnchor = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/prof\.?|dr\.?/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
 
 const workstreamTitles = (person: Person): string[] =>
   (person.workstreams || [])
@@ -60,8 +73,9 @@ const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index
 
   return (
     <li
-      className="flex flex-col gap-3"
+      className="flex scroll-mt-24 flex-col gap-3"
       data-reveal
+      id={personAnchor(person.name)}
       style={{ transitionDelay: `${(index % 4) * 60}ms` }}
     >
       <div className="aspect-[4/5] w-full overflow-hidden bg-card">
@@ -77,36 +91,13 @@ const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index
         )}
       </div>
       <div>
-        <h3 className="font-display text-[1.2rem] leading-tight">
-          {person.profileUrl ? (
-            <a
-              className="link-line"
-              href={person.profileUrl}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              {person.name}
-              <span className="sr-only"> — profile (opens in a new tab)</span>
-            </a>
-          ) : (
-            person.name
-          )}
-        </h3>
+        <h3 className="font-display text-[1.2rem] leading-tight">{person.name}</h3>
         <p className="mt-1 text-sm font-medium leading-snug">{person.role}</p>
         <p className="eyebrow mt-1.5">{person.organisation}</p>
       </div>
       {person.bio && <p className="text-sm leading-relaxed text-muted-foreground">{person.bio}</p>}
       {titles.length > 0 && (
-        <p className="mt-auto pt-1 text-xs text-muted-foreground">
-          {titles.map((title, i) => (
-            <React.Fragment key={title}>
-              {i > 0 && ' · '}
-              <a className="link-line" href={`/workstreams`}>
-                {title}
-              </a>
-            </React.Fragment>
-          ))}
-        </p>
+        <p className="mt-auto pt-1 text-xs text-muted-foreground">{titles.join(' · ')}</p>
       )}
     </li>
   )
@@ -128,6 +119,10 @@ export const PeopleBlockComponent: React.FC<PeopleBlockType> = async ({ heading,
 
   if (docs.length === 0) return null
 
+  const firstPopulated = GROUPS.find((group) =>
+    docs.some((person) => person.group === group.value),
+  )?.value
+
   return (
     <div className="container flex flex-col gap-16 lg:gap-20">
       {(heading || intro) && <SectionHead heading={heading} intro={intro} />}
@@ -136,9 +131,13 @@ export const PeopleBlockComponent: React.FC<PeopleBlockType> = async ({ heading,
         const members = docs.filter((person) => person.group === group.value)
         if (members.length === 0) return null
 
+        // The first section sits right under the page-frame rule, so it does
+        // not draw a second one.
+        const isFirst = !heading && !intro && group.value === firstPopulated
+
         return (
           <section key={group.value}>
-            <SectionHead heading={group.heading} intro={group.intro} />
+            <SectionHead flush={isFirst} heading={group.heading} intro={group.intro} />
             <ul className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-8">
               {members.map((person, index) => (
                 <PersonCard index={index} key={person.id} person={person} />

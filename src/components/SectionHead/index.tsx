@@ -10,13 +10,16 @@ export const SectionHead: React.FC<{
   className?: string
   heading?: string | null
   intro?: string | null
-}> = ({ className, heading, intro }) => {
+  /** Drop the chapter rule where one already sits directly above. */
+  flush?: boolean
+}> = ({ className, heading, intro, flush }) => {
   if (!heading && !intro) return null
 
   return (
     <div
       className={cn(
-        'mb-8 grid grid-cols-1 gap-4 border-t-2 border-foreground pt-5 lg:mb-10 lg:grid-cols-12 lg:gap-x-10',
+        'mb-8 grid grid-cols-1 gap-4 lg:mb-10 lg:grid-cols-12 lg:gap-x-10',
+        flush ? 'pt-1' : 'chapter-rule border-t-2 border-foreground pt-5',
         className,
       )}
     >

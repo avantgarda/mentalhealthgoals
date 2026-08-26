@@ -957,13 +957,13 @@ export interface Person {
   organisation: string;
   bio?: string | null;
   /**
-   * Institutional profile page, e.g. https://www.kcl.ac.uk/people/… — the name links to it.
+   * Institutional profile page, for reference. Not published — names on the site link to this person’s entry on the Team page instead.
    */
   profileUrl?: string | null;
   /**
    * Which section of the Team page this person appears under.
    */
-  group: 'leadership' | 'workstream-leads' | 'alliance-team' | 'collaborators';
+  group: 'leadership' | 'digit' | 'delivery' | 'collaborators';
   /**
    * Workstreams this person leads or works on — also lists them on those workstream pages.
    */

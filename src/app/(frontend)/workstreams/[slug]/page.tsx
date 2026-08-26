@@ -7,8 +7,8 @@ import { notFound } from 'next/navigation'
 import React, { cache } from 'react'
 
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
-import { INSTITUTION_URLS, splitInstitutions } from '@/utilities/institutionLinks'
 import { LinkifyEntities } from '@/utilities/linkifyEntities'
+import { personAnchor } from '@/blocks/People/Component'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -144,27 +144,14 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
             </span>
             <div className="flex flex-col gap-1.5">
               <span className="eyebrow">Delivered by</span>
-              <ul className="flex flex-col text-sm leading-snug">
-                {splitInstitutions(deliveredBy).map((name) => {
-                  const url = INSTITUTION_URLS[name]
-                  return (
-                    <li key={name}>
-                      {url ? (
-                        <a
-                          className="link-line inline-block py-1"
-                          href={url}
-                          rel="noopener noreferrer"
-                          target="_blank"
-                        >
-                          {name}
-                          <span className="sr-only"> (opens in a new tab)</span>
-                        </a>
-                      ) : (
-                        name
-                      )}
-                    </li>
-                  )
-                })}
+              <ul className="flex flex-col gap-1 text-sm leading-snug">
+                {deliveredBy
+                  .split('·')
+                  .map((institution) => institution.trim())
+                  .filter(Boolean)
+                  .map((institution) => (
+                    <li key={institution}>{institution}</li>
+                  ))}
               </ul>
             </div>
             {resources && resources.length > 0 && (
@@ -253,19 +240,12 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
                     >
                       <div className="md:col-span-5">
                         <p className="font-display text-[1.15rem] leading-tight">
-                          {person.profileUrl ? (
-                            <a
-                              className="link-line inline-block py-1"
-                              href={person.profileUrl}
-                              rel="noopener noreferrer"
-                              target="_blank"
-                            >
-                              {person.name}
-                              <span className="sr-only"> — profile (opens in a new tab)</span>
-                            </a>
-                          ) : (
-                            person.name
-                          )}
+                          <Link
+                            className="link-line inline-block py-1"
+                            href={`/people#${personAnchor(person.name)}`}
+                          >
+                            {person.name}
+                          </Link>
                         </p>
                       </div>
                       <p className="text-[0.95rem] leading-snug md:col-span-4">{person.role}</p>

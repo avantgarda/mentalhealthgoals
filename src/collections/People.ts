@@ -50,7 +50,7 @@ export const People: CollectionConfig = {
       label: 'Profile URL',
       admin: {
         description:
-          'Institutional profile page, e.g. https://www.kcl.ac.uk/people/… — the name links to it.',
+          'Institutional profile page, for reference. Not published — names on the site link to this person’s entry on the Team page instead.',
       },
     },
     {
@@ -63,9 +63,9 @@ export const People: CollectionConfig = {
       },
       options: [
         { label: 'Programme leadership', value: 'leadership' },
-        { label: 'Workstream leads', value: 'workstream-leads' },
-        { label: 'Alliance Management Team', value: 'alliance-team' },
-        { label: 'Wider collaborators', value: 'collaborators' },
+        { label: 'DIGIT leadership', value: 'digit' },
+        { label: 'Delivery team', value: 'delivery' },
+        { label: 'Working with us', value: 'collaborators' },
       ],
     },
     {

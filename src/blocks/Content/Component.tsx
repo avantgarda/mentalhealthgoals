@@ -16,13 +16,20 @@ import { firstHeadingText } from '@/heros/splitRichText'
  *    wide ruled rows with an arrow — the three audience pathways.
  *  - Any other mix renders as ruled columns on the same grid.
  */
+/**
+ * Three linked one-third columns are the audience "doors" — a full-bleed band
+ * rather than a text grid. RenderBlocks needs the same test to collapse the
+ * margin between consecutive full-bleed bands.
+ */
+export const isDoorsLayout = (block: ContentBlockProps): boolean =>
+  (block.columns?.length ?? 0) === 3 &&
+  (block.columns ?? []).every((col) => col.size === 'oneThird' && col.enableLink && col.link)
+
 export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
   const { columns } = props
   if (!columns || columns.length === 0) return null
 
-  const isDoors =
-    columns.length === 3 &&
-    columns.every((col) => col.size === 'oneThird' && col.enableLink && col.link)
+  const isDoors = isDoorsLayout(props)
 
   if (isDoors) {
     return (
@@ -105,7 +112,7 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
 
   return (
     <div className="container">
-      <div className="grid grid-cols-4 gap-x-10 gap-y-10 border-t-2 border-foreground pt-8 lg:grid-cols-12">
+      <div className="chapter-rule grid grid-cols-4 gap-x-10 gap-y-10 border-t-2 border-foreground pt-8 lg:grid-cols-12">
         {columns.map((col, index) => {
           const { enableLink, link, richText, size } = col
           const narrow = size === 'oneThird'

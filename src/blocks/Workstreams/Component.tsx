@@ -94,23 +94,34 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
         {runs.map((run, runIndex) => {
           const umbrella = run.umbrella ? UMBRELLAS[run.umbrella] : null
 
-          if (!umbrella) {
-            return <ol key={runIndex}>{run.items.map((ws, i) => row(ws, i))}</ol>
-          }
-
+          // Every run gets the same geometry so an umbrella team does not read
+          // as more important than the workstreams outside it — only the label
+          // and the quiet tint distinguish them.
           return (
             <section
-              className="border-l-2 border-primary/50 bg-primary/[0.04] pl-4 lg:pl-6"
+              className={
+                umbrella
+                  ? 'border-l-2 border-primary/50 bg-primary/[0.04] pl-4 lg:pl-6'
+                  : 'border-l-2 border-border pl-4 lg:pl-6'
+              }
               key={runIndex}
             >
               <div className="flex items-start gap-4 py-4" data-reveal>
-                <DigitMark className="mt-0.5 h-9 w-9 text-primary" />
-                <div className="flex flex-col gap-1">
-                  <p className="eyebrow !text-brand-accent-text">
-                    {umbrella.name} — {umbrella.expansion}
+                {umbrella ? (
+                  <>
+                    <DigitMark className="mt-0.5 h-9 w-9 text-primary" />
+                    <div className="flex flex-col gap-1">
+                      <p className="eyebrow !text-brand-accent-text">
+                        {umbrella.name} — {umbrella.expansion}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{umbrella.note}</p>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Delivered with programme partners across the UK.
                   </p>
-                  <p className="text-sm text-muted-foreground">{umbrella.note}</p>
-                </div>
+                )}
               </div>
               <ol>{run.items.map((ws, i) => row(ws, i))}</ol>
             </section>

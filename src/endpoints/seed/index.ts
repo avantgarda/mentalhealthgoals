@@ -254,17 +254,25 @@ export const seed = async ({
 
   payload.logger.info(`— Seeding team...`)
 
-  // Team, ordered as it appears on the Team page. `group` drives the page
-  // sections; `workstreams` cross-lists a person on those workstream pages.
-  // Sources: the GOV.UK Mental Health Goals page and the IEF brochure.
-  // Profile URLs are only included where the page was verified to resolve.
+  // Team, ordered as it appears on the Team page.
+  //
+  // Structure follows the DIGIT grant application (APP97536, "Mental Health
+  // Goals Programme — Data and Digital Industry Alliance Team") and the
+  // programme contacts workbook: DIGIT is the funded project that delivers the
+  // Alliance Management Team, Innovative Clinical Trials Hub and Lived
+  // Experience Industry Partnership, so its lead and co-leads are their own
+  // section. Cohort, data and digital partners are collaborators, not DIGIT.
+  //
+  // Deliberately NOT published from the internal contacts workbook: email
+  // addresses, executive assistants, university operations staff, and external
+  // stakeholders whose involvement is not already public on GOV.UK.
   const people = [
     // ——— Programme leadership ———
     {
       order: 1,
       group: 'leadership' as const,
       name: 'Prof. Kathryn Abel',
-      role: 'Co-Chair',
+      role: 'Co-Chair, Mental Health Goals Programme',
       organisation: 'University of Manchester',
       profileUrl: 'https://research.manchester.ac.uk/en/persons/kathryn.m.abel',
       bio: 'Professor of Psychological Medicine and Director of the Centre for Women’s Mental Health at the University of Manchester, and Honorary Consultant Psychiatrist with Greater Manchester Mental Health NHS Trust. An NIHR Senior Investigator, European Research Council Fellow and elected Fellow of the Academy of Medical Sciences.',
@@ -273,7 +281,7 @@ export const seed = async ({
       order: 2,
       group: 'leadership' as const,
       name: 'Prof. Husseini Manji',
-      role: 'Co-Chair',
+      role: 'Co-Chair, Mental Health Goals Programme',
       organisation: 'University of Oxford',
       profileUrl: 'https://www.psych.ox.ac.uk/team/husseini-manji',
       bio: 'Professor at the University of Oxford, previously Global Therapeutic Head for Neuroscience at Janssen R&D and Global Head, Science for Minds, at Johnson & Johnson. Formerly Chief of the Laboratory of Molecular Pathophysiology at the US National Institutes of Health and Director of the NIH Mood and Anxiety Disorders Programme.',
@@ -282,17 +290,18 @@ export const seed = async ({
       order: 3,
       group: 'leadership' as const,
       name: 'Dr Vaibhav Narayan',
-      role: 'Chief Industry, Data Science and Digital Health Officer',
+      role: 'Chief Industry, Data Science and Digital Health Officer · Alliance Management Team Co-Lead',
       organisation: 'Mental Health Goals Programme',
+      workstreams: [wsId['alliance-management-team']],
       bio: 'Over 20 years of leadership in data science, digital health and pharmaceutical R&D, including 13 years at Johnson & Johnson as Vice President of Data Sciences and Digital Health. Earlier senior roles include Head of Discovery Informatics at Eli Lilly and Director of Computational Sciences at Celera Genomics, where his team helped sequence the human genome.',
     },
 
-    // ——— Workstream leads ———
+    // ——— DIGIT leadership ———
     {
       order: 10,
-      group: 'workstream-leads' as const,
+      group: 'digit' as const,
       name: 'Prof. Mitul Mehta',
-      role: 'Lead, Alliance Management Team',
+      role: 'DIGIT Lead · Alliance Management Team Co-Lead',
       organisation: 'King’s College London',
       photo: mehtaPhotoDoc.id,
       profileUrl: 'https://www.kcl.ac.uk/people/mitul-mehta',
@@ -301,28 +310,28 @@ export const seed = async ({
     },
     {
       order: 11,
-      group: 'workstream-leads' as const,
+      group: 'digit' as const,
       name: 'Prof. Richard Emsley',
-      role: 'Lead, Innovative Clinical Trials Hub',
+      role: 'DIGIT Co-Lead · Innovative Clinical Trials Hub Lead',
       organisation: 'King’s College London',
       profileUrl: 'https://www.kcl.ac.uk/people/richard-emsley',
-      workstreams: [wsId['innovative-trials-hub'], wsId['alliance-management-team']],
+      workstreams: [wsId['innovative-trials-hub']],
       bio: 'NIHR Research Professor and Professor of Medical Statistics and Trials Methodology at the IoPPN. Academic Director of King’s Clinical Trials Unit and Theme Lead for Trials, Genomics and Prediction in the NIHR Maudsley BRC.',
     },
     {
       order: 12,
-      group: 'workstream-leads' as const,
+      group: 'digit' as const,
       name: 'Dr Siân Rees',
-      role: 'Lead, Lived Experience Industry Partnership',
+      role: 'DIGIT Co-Lead · Lived Experience Industry Partnership Co-Lead (Practice)',
       organisation: 'Health Innovation Oxford & Thames Valley',
       workstreams: [wsId['lived-experience-industry-partnership']],
       bio: 'Director of Community Involvement and Workforce Innovation, with a background in public health medicine and a decade in mental health policy at the Department of Health.',
     },
     {
       order: 13,
-      group: 'workstream-leads' as const,
+      group: 'digit' as const,
       name: 'Prof. Edward Harcourt',
-      role: 'Co-Lead, Lived Experience Industry Partnership',
+      role: 'DIGIT Co-Lead · Lived Experience Industry Partnership Co-Lead (Concepts)',
       organisation: 'University of Oxford',
       profileUrl: 'https://www.philosophy.ox.ac.uk/people/edward-harcourt',
       workstreams: [wsId['lived-experience-industry-partnership']],
@@ -330,78 +339,28 @@ export const seed = async ({
     },
     {
       order: 14,
-      group: 'workstream-leads' as const,
-      name: 'Dr Pauline Whelan',
-      role: 'Lead, Digital Innovation',
-      organisation: 'University of Manchester',
-      profileUrl: 'https://research.manchester.ac.uk/en/persons/pauline.whelan',
-      workstreams: [wsId['digital-innovation']],
-      bio: 'Honorary Senior Research Fellow in Digital Health at the University of Manchester and Chief Operating Officer at CareLoop Health. Co-leads the programme’s digital adoption work, published on the Mental Health Digital Innovation site.',
+      group: 'digit' as const,
+      name: 'Prof. Paula Williamson',
+      role: 'DIGIT Co-Lead · Innovative Clinical Trials Hub Co-Investigator',
+      organisation: 'University of Liverpool',
+      workstreams: [wsId['innovative-trials-hub']],
+      bio: 'Professor of Medical Statistics at the University of Liverpool, bringing trials methodology and core outcome set expertise to the programme’s trial design work.',
     },
     {
       order: 15,
-      group: 'workstream-leads' as const,
-      name: 'Dr Trina Histon',
-      role: 'Co-Lead, Digital Innovation',
-      organisation: 'Percolating Health',
-      workstreams: [wsId['digital-innovation']],
-      bio: 'Health psychologist, digital health strategist and Director of Percolating Health, co-leading the programme’s work on digital adoption pathways for the NHS.',
-    },
-    {
-      order: 16,
-      group: 'workstream-leads' as const,
-      name: 'Prof. Ann John',
-      role: 'Lead, Data Observatory',
-      organisation: 'Swansea University',
-      profileUrl: 'https://www.swansea.ac.uk/staff/a.john/',
-      workstreams: [wsId['data-observatory']],
-      bio: 'Professor of Public Health and Psychiatry, Health Data Science at Swansea University, and Co-Director of DATAMIND — the UK Hub for Mental Health Informatics Research Development. Leads the programme’s work on secure, centralised and scalable data.',
-    },
-    {
-      order: 17,
-      group: 'workstream-leads' as const,
+      group: 'digit' as const,
       name: 'Dr Matthias Pierce',
-      role: 'Co-Lead, Data Observatory',
+      role: 'DIGIT Co-Lead · Alliance Management Team Co-Investigator',
       organisation: 'University of Manchester',
       profileUrl: 'https://research.manchester.ac.uk/en/persons/matthias.pierce',
-      workstreams: [wsId['data-observatory']],
-      bio: 'Biostatistician and Senior Research Fellow at the Centre for Women’s Mental Health, University of Manchester, co-leading the DATAMIND Observatory for the programme.',
-    },
-    {
-      order: 18,
-      group: 'workstream-leads' as const,
-      name: 'Prof. Gerome Breen',
-      role: 'Lead, Multi-omics — severe depression',
-      organisation: 'King’s College London',
-      profileUrl: 'https://www.kcl.ac.uk/people/gerome-breen',
-      workstreams: [wsId['multi-omics']],
-      bio: 'Professor of Psychiatric Genetics at King’s College London. Leads the severe depression strand of the multi-omics cohort, building on the GLAD Study, with Queen’s University Belfast and the University of Edinburgh.',
-    },
-    {
-      order: 19,
-      group: 'workstream-leads' as const,
-      name: 'Prof. James Walters',
-      role: 'Lead, Multi-omics — psychosis',
-      organisation: 'Cardiff University',
-      profileUrl: 'https://profiles.cardiff.ac.uk/staff/waltersjt',
-      workstreams: [wsId['multi-omics']],
-      bio: 'Director of the Centre for Neuropsychiatric Genetics and Genomics and Professor in the Division of Psychological Medicine and Clinical Neurosciences at Cardiff University. Leads the psychosis strand with the Universities of Cambridge and Edinburgh, and multi-omic data generation across the cohort.',
-    },
-    {
-      order: 20,
-      group: 'workstream-leads' as const,
-      name: 'Prof. Rob Stewart',
-      role: 'Co-Director, DATAMIND',
-      organisation: 'King’s College London',
-      profileUrl: 'https://www.kcl.ac.uk/people/professor-robert-stewart',
-      workstreams: [wsId['data-observatory']],
-      bio: 'Professor of Psychiatric Epidemiology and Clinical Informatics at the IoPPN, and Clinical and Population Informatics Lead at the NIHR Maudsley Biomedical Research Centre. Co-Directs DATAMIND with Professor Ann John.',
+      workstreams: [wsId['alliance-management-team'], wsId['data-observatory']],
+      bio: 'Biostatistician and Senior Research Fellow at the Centre for Women’s Mental Health, University of Manchester, and a lead on the programme’s data observatory work.',
     },
 
-    // ——— Alliance Management Team ———
+    // ——— Delivery team ———
     {
-      order: 30,
-      group: 'alliance-team' as const,
+      order: 20,
+      group: 'delivery' as const,
       name: 'Eric Lynch',
       role: 'Alliance Manager',
       organisation: 'King’s College London',
@@ -410,29 +369,99 @@ export const seed = async ({
       bio: 'First point of contact for companies and partners looking to work with the Mental Health Goals Programme.',
     },
     {
-      order: 31,
-      group: 'alliance-team' as const,
+      order: 21,
+      group: 'delivery' as const,
       name: 'Non Hill',
       role: 'Lived Experience Lead',
-      organisation: 'Oxford & Thames Valley Health Innovation Network',
+      organisation: 'Health Innovation Oxford & Thames Valley',
       workstreams: [wsId['lived-experience-industry-partnership']],
       bio: 'Brings over a decade of lived experience as a carer, professional lived experience roles across Healthwatch Surrey and Surrey and Borders Partnership NHS Foundation Trust, and a previous decade as a research neuroscientist in the pharmaceutical industry.',
     },
     {
-      order: 32,
-      group: 'alliance-team' as const,
-      name: 'Eoin Gogarty',
-      role: 'Database Lead',
-      organisation: 'King’s College London',
-      workstreams: [wsId['alliance-management-team']],
+      order: 22,
+      group: 'delivery' as const,
+      name: 'Dr Kerrie McGiveron',
+      role: 'Research and Innovation Associate, Innovative Clinical Trials Hub',
+      organisation: 'University of Liverpool',
+      workstreams: [wsId['innovative-trials-hub']],
+      bio: 'Methodology project coordinator for the trials hub, working across the programme’s trial design and delivery partners.',
     },
     {
-      order: 33,
-      group: 'alliance-team' as const,
+      order: 23,
+      group: 'delivery' as const,
+      name: 'Eoin Gogarty',
+      role: 'Research Fellow (Database Lead)',
+      organisation: 'King’s College London',
+      workstreams: [wsId['alliance-management-team']],
+      bio: 'Builds the capabilities database behind the programme’s offer to industry.',
+    },
+    {
+      order: 24,
+      group: 'delivery' as const,
       name: 'Sidharth Sanjeev',
       role: 'Research Assistant',
       organisation: 'King’s College London',
       workstreams: [wsId['alliance-management-team']],
+    },
+
+    // ——— Working with us ———
+    {
+      order: 30,
+      group: 'collaborators' as const,
+      name: 'Prof. Gerome Breen',
+      role: 'GLAD Study Lead and Principal Investigator',
+      organisation: 'King’s College London',
+      profileUrl: 'https://www.kcl.ac.uk/people/gerome-breen',
+      workstreams: [wsId['multi-omics']],
+      bio: 'Professor of Psychiatric Genetics at King’s College London, leading the severe depression cohort built on the GLAD Study with Queen’s University Belfast and the University of Edinburgh.',
+    },
+    {
+      order: 31,
+      group: 'collaborators' as const,
+      name: 'Prof. James Walters',
+      role: 'Director, Centre for Neuropsychiatric Genetics and Genomics',
+      organisation: 'Cardiff University',
+      workstreams: [wsId['multi-omics']],
+      bio: 'Leads the psychosis cohort with the Universities of Cambridge and Edinburgh, and multi-omic data generation across the programme’s cohorts.',
+    },
+    {
+      order: 32,
+      group: 'collaborators' as const,
+      name: 'Prof. Ann John',
+      role: 'DATAMIND Co-Director',
+      organisation: 'Swansea University',
+      profileUrl: 'https://www.swansea.ac.uk/staff/a.john/',
+      workstreams: [wsId['data-observatory']],
+      bio: 'Professor of Public Health and Psychiatry, Health Data Science at Swansea University, leading the programme’s work on secure, centralised and scalable mental health data.',
+    },
+    {
+      order: 33,
+      group: 'collaborators' as const,
+      name: 'Prof. Rob Stewart',
+      role: 'DATAMIND Co-Director',
+      organisation: 'King’s College London',
+      profileUrl: 'https://www.kcl.ac.uk/people/professor-robert-stewart',
+      workstreams: [wsId['data-observatory']],
+      bio: 'Professor of Psychiatric Epidemiology and Clinical Informatics at the IoPPN, and Clinical and Population Informatics Lead at the NIHR Maudsley Biomedical Research Centre.',
+    },
+    {
+      order: 34,
+      group: 'collaborators' as const,
+      name: 'Dr Pauline Whelan',
+      role: 'DATAMIND Digitally Enhanced Trials Lead',
+      organisation: 'University of Manchester',
+      profileUrl: 'https://research.manchester.ac.uk/en/persons/pauline.whelan',
+      workstreams: [wsId['digital-innovation']],
+      bio: 'Honorary Senior Research Fellow in Digital Health at the University of Manchester and Chief Operating Officer at CareLoop Health, working on digital adoption pathways for the NHS.',
+    },
+    {
+      order: 35,
+      group: 'collaborators' as const,
+      name: 'Dr Trina Histon',
+      role: 'Health Psychologist and Digital Health Strategist',
+      organisation: 'Percolating Health',
+      workstreams: [wsId['digital-innovation']],
+      bio: 'Director of Percolating Health, working with the programme on how digital mental health tools reach the people who need them.',
     },
   ]
 
@@ -531,18 +560,13 @@ export const seed = async ({
                   ),
                 ),
                 paragraph(
-                  text('Read more: '),
+                  text('The programme overview is published on '),
                   link(
-                    'Mental Health Goals on GOV.UK',
+                    'GOV.UK',
                     'https://www.gov.uk/government/publications/life-sciences-healthcare-goals/mental-health-goals',
                     true,
                   ),
-                  text(' · '),
-                  link(
-                    'Life Sciences Sector Plan',
-                    'https://www.gov.uk/government/publications/life-sciences-sector-plan',
-                    true,
-                  ),
+                  text('.'),
                 ),
               ),
             },
@@ -1424,36 +1448,34 @@ export const seed = async ({
             {
               size: 'half',
               richText: root(
-                heading('h2', text('Prof. Mitul Mehta')),
-                paragraph(text('Lead, Alliance Management Team')),
-                paragraph(link('mitul.mehta@kcl.ac.uk', 'mailto:mitul.mehta@kcl.ac.uk')),
+                heading('h2', text('Work with the programme')),
+                paragraph(
+                  text(
+                    'For industry partnerships, research collaboration or lived experience involvement, the Alliance Management Team is the front door:',
+                  ),
+                ),
+                paragraph(
+                  link(
+                    'enquiries@mentalhealthgoals.co.uk',
+                    'mailto:enquiries@mentalhealthgoals.co.uk',
+                  ),
+                ),
               ),
             },
             {
               size: 'half',
               richText: root(
-                heading('h2', text('Eric Lynch')),
-                paragraph(text('Alliance Manager, Alliance Management Team')),
-                paragraph(link('eric.lynch@kcl.ac.uk', 'mailto:eric.lynch@kcl.ac.uk')),
-              ),
-            },
-          ],
-        },
-        {
-          blockType: 'content',
-          columns: [
-            {
-              size: 'full',
-              richText: root(
+                heading('h2', text('Policy enquiries')),
                 paragraph(
                   text(
-                    'For policy enquiries about the Mental Health Goals programme, contact the Office for Life Sciences: ',
+                    'For policy questions about the Mental Health Goals Programme, contact the Office for Life Sciences:',
                   ),
+                ),
+                paragraph(
                   link(
                     'mentalhealthgoals@officeforlifesciences.gov.uk',
                     'mailto:mentalhealthgoals@officeforlifesciences.gov.uk',
                   ),
-                  text('.'),
                 ),
               ),
             },
