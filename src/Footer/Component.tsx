@@ -78,7 +78,7 @@ export async function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-4 border-t border-white/15 pt-5 font-mono text-[0.72rem] uppercase tracking-[0.12em] text-white/60 md:flex-row md:items-center md:justify-between">
+        <div className="mt-12 flex flex-col gap-4 border-t border-white/15 pt-5 text-[0.7rem] font-medium uppercase tracking-[0.14em] text-white/60 md:flex-row md:items-center md:justify-between">
           <p>
             © {new Date().getFullYear()} {details?.name || 'Mental Health Goals Programme'} ·
             mentalhealthgoals.co.uk

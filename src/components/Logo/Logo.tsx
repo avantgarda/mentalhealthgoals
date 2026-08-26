@@ -30,7 +30,7 @@ export const Logo = (props: Props) => {
           {BRAND_NAME}
         </span>
         {showTagline && (
-          <span className="mt-1 font-mono text-[0.58rem] font-medium uppercase tracking-[0.22em] opacity-75">
+          <span className="mt-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] opacity-75">
             {BRAND_TAGLINE}
           </span>
         )}

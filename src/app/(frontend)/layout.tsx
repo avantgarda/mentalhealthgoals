@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 
 import { cn } from '@/utilities/ui'
-import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from 'next/font/google'
+import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 import React from 'react'
 
 import { AdminBar } from '@/components/AdminBar'
@@ -35,12 +36,17 @@ const plexMono = IBM_Plex_Mono({
   display: 'swap',
 })
 
-/** Display serif with an optical-size axis — crisp at headline sizes, sturdy small. */
-const newsreader = Newsreader({
-  subsets: ['latin'],
-  style: ['normal', 'italic'],
-  axes: ['opsz'],
-  variable: '--font-newsreader',
+/**
+ * Display serif: Zodiak (Indian Type Foundry, via Fontshare — self-hosted,
+ * licence in src/fonts/zodiak). Deliberately from outside the Google Fonts
+ * pool so the site's voice doesn't converge with template/AI-built sites.
+ */
+const zodiak = localFont({
+  src: [
+    { path: '../../fonts/zodiak/Zodiak-Variable.woff2', weight: '100 900', style: 'normal' },
+    { path: '../../fonts/zodiak/Zodiak-VariableItalic.woff2', weight: '100 900', style: 'italic' },
+  ],
+  variable: '--font-zodiak',
   display: 'swap',
 })
 
@@ -57,7 +63,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html
-      className={cn(plexSans.variable, plexMono.variable, newsreader.variable, fraunces.variable)}
+      className={cn(plexSans.variable, plexMono.variable, zodiak.variable, fraunces.variable)}
       lang="en"
       suppressHydrationWarning
     >

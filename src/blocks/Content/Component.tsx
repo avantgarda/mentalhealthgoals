@@ -46,7 +46,7 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
                     />
                   )}
                 </div>
-                <div className="flex lg:col-span-3 lg:items-end lg:justify-end">
+                <div className="flex lg:col-span-3 lg:items-end lg:justify-end lg:pr-4">
                   {col.link && (
                     <CMSLink
                       {...col.link}

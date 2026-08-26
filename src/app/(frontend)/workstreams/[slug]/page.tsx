@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation'
 import React, { cache } from 'react'
 
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
+import { INSTITUTION_URLS, splitInstitutions } from '@/utilities/institutionLinks'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -106,7 +107,8 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
 
   if (!workstream) notFound()
 
-  const { number, title, summary, description, deliveredBy, boundaryStatement } = workstream
+  const { number, title, summary, description, deliveredBy, boundaryStatement, resources } =
+    workstream
   const all = await queryAllWorkstreams()
   const index = all.findIndex((w) => w.slug === workstream.slug)
   const next = index >= 0 ? all[(index + 1) % all.length] : null
@@ -124,10 +126,52 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
             <span aria-hidden="true" className="numeral text-[3.5rem] text-brand-accent-text">
               {String(number).padStart(2, '0')}
             </span>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               <span className="eyebrow">Delivered by</span>
-              <span className="text-sm leading-snug">{deliveredBy}</span>
+              <ul className="flex flex-col text-sm leading-snug">
+                {splitInstitutions(deliveredBy).map((name) => {
+                  const url = INSTITUTION_URLS[name]
+                  return (
+                    <li key={name}>
+                      {url ? (
+                        <a
+                          className="link-line inline-block py-1"
+                          href={url}
+                          rel="noopener noreferrer"
+                          target="_blank"
+                        >
+                          {name}
+                          <span className="sr-only"> (opens in a new tab)</span>
+                        </a>
+                      ) : (
+                        name
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
             </div>
+            {resources && resources.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <span className="eyebrow">Links</span>
+                <ul className="flex flex-col text-sm leading-snug">
+                  {resources.map((resource) => (
+                    <li key={resource.id || resource.url}>
+                      <a
+                        className="link-line inline-block py-1"
+                        href={resource.url}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        {resource.label}
+                        <span aria-hidden="true"> ↗</span>
+                        <span className="sr-only"> (opens in a new tab)</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <header className="flex flex-col gap-6 lg:col-span-9">
@@ -185,7 +229,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
               <div className="border-t border-border pt-8" data-reveal>
                 <p className="eyebrow mb-3">Next workstream</p>
                 <Link
-                  className="group flex items-baseline justify-between gap-4 font-display text-[1.5rem] leading-tight"
+                  className="group flex items-baseline justify-between gap-4 pr-1 font-display text-[1.5rem] leading-tight lg:pr-4"
                   href={`/workstreams/${next.slug}`}
                 >
                   <span>

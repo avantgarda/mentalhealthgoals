@@ -919,6 +919,19 @@ export interface Workstream {
       }[]
     | null;
   /**
+   * Related external sites shown on this workstream’s page (e.g. the GLAD Study, MHDI).
+   */
+  resources?:
+    | {
+        label: string;
+        /**
+         * Full URL, including https://
+         */
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
   generateSlug?: boolean | null;
@@ -1538,6 +1551,13 @@ export interface WorkstreamsSelect<T extends boolean = true> {
     | T
     | {
         point?: T;
+        id?: T;
+      };
+  resources?:
+    | T
+    | {
+        label?: T;
+        url?: T;
         id?: T;
       };
   generateSlug?: T;

@@ -38,7 +38,7 @@ export const MotionToggle: React.FC = () => {
   return (
     <button
       aria-pressed={isOn}
-      className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.14em] text-inherit hover:text-white"
+      className="inline-flex items-center gap-2 text-[0.7rem] font-medium uppercase tracking-[0.14em] text-inherit hover:text-white"
       onClick={toggle}
       type="button"
     >

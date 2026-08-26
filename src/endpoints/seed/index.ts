@@ -123,6 +123,16 @@ export const seed = async ({
       description:
         'The AMT is a wrap-around service for industry — linking companies with methodology expertise in trial design and delivery, the lived experience partnership, bespoke IP and royalty strategies, funding applications and advisory board development. It provides a seamless structure that is simple to navigate for companies of every size, complementing the NIHR Innovation Service and the MRC Mental Health Platform.',
       deliveredBy: 'King’s College London',
+      resources: [
+        {
+          label: 'Mental Health Goals on GOV.UK',
+          url: 'https://www.gov.uk/government/publications/life-sciences-healthcare-goals/mental-health-goals',
+        },
+        {
+          label: 'The £50 million announcement',
+          url: 'https://www.gov.uk/government/news/50-million-boost-for-groundbreaking-mental-health-research',
+        },
+      ],
     },
     {
       number: 2,
@@ -132,6 +142,12 @@ export const seed = async ({
       description:
         'The ITH provides statistical and methodological expertise in the design and analysis of precision psychiatry studies, from early-phase biomarker-guided designs through adaptive Phase 2 and 3 trials — plus the infrastructure for multi-arm multi-stage platform studies delivered at scale in primary and community settings.',
       deliveredBy: 'King’s College London',
+      resources: [
+        {
+          label: 'NIHR Mental Health Translational Research Collaboration',
+          url: 'https://www.nihr.ac.uk/about-us/what-we-do/infrastructure/translational-research-collaborations/mental-health',
+        },
+      ],
     },
     {
       number: 3,
@@ -141,6 +157,12 @@ export const seed = async ({
       description:
         'The LEIP creates a new alliance between patients and industry — joint priority setting, deliberative dialogues and communities of practice that align what patients want with what industry develops, and rebalance power between patients, research and industry.',
       deliveredBy: 'University of Oxford',
+      resources: [
+        {
+          label: 'Mental Health Goals on GOV.UK',
+          url: 'https://www.gov.uk/government/publications/life-sciences-healthcare-goals/mental-health-goals',
+        },
+      ],
     },
     {
       number: 4,
@@ -150,6 +172,7 @@ export const seed = async ({
       description:
         'The Digital Innovation workstream supports digital health technologies through launch, adoption and scale in the NHS — creating clear pathways for digital therapeutics and measurement tools to reach the people who need them.',
       deliveredBy: 'University of Manchester',
+      resources: [{ label: 'Mental Health Digital Innovation (MHDI)', url: 'https://www.mhdi.uk' }],
     },
     {
       number: 5,
@@ -159,6 +182,12 @@ export const seed = async ({
       description:
         'The Data Observatory provides feasibility and protocol-design services over national data assets — supporting site selection, recruitment planning and AI-driven analytics within trusted research environments.',
       deliveredBy: 'University of Manchester · Swansea University',
+      resources: [
+        {
+          label: 'DATAMIND — Hub for Mental Health Informatics Research',
+          url: 'https://datamind.org.uk/',
+        },
+      ],
     },
     {
       number: 6,
@@ -170,6 +199,7 @@ export const seed = async ({
         'Building on the GLAD (Genetic Links to Anxiety and Depression) Study, the Multi-omics workstream combines biological and clinical data for psychosis and severe depression at unprecedented depth — enabling the next generation of personalised treatments.',
       deliveredBy:
         'King’s College London · Cardiff University · Queen’s University Belfast · University of Edinburgh · University of Cambridge',
+      resources: [{ label: 'The GLAD Study', url: 'https://gladstudy.org.uk/' }],
     },
   ]
 
@@ -195,56 +225,78 @@ export const seed = async ({
   payload.logger.info(`— Seeding people...`)
 
   const people = [
+    // Programme leadership, from the GOV.UK Mental Health Goals page
     {
       order: 1,
+      name: 'Prof. Kathryn Abel',
+      role: 'Co-Chair, Mental Health Goals Programme',
+      organisation: 'University of Manchester',
+      bio: 'Professor of Psychological Medicine and Director of the Centre for Women’s Mental Health at the University of Manchester, and Honorary Consultant Psychiatrist with Greater Manchester Mental Health NHS Trust. An NIHR Senior Investigator, European Research Council Fellow and elected Fellow of the Academy of Medical Sciences.',
+    },
+    {
+      order: 2,
+      name: 'Prof. Husseini Manji',
+      role: 'Co-Chair, Mental Health Goals Programme',
+      organisation: 'University of Oxford',
+      bio: 'Professor at the University of Oxford, previously Global Therapeutic Head for Neuroscience at Janssen R&D and Global Head, Science for Minds, at Johnson & Johnson. Formerly Chief of the Laboratory of Molecular Pathophysiology at the US National Institutes of Health and Director of the NIH Mood and Anxiety Disorders Programme.',
+    },
+    {
+      order: 3,
+      name: 'Dr Vaibhav Narayan',
+      role: 'Chief Industry, Data Science and Digital Health Officer',
+      organisation: 'Mental Health Goals Programme',
+      bio: 'Over 20 years of leadership in data science, digital health and pharmaceutical R&D, including 13 years at Johnson & Johnson as Vice President of Data Sciences and Digital Health. Earlier senior roles include Head of Discovery Informatics at Eli Lilly and Director of Computational Sciences at Celera Genomics, where his team helped sequence the human genome.',
+    },
+    {
+      order: 4,
       name: 'Prof. Mitul Mehta',
       role: 'Lead, Alliance Management Team',
       organisation: 'King’s College London',
       bio: 'Professor of Neuroimaging & Psychopharmacology and Director of the Centre for Innovative Therapeutics at King’s College London. Leads the Experimental Medicine & Novel Therapeutics theme at the NIHR-Maudsley Biomedical Research Centre.',
     },
     {
-      order: 2,
+      order: 5,
       name: 'Prof. Richard Emsley',
       role: 'Co-Lead',
       organisation: 'King’s College London',
       bio: 'NIHR Research Professor and Professor of Medical Statistics and Trials Methodology at the IoPPN. Academic Director of King’s Clinical Trials Unit and Theme Lead for Trials, Genomics and Prediction in the NIHR Maudsley BRC.',
     },
     {
-      order: 3,
+      order: 6,
       name: 'Siân Rees',
       role: 'Co-Lead',
       organisation: 'Health Innovation Oxford & Thames Valley',
       bio: 'Director of Community Involvement and Workforce Innovation, with a background in public health medicine and a decade in mental health policy at the Department of Health.',
     },
     {
-      order: 4,
+      order: 7,
       name: 'Prof. Edward Harcourt',
       role: 'Co-Lead',
       organisation: 'University of Oxford',
       bio: 'Professor of Philosophy at the University of Oxford. Academic Lead for Patient and Public Involvement in the Oxford Health BRC and the Mental Health Translational Research Collaboration / Mental Health Mission.',
     },
     {
-      order: 5,
+      order: 8,
       name: 'Non Hill',
       role: 'Lived Experience Lead',
       organisation: 'Oxford & Thames Valley Health Innovation Network',
       bio: 'Brings over a decade of lived experience as a carer, professional lived experience roles across Healthwatch Surrey and Surrey and Borders Partnership NHS Foundation Trust, and a previous decade as a research neuroscientist in the pharmaceutical industry.',
     },
     {
-      order: 6,
+      order: 9,
       name: 'Eric Lynch',
       role: 'Alliance Manager, AMT',
       organisation: 'King’s College London',
       bio: 'First point of contact for companies and partners looking to work with the Mental Health Goals Programme.',
     },
     {
-      order: 7,
+      order: 10,
       name: 'Eoin Gogarty',
       role: 'Database Lead, AMT',
       organisation: 'King’s College London',
     },
     {
-      order: 8,
+      order: 11,
       name: 'Sidharth Sanjeev',
       role: 'Research Assistant, AMT',
       organisation: 'King’s College London',
@@ -343,6 +395,20 @@ export const seed = async ({
                 paragraph(
                   text(
                     'It brings together experts, data assets, patients and the public into one joined-up, trusted system: a simple national structure for industry, better-designed trials, a new kind of partnership between patients and industry, and support for better policy and regulation.',
+                  ),
+                ),
+                paragraph(
+                  text('Read more: '),
+                  link(
+                    'Mental Health Goals on GOV.UK',
+                    'https://www.gov.uk/government/publications/life-sciences-healthcare-goals/mental-health-goals',
+                    true,
+                  ),
+                  text(' · '),
+                  link(
+                    'Life Sciences Sector Plan',
+                    'https://www.gov.uk/government/publications/life-sciences-sector-plan',
+                    true,
                   ),
                 ),
               ),
@@ -490,6 +556,23 @@ export const seed = async ({
                     'But it is difficult for industry to work with the UK: the system is complicated, spread across many organisations, and not easy to navigate. Patients also want more say in how their data are used and what kinds of treatments are developed. The Mental Health Goals Programme brings everything together into one joined-up, trusted system.',
                   ),
                 ),
+                paragraph(
+                  text('Mental health problems carry an extremely large burden of disease — '),
+                  link(
+                    '1 in 4 people in England',
+                    'https://www.mind.org.uk/information-support/types-of-mental-health-problems/mental-health-facts-and-statistics/',
+                    true,
+                  ),
+                  text(
+                    ' experience a mental health problem each year — while a sustained withdrawal of commercial investment has left few new treatments on the horizon. Advances in genetics, neuroscience, imaging and data science mean now is the time to translate research into patient benefit.',
+                  ),
+                ),
+                heading('h2', text('Precision psychiatry')),
+                paragraph(
+                  text(
+                    'Precision psychiatry uses personal data — such as genomics, brain scans and lifestyle — to better understand an individual’s condition and personalise treatment. For years, patients have said that existing treatments fail to address their most pressing symptoms, cause significant long-term unwanted effects, or diminish quality of life. The programme backs a new approach: one that focuses on the most disabling symptoms, identified by people with lived experience, rather than relying on broad diagnostic labels.',
+                  ),
+                ),
                 heading('h2', text('What we will do')),
                 paragraph(
                   text(
@@ -503,15 +586,102 @@ export const seed = async ({
                 ),
                 heading('h2', text('The world’s largest integrated mental health dataset')),
                 paragraph(
-                  text(
-                    'Built on the GLAD (Genetic Links to Anxiety and Depression) Study, the programme combines biological and clinical data for psychosis and severe depression — with 20,000 additional deeply characterised genomic samples, and unique integration of multi-omics, AI and lived experience.',
+                  text('Built on the '),
+                  link(
+                    'GLAD (Genetic Links to Anxiety and Depression) Study',
+                    'https://gladstudy.org.uk/',
+                    true,
                   ),
+                  text(
+                    ', the programme combines biological and clinical data for psychosis and severe depression — with 20,000 additional deeply characterised genomic samples, and unique integration of multi-omics, AI and lived experience.',
+                  ),
+                ),
+                heading('h2', text('Funded by government, delivered nationally')),
+                paragraph(
+                  text('The programme is investing '),
+                  link(
+                    'up to £50 million over five years',
+                    'https://www.gov.uk/government/news/50-million-boost-for-groundbreaking-mental-health-research',
+                    true,
+                  ),
+                  text(', funded by the '),
+                  link(
+                    'Office for Life Sciences',
+                    'https://www.gov.uk/government/organisations/office-for-life-sciences',
+                    true,
+                  ),
+                  text(' and delivered by the '),
+                  link(
+                    'Medical Research Council (MRC)',
+                    'https://www.ukri.org/councils/mrc/',
+                    true,
+                  ),
+                  text(
+                    '. It is co-chaired by Professor Kathryn Abel and Professor Husseini Manji, with Dr Vaibhav Narayan as Chief Industry, Data Science and Digital Health Officer. The full programme overview is published on ',
+                  ),
+                  link(
+                    'GOV.UK',
+                    'https://www.gov.uk/government/publications/life-sciences-healthcare-goals/mental-health-goals',
+                    true,
+                  ),
+                  text('.'),
+                ),
+                heading('h2', text('Built on previous investments')),
+                paragraph(
+                  text(
+                    'The Goals programme builds on the Mental Health Mission, launched in May 2023 with a ',
+                  ),
+                  link(
+                    '£42.7 million investment',
+                    'https://www.nihr.ac.uk/news/427-million-funding-boost-for-mental-health-research/33559',
+                    true,
+                  ),
+                  text(' in clinical research centres delivered through the '),
+                  link(
+                    'NIHR Mental Health Translational Research Collaboration',
+                    'https://www.nihr.ac.uk/about-us/what-we-do/infrastructure/translational-research-collaborations/mental-health',
+                    true,
+                  ),
+                  text(' — including the '),
+                  link(
+                    'Mental Health Research for Innovation Centre (M-RIC)',
+                    'https://mric.uk/',
+                    true,
+                  ),
+                  text(' in Liverpool and the '),
+                  link(
+                    'Mental Health Mission Midlands Translational Centre',
+                    'https://www.birmingham.ac.uk/research/mental-health/themes/mhmtc/index.aspx',
+                    true,
+                  ),
+                  text(
+                    ' in Birmingham, with a further £18 million invested in November 2024 to expand the mood-disorder research network to 15 clinics across the UK.',
+                  ),
+                ),
+                paragraph(
+                  text('In May 2024 the programme invested in '),
+                  link('DATAMIND', 'https://datamind.org.uk/', true),
+                  text(
+                    ' — the Hub for Mental Health Informatics Research Development — and in July 2024 an Innovative Clinical Trials Hub was launched to develop infrastructure for innovative clinical trials and a collaborative partnership for industry. Digital adoption activity is published on the ',
+                  ),
+                  link(
+                    'Mental Health Digital Innovation (MHDI) website',
+                    'https://www.mhdi.uk',
+                    true,
+                  ),
+                  text('.'),
                 ),
                 heading('h2', text('Partners across the UK')),
                 paragraph(
                   text(
-                    'The programme is led from King’s College London and delivered with partners including the University of Oxford, University of Manchester, Swansea University, Cardiff University, Queen’s University Belfast, University of Edinburgh, University of Cambridge and Health Innovation Oxford & Thames Valley — a cornerstone of the Government’s 2025 Life Sciences Sector Plan.',
+                    'The programme is led from King’s College London and delivered with partners including the University of Oxford, University of Manchester, Swansea University, Cardiff University, Queen’s University Belfast, University of Edinburgh, University of Cambridge and Health Innovation Oxford & Thames Valley — a cornerstone of the Government’s 2025 ',
                   ),
+                  link(
+                    'Life Sciences Sector Plan',
+                    'https://www.gov.uk/government/publications/life-sciences-sector-plan',
+                    true,
+                  ),
+                  text('.'),
                 ),
               ),
             },
@@ -637,8 +807,12 @@ export const seed = async ({
                 ),
                 paragraph(
                   text(
-                    'The team supports industry across the full spectrum of mental health diagnoses and psychiatric symptoms — including those experienced in neurological and neurodegenerative disorders and at the physical–mental health interface — and coordinates with the NIHR Innovation Service and the MRC Mental Health Platform to avoid duplication.',
+                    'The team supports industry across the full spectrum of mental health diagnoses and psychiatric symptoms — including those experienced in neurological and neurodegenerative disorders and at the physical–mental health interface — and coordinates with the ',
                   ),
+                  link('NIHR', 'https://www.nihr.ac.uk', true),
+                  text(' Innovation Service and the '),
+                  link('MRC', 'https://www.ukri.org/councils/mrc/', true),
+                  text(' Mental Health Platform to avoid duplication.'),
                 ),
               ),
             },
@@ -755,8 +929,14 @@ export const seed = async ({
                 heading('h2', text('Your data, your say')),
                 paragraph(
                   text(
-                    'Public and patient trust is fundamental to a national data infrastructure. That means absolute transparency and clear communication about data pathways: what data are, where they go, and how they are stored, used and accessed.',
+                    'Public and patient trust is fundamental to a national data infrastructure. That means absolute transparency and clear communication about data pathways: what data are, where they go, and how they are stored, used and accessed. The programme’s cohorts build on the ',
                   ),
+                  link(
+                    'GLAD (Genetic Links to Anxiety and Depression) Study',
+                    'https://gladstudy.org.uk/',
+                    true,
+                  ),
+                  text(', whose volunteers have already shaped how this research is done.'),
                 ),
                 heading('h2', text('Get involved')),
                 paragraph(
@@ -820,7 +1000,15 @@ export const seed = async ({
               richText: root(
                 paragraph(
                   text(
-                    'The Industry Engagement Forum (IEF) is established to promote impactful collaboration between industry partners and the programmes, initiatives and workstreams of MHGP. This launch meeting will establish a strategic dialogue with industry, demonstrate the strengths of the UK mental health research ecosystem, identify barriers to collaboration, and provide input for a roadmap for accelerating novel therapeutics in severe mental illness (SMI) and neurodegeneration.',
+                    'The Industry Engagement Forum (IEF) is established to promote impactful collaboration between industry partners and the programmes, initiatives and workstreams of MHGP — alongside trade associations ',
+                  ),
+                  link('ABPI', 'https://www.abpi.org.uk', true),
+                  text(', '),
+                  link('ABHI', 'https://www.abhi.org.uk', true),
+                  text(' and '),
+                  link('BIA', 'https://www.bioindustry.org', true),
+                  text(
+                    '. This launch meeting will establish a strategic dialogue with industry, demonstrate the strengths of the UK mental health research ecosystem, identify barriers to collaboration, and provide input for a roadmap for accelerating novel therapeutics in severe mental illness (SMI) and neurodegeneration.',
                   ),
                 ),
                 heading('h2', text('Getting there')),
@@ -988,8 +1176,14 @@ export const seed = async ({
               richText: root(
                 paragraph(
                   text(
-                    'The programme’s wider leadership includes co-leads and collaborators across the University of Liverpool, University of Manchester, University of Oxford and Health Innovation Oxford & Thames Valley — with governance connecting all six workstreams through the MHG Programme Steering Committee.',
+                    'The programme’s wider leadership includes co-leads and collaborators across the University of Liverpool, University of Manchester, University of Oxford and Health Innovation Oxford & Thames Valley — with governance connecting all six workstreams through the MHG Programme Steering Committee. Full details of who we are working with are published on ',
                   ),
+                  link(
+                    'GOV.UK',
+                    'https://www.gov.uk/government/publications/life-sciences-healthcare-goals/mental-health-goals',
+                    true,
+                  ),
+                  text('.'),
                 ),
               ),
             },
@@ -1037,6 +1231,26 @@ export const seed = async ({
                 heading('h2', text('Eric Lynch')),
                 paragraph(text('Alliance Manager, Alliance Management Team')),
                 paragraph(link('eric.lynch@kcl.ac.uk', 'mailto:eric.lynch@kcl.ac.uk')),
+              ),
+            },
+          ],
+        },
+        {
+          blockType: 'content',
+          columns: [
+            {
+              size: 'full',
+              richText: root(
+                paragraph(
+                  text(
+                    'For policy enquiries about the Mental Health Goals programme, contact the Office for Life Sciences: ',
+                  ),
+                  link(
+                    'mentalhealthgoals@officeforlifesciences.gov.uk',
+                    'mailto:mentalhealthgoals@officeforlifesciences.gov.uk',
+                  ),
+                  text('.'),
+                ),
               ),
             },
           ],
@@ -1372,6 +1586,14 @@ export const seed = async ({
               type: 'custom' as const,
               label: 'Industry Engagement Forum',
               url: '/industry-engagement-forum',
+            },
+          },
+          {
+            link: {
+              type: 'custom' as const,
+              newTab: true,
+              label: 'Mental Health Goals on GOV.UK',
+              url: 'https://www.gov.uk/government/publications/life-sciences-healthcare-goals/mental-health-goals',
             },
           },
           {

@@ -37,7 +37,7 @@ export const MobileMenu: React.FC<{ data: HeaderType }> = ({ data }) => {
       <button
         aria-controls={panelId}
         aria-expanded={open}
-        className="inline-flex h-10 items-center gap-2 rounded-[2px] px-2 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-current hover:bg-foreground/[0.06]"
+        className="inline-flex h-10 items-center gap-2 rounded-[2px] px-2 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-current hover:bg-foreground/[0.06]"
         onClick={() => setOpen((v) => !v)}
         type="button"
       >
@@ -98,7 +98,7 @@ export const MobileMenu: React.FC<{ data: HeaderType }> = ({ data }) => {
             })}
             <li>
               <Link
-                className="flex items-center justify-between gap-4 py-3.5 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground"
+                className="flex items-center justify-between gap-4 py-3.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground"
                 href="/search"
               >
                 Search the site
