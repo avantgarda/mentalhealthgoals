@@ -8,6 +8,7 @@ import React, { cache } from 'react'
 
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { INSTITUTION_URLS, splitInstitutions } from '@/utilities/institutionLinks'
+import { LinkifyEntities } from '@/utilities/linkifyEntities'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -40,6 +41,20 @@ const queryWorkstreamBySlug = cache(async ({ slug }: { slug: string }) => {
   })
 
   return result.docs?.[0] || null
+})
+
+/** People related to this workstream, for the team section. */
+const queryWorkstreamPeople = cache(async ({ id }: { id: number }) => {
+  const payload = await getPayload({ config: configPromise })
+  const result = await payload.find({
+    collection: 'people',
+    depth: 0,
+    limit: 20,
+    pagination: false,
+    sort: 'order',
+    where: { workstreams: { in: [id] } },
+  })
+  return result.docs
 })
 
 const queryAllWorkstreams = cache(async () => {
@@ -110,6 +125,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
   const { number, title, summary, description, deliveredBy, boundaryStatement, resources } =
     workstream
   const all = await queryAllWorkstreams()
+  const team = await queryWorkstreamPeople({ id: workstream.id })
   const index = all.findIndex((w) => w.slug === workstream.slug)
   const next = index >= 0 ? all[(index + 1) % all.length] : null
   const sections = SECTIONS.filter((s) => (workstream[s.key]?.length ?? 0) > 0)
@@ -217,13 +233,53 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
 
             {description && (
               <p className="lede max-w-[66ch]" data-reveal>
-                {description}
+                <LinkifyEntities text={description} />
               </p>
             )}
 
             {SECTIONS.map((s) => (
               <PointList heading={s.heading} id={s.id} key={s.id} points={workstream[s.key]} />
             ))}
+
+            {team.length > 0 && (
+              <section className="scroll-mt-8 border-t-2 border-foreground pt-5" id="team">
+                <h2 className="display-2 mb-6">Who leads this workstream</h2>
+                <ul className="border-t border-border">
+                  {team.map((person) => (
+                    <li
+                      className="grid grid-cols-1 gap-1 border-b border-border py-4 md:grid-cols-12 md:gap-x-8"
+                      data-reveal
+                      key={person.id}
+                    >
+                      <div className="md:col-span-5">
+                        <p className="font-display text-[1.15rem] leading-tight">
+                          {person.profileUrl ? (
+                            <a
+                              className="link-line inline-block py-1"
+                              href={person.profileUrl}
+                              rel="noopener noreferrer"
+                              target="_blank"
+                            >
+                              {person.name}
+                              <span className="sr-only"> — profile (opens in a new tab)</span>
+                            </a>
+                          ) : (
+                            person.name
+                          )}
+                        </p>
+                      </div>
+                      <p className="text-[0.95rem] leading-snug md:col-span-4">{person.role}</p>
+                      <p className="eyebrow md:col-span-3 md:text-right">{person.organisation}</p>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  <Link className="link-line" href="/people">
+                    See the full team
+                  </Link>
+                </p>
+              </section>
+            )}
 
             {next && next.slug !== workstream.slug && (
               <div className="border-t border-border pt-8" data-reveal>

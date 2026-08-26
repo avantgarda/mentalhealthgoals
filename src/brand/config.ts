@@ -47,7 +47,7 @@ export const Brand: GlobalConfig = {
     {
       name: 'showTagline',
       type: 'checkbox',
-      label: 'Show "National Programme" beneath the name',
+      label: 'Show "UK-wide Programme" beneath the name',
       defaultValue: true,
     },
   ],

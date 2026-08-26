@@ -3,7 +3,7 @@ import { getServerSideURL } from './getURL'
 
 const defaultOpenGraph: Metadata['openGraph'] = {
   type: 'website',
-  description: 'A UK Government-backed national programme transforming mental health research.',
+  description: 'A UK Government-backed, UK-wide programme transforming mental health research.',
   images: [
     {
       // Static default (this module is synchronous); generateMeta and the root

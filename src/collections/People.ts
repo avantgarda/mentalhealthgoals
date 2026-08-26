@@ -45,6 +45,40 @@ export const People: CollectionConfig = {
       type: 'textarea',
     },
     {
+      name: 'profileUrl',
+      type: 'text',
+      label: 'Profile URL',
+      admin: {
+        description:
+          'Institutional profile page, e.g. https://www.kcl.ac.uk/people/… — the name links to it.',
+      },
+    },
+    {
+      name: 'group',
+      type: 'select',
+      required: true,
+      defaultValue: 'collaborators',
+      admin: {
+        description: 'Which section of the Team page this person appears under.',
+      },
+      options: [
+        { label: 'Programme leadership', value: 'leadership' },
+        { label: 'Workstream leads', value: 'workstream-leads' },
+        { label: 'Alliance Management Team', value: 'alliance-team' },
+        { label: 'Wider collaborators', value: 'collaborators' },
+      ],
+    },
+    {
+      name: 'workstreams',
+      type: 'relationship',
+      relationTo: 'workstreams',
+      hasMany: true,
+      admin: {
+        description:
+          'Workstreams this person leads or works on — also lists them on those workstream pages.',
+      },
+    },
+    {
       name: 'photo',
       type: 'upload',
       relationTo: 'media',

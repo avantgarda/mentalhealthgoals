@@ -22,7 +22,7 @@ const BeforeDashboard: React.FC<ServerProps> = ({ user }) => {
           <li>
             <SeedButton />
             {
-              ' to reset the site to its starter MHGP content (pages, workstreams, people and news), then '
+              ' to reset the site to its starter MHG content (pages, workstreams, people and news), then '
             }
             <a href="/" target="_blank">
               visit your website

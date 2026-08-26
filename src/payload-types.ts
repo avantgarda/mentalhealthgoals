@@ -888,6 +888,10 @@ export interface Workstream {
    */
   deliveredBy: string;
   /**
+   * Workstreams delivered under a shared umbrella team are bracketed together in the index.
+   */
+  group?: 'digit' | null;
+  /**
    * How this workstream defines its remit — shown as the lead statement on its own page.
    */
   boundaryStatement?: string | null;
@@ -952,6 +956,18 @@ export interface Person {
   role: string;
   organisation: string;
   bio?: string | null;
+  /**
+   * Institutional profile page, e.g. https://www.kcl.ac.uk/people/… — the name links to it.
+   */
+  profileUrl?: string | null;
+  /**
+   * Which section of the Team page this person appears under.
+   */
+  group: 'leadership' | 'workstream-leads' | 'alliance-team' | 'collaborators';
+  /**
+   * Workstreams this person leads or works on — also lists them on those workstream pages.
+   */
+  workstreams?: (number | Workstream)[] | null;
   photo?: (number | null) | Media;
   /**
    * Lower numbers appear first
@@ -1534,6 +1550,7 @@ export interface WorkstreamsSelect<T extends boolean = true> {
   summary?: T;
   description?: T;
   deliveredBy?: T;
+  group?: T;
   boundaryStatement?: T;
   primaryFocus?:
     | T
@@ -1574,6 +1591,9 @@ export interface PeopleSelect<T extends boolean = true> {
   role?: T;
   organisation?: T;
   bio?: T;
+  profileUrl?: T;
+  group?: T;
+  workstreams?: T;
   photo?: T;
   order?: T;
   updatedAt?: T;

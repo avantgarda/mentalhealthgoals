@@ -130,7 +130,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: '%s',
     },
     description:
-      'A UK Government-backed national programme transforming mental health research — connecting industry, researchers, patients and the public.',
+      'A UK Government-backed, UK-wide programme transforming mental health research — connecting industry, researchers, patients and the public.',
     twitter: {
       card: 'summary_large_image',
     },

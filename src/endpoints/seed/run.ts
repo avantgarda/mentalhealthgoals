@@ -1,5 +1,5 @@
 /**
- * Seeds the database with the MHGP content. Run with:
+ * Seeds the database with the MHG content. Run with:
  *
  *   pnpm seed
  *
@@ -64,7 +64,7 @@ async function run() {
     admin = await payload.create({
       collection: 'users',
       data: {
-        name: 'MHGP Admin',
+        name: 'MHG Admin',
         email: adminEmail!,
         password: adminPassword,
         role: 'admin',

@@ -73,6 +73,16 @@ export const Workstreams: CollectionConfig = {
       },
     },
     {
+      name: 'group',
+      type: 'select',
+      label: 'Umbrella team',
+      admin: {
+        description:
+          'Workstreams delivered under a shared umbrella team are bracketed together in the index.',
+      },
+      options: [{ label: 'DIGIT — Data and Digital Industry Alliance Team', value: 'digit' }],
+    },
+    {
       name: 'boundaryStatement',
       type: 'textarea',
       label: 'Boundary statement',

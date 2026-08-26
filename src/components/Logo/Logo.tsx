@@ -9,7 +9,7 @@ interface Props {
   className?: string
   /** Which mark to show. Set from the Brand global; falls back to the default. */
   variant?: LogoVariant
-  /** Show the "National Programme" line beneath the name. */
+  /** Show the "UK-wide Programme" line beneath the name. */
   showTagline?: boolean
   loading?: 'lazy' | 'eager'
   priority?: 'auto' | 'high' | 'low'

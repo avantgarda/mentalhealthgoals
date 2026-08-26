@@ -28,4 +28,4 @@ export const BRAND_COLORS = {
 } as const
 
 export const BRAND_NAME = 'Mental Health Goals'
-export const BRAND_TAGLINE = 'National Programme'
+export const BRAND_TAGLINE = 'UK-wide Programme'

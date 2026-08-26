@@ -25,9 +25,9 @@ export async function Footer() {
               <Logo showTagline={brand.showTagline} variant={brand.variant} />
             </Link>
             <p className="text-[0.95rem] leading-relaxed text-white/75">
-              A UK Government-backed national programme transforming mental health research —
+              A UK Government-backed, UK-wide programme transforming mental health research —
               delivered by King&apos;s College London with university, NHS, industry and lived
-              experience partners across the UK.
+              experience partners across all four nations.
             </p>
           </div>
 
