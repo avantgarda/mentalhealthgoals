@@ -18,3 +18,11 @@ export const formatDateTime = (timestamp: string): string => {
 
   return `${MM}/${DD}/${YYYY}`
 }
+
+/** UK-style display date, e.g. "27 August 2026" — for bylines and news lists. */
+export const formatDisplayDate = (timestamp: string): string =>
+  new Date(timestamp).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })

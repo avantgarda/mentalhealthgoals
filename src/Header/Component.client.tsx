@@ -9,6 +9,7 @@ import type { Header } from '@/payload-types'
 import { Logo } from '@/components/Logo/Logo'
 import type { BrandSettings } from '@/brand/getBrand'
 import { HeaderNav } from './Nav'
+import { MobileMenu } from './Nav/MobileMenu'
 
 interface HeaderClientProps {
   brand: BrandSettings
@@ -36,13 +37,15 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
       className={[
         'relative z-20',
         // When rendered over a dark hero, the header needs its own dark background on
-        // small screens where the hero image does not extend up behind it
-        theme === 'dark' ? 'bg-brand-deep lg:bg-transparent' : '',
+        // small screens where the hero does not extend up behind it
+        theme === 'dark'
+          ? 'bg-brand-deep lg:bg-transparent'
+          : 'border-b border-border/70 bg-background',
       ].join(' ')}
       {...(theme ? { 'data-theme': theme } : {})}
     >
-      <div className="container py-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between text-foreground">
-        <Link href="/" className="shrink-0">
+      <div className="container flex h-[4.25rem] items-center justify-between gap-6 text-foreground lg:h-[4.75rem]">
+        <Link href="/" className="shrink-0" aria-label="Mental Health Goals — home">
           <Logo
             loading="eager"
             priority="high"
@@ -50,7 +53,8 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
             variant={brand.variant}
           />
         </Link>
-        <HeaderNav data={data} />
+        <HeaderNav className="hidden lg:flex" data={data} />
+        <MobileMenu data={data} />
       </div>
     </header>
   )

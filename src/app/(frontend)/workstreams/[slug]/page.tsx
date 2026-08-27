@@ -7,6 +7,8 @@ import { notFound } from 'next/navigation'
 import React, { cache } from 'react'
 
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
+import { LinkifyEntities } from '@/utilities/linkifyEntities'
+import { personAnchor } from '@/blocks/People/Component'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -41,29 +43,75 @@ const queryWorkstreamBySlug = cache(async ({ slug }: { slug: string }) => {
   return result.docs?.[0] || null
 })
 
-/** Section of bulleted points — renders nothing when the list is empty. */
-const PointList: React.FC<{
-  heading: string
-  points?: { point?: string | null; id?: string | null }[] | null
-}> = ({ heading, points }) => {
+/** People related to this workstream, for the team section. */
+const queryWorkstreamPeople = cache(async ({ id }: { id: number }) => {
+  const payload = await getPayload({ config: configPromise })
+  const result = await payload.find({
+    collection: 'people',
+    depth: 0,
+    limit: 20,
+    pagination: false,
+    sort: 'order',
+    where: { workstreams: { in: [id] } },
+  })
+  return result.docs
+})
+
+const queryAllWorkstreams = cache(async () => {
+  const payload = await getPayload({ config: configPromise })
+  const result = await payload.find({
+    collection: 'workstreams',
+    depth: 0,
+    limit: 12,
+    pagination: false,
+    overrideAccess: false,
+    sort: 'number',
+    select: { slug: true, title: true, number: true },
+  })
+  return result.docs
+})
+
+type Points = { point?: string | null; id?: string | null }[] | null | undefined
+
+const SECTIONS = [
+  { id: 'primary-focus', heading: 'Primary focus', key: 'primaryFocus' },
+  { id: 'key-questions', heading: 'Key questions & challenges', key: 'keyQuestions' },
+  {
+    id: 'differentiators',
+    heading: 'How this differs from other infrastructure',
+    key: 'differentiators',
+  },
+] as const
+
+/** Section of numbered points as ruled rows — renders nothing when empty. */
+const PointList: React.FC<{ heading: string; id: string; points?: Points }> = ({
+  heading,
+  id,
+  points,
+}) => {
   if (!points || points.length === 0) return null
 
   return (
-    <section>
-      <h2 className="text-2xl md:text-3xl font-semibold mb-6">{heading}</h2>
-      <ul className="flex flex-col divide-y divide-border border-y border-border">
+    <section className="scroll-mt-8 border-t-2 border-foreground pt-5" id={id}>
+      <h2 className="display-2 mb-6">{heading}</h2>
+      <ol className="border-t border-border">
         {points.map((entry, i) => (
-          <li key={entry.id || i} className="py-4 flex gap-4">
+          <li
+            className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-4 border-b border-border py-4"
+            data-reveal
+            key={entry.id || i}
+            style={{ transitionDelay: `${Math.min(i, 6) * 40}ms` }}
+          >
             <span
               aria-hidden="true"
-              className="font-display text-sm text-brand-accent-text shrink-0 pt-0.5 tabular-nums"
+              className="pt-1 font-mono text-xs tabular-nums text-muted-foreground"
             >
               {String(i + 1).padStart(2, '0')}
             </span>
             <span className="leading-relaxed">{entry.point}</span>
           </li>
         ))}
-      </ul>
+      </ol>
     </section>
   )
 }
@@ -74,56 +122,171 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
 
   if (!workstream) notFound()
 
-  const { number, title, summary, description, deliveredBy, boundaryStatement } = workstream
+  const { number, title, summary, description, deliveredBy, boundaryStatement, resources } =
+    workstream
+  const all = await queryAllWorkstreams()
+  const team = await queryWorkstreamPeople({ id: workstream.id })
+  const index = all.findIndex((w) => w.slug === workstream.slug)
+  const next = index >= 0 ? all[(index + 1) % all.length] : null
+  const sections = SECTIONS.filter((s) => (workstream[s.key]?.length ?? 0) > 0)
 
   return (
-    <article className="pt-16 pb-24">
-      <div className="container flex flex-col gap-14">
-        <header className="max-w-3xl flex flex-col gap-5">
-          <Link
-            className="text-sm text-muted-foreground hover:text-foreground w-fit"
-            href="/workstreams"
-          >
-            <span aria-hidden="true">← </span>All workstreams
-          </Link>
-
-          <span aria-hidden="true" className="font-display text-4xl text-brand-accent-text">
-            {String(number).padStart(2, '0')}
-          </span>
-
-          <h1 className="text-4xl md:text-5xl font-semibold leading-tight text-balance">{title}</h1>
-
-          {summary && (
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">{summary}</p>
-          )}
-
-          {boundaryStatement && (
-            <p className="whitespace-pre-line border-l-2 border-brand-accent-text pl-5 text-lg leading-relaxed">
-              {boundaryStatement}
-            </p>
-          )}
-
-          <div className="pt-2">
-            <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground block mb-1">
-              Delivered by
+    <article className="pb-24 pt-10 lg:pt-16">
+      <div className="container">
+        {/* Frame */}
+        <div className="grid grid-cols-1 gap-x-10 gap-y-8 border-b-2 border-foreground pb-10 lg:grid-cols-12 lg:pb-14">
+          <div className="flex flex-col gap-6 lg:col-span-3">
+            <Link className="eyebrow link-line w-fit hover:text-foreground" href="/workstreams">
+              <span aria-hidden="true">← </span>All workstreams
+            </Link>
+            <span aria-hidden="true" className="numeral text-[3.5rem] text-brand-accent-text">
+              {String(number).padStart(2, '0')}
             </span>
-            <span className="text-sm">{deliveredBy}</span>
+            <div className="flex flex-col gap-1.5">
+              <span className="eyebrow">Delivered by</span>
+              <ul className="flex flex-col gap-1 text-sm leading-snug">
+                {deliveredBy
+                  .split('·')
+                  .map((institution) => institution.trim())
+                  .filter(Boolean)
+                  .map((institution) => (
+                    <li key={institution}>{institution}</li>
+                  ))}
+              </ul>
+            </div>
+            {resources && resources.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <span className="eyebrow">Links</span>
+                <ul className="flex flex-col text-sm leading-snug">
+                  {resources.map((resource) => (
+                    <li key={resource.id || resource.url}>
+                      <a
+                        className="link-line inline-block py-1"
+                        href={resource.url}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        {resource.label}
+                        <span aria-hidden="true"> ↗</span>
+                        <span className="sr-only"> (opens in a new tab)</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-        </header>
 
-        {description && (
-          <div className="max-w-3xl">
-            <p className="text-muted-foreground leading-relaxed">{description}</p>
+          <header className="flex flex-col gap-6 lg:col-span-9">
+            <h1 className="display-1 max-w-[16ch]">{title}</h1>
+            {summary && <p className="lede max-w-[44rem]">{summary}</p>}
+          </header>
+        </div>
+
+        {/* Body */}
+        <div className="grid grid-cols-1 gap-x-10 gap-y-10 pt-10 lg:grid-cols-12 lg:pt-14">
+          <aside className="lg:col-span-3">
+            {sections.length > 0 && (
+              <nav
+                aria-label="On this page"
+                className="flex flex-col gap-3 border-t border-border pt-3 lg:sticky lg:top-8"
+              >
+                <p className="eyebrow">On this page</p>
+                <ul className="flex flex-col gap-2 text-sm">
+                  {sections.map((s) => (
+                    <li key={s.id}>
+                      <a
+                        className="link-line text-muted-foreground hover:text-foreground"
+                        href={`#${s.id}`}
+                      >
+                        {s.heading}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
+          </aside>
+
+          <div className="flex flex-col gap-14 lg:col-span-8 lg:col-start-5">
+            {boundaryStatement && (
+              <blockquote
+                className="m-0 whitespace-pre-line border-l-2 border-brand-accent pl-6 font-display text-[clamp(1.35rem,2vw,1.7rem)] italic leading-snug"
+                data-reveal
+              >
+                {boundaryStatement}
+              </blockquote>
+            )}
+
+            {description && (
+              <p className="lede max-w-[66ch]" data-reveal>
+                <LinkifyEntities text={description} />
+              </p>
+            )}
+
+            {SECTIONS.map((s) => (
+              <PointList heading={s.heading} id={s.id} key={s.id} points={workstream[s.key]} />
+            ))}
+
+            {team.length > 0 && (
+              <section className="scroll-mt-8 border-t-2 border-foreground pt-5" id="team">
+                <h2 className="display-2 mb-6">Who leads this workstream</h2>
+                <ul className="border-t border-border">
+                  {team.map((person) => (
+                    <li
+                      className="grid grid-cols-1 gap-1 border-b border-border py-4 md:grid-cols-12 md:gap-x-8"
+                      data-reveal
+                      key={person.id}
+                    >
+                      <div className="md:col-span-5">
+                        <p className="font-display text-[1.15rem] leading-tight">
+                          <Link
+                            className="link-line inline-block py-1"
+                            href={`/people#${personAnchor(person.name)}`}
+                          >
+                            {person.name}
+                          </Link>
+                        </p>
+                      </div>
+                      <p className="text-[0.95rem] leading-snug md:col-span-4">{person.role}</p>
+                      <p className="eyebrow md:col-span-3 md:text-right">{person.organisation}</p>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  <Link className="link-line" href="/people">
+                    See the full team
+                  </Link>
+                </p>
+              </section>
+            )}
+
+            {next && next.slug !== workstream.slug && (
+              <div className="border-t border-border pt-8" data-reveal>
+                <p className="eyebrow mb-3">Next workstream</p>
+                <Link
+                  className="group flex items-baseline justify-between gap-4 pr-1 font-display text-[1.5rem] leading-tight lg:pr-4"
+                  href={`/workstreams/${next.slug}`}
+                >
+                  <span>
+                    <span
+                      aria-hidden="true"
+                      className="mr-3 font-mono text-xs text-muted-foreground"
+                    >
+                      {String(next.number).padStart(2, '0')}
+                    </span>
+                    {next.title}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="arrow font-sans text-base text-muted-foreground"
+                  >
+                    →
+                  </span>
+                </Link>
+              </div>
+            )}
           </div>
-        )}
-
-        <div className="max-w-3xl flex flex-col gap-14">
-          <PointList heading="Primary focus" points={workstream.primaryFocus} />
-          <PointList heading={'Key questions & challenges'} points={workstream.keyQuestions} />
-          <PointList
-            heading="How this differs from other infrastructure"
-            points={workstream.differentiators}
-          />
         </div>
       </div>
     </article>

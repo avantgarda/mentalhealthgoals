@@ -45,6 +45,40 @@ export const People: CollectionConfig = {
       type: 'textarea',
     },
     {
+      name: 'profileUrl',
+      type: 'text',
+      label: 'Profile URL',
+      admin: {
+        description:
+          'Institutional profile page, for reference. Not published — names on the site link to this person’s entry on the Team page instead.',
+      },
+    },
+    {
+      name: 'group',
+      type: 'select',
+      required: true,
+      defaultValue: 'delivery',
+      admin: {
+        description: 'Which section of the Team page this person appears under.',
+      },
+      options: [
+        { label: 'Programme leadership', value: 'leadership' },
+        { label: 'DIGIT leadership', value: 'digit' },
+        { label: 'Workstream leads', value: 'workstream-leads' },
+        { label: 'Delivery team', value: 'delivery' },
+      ],
+    },
+    {
+      name: 'workstreams',
+      type: 'relationship',
+      relationTo: 'workstreams',
+      hasMany: true,
+      admin: {
+        description:
+          'Workstreams this person leads or works on — also lists them on those workstream pages.',
+      },
+    },
+    {
       name: 'photo',
       type: 'upload',
       relationTo: 'media',

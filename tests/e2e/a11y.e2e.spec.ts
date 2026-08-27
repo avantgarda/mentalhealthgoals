@@ -13,6 +13,14 @@ const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best
 const scan = async (page: Page) => {
   // Never scan a half-rendered page (cold dev-server compiles on CI)
   await page.locator('#main-content').waitFor()
+  // Streaming metadata can land the <title> a beat after the shell on a cold
+  // server; axe's document-title rule must see the finished document.
+  await page.waitForFunction(() => document.title.length > 0)
+  // Let entrance animations and scroll reveals finish — axe measures colour
+  // contrast on the current frame, and a word mid-fade is not a real failure.
+  await page.evaluate(async () => {
+    await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)))
+  })
 
   // The suite runs against `next dev`; the dev-tools overlay (<nextjs-portal>)
   // injects itself into the page and, when it surfaces an issue badge, breaks

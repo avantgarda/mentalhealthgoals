@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 
 import { cn } from '@/utilities/ui'
-import { Fraunces, Inter } from 'next/font/google'
+import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 import React from 'react'
 
 import { AdminBar } from '@/components/AdminBar'
@@ -9,19 +10,47 @@ import { brandAssetPath, getBrandSettings } from '@/brand/getBrand'
 import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
 import { Providers } from '@/providers'
+import { InitMotion } from '@/providers/Motion/InitMotion'
 import { InitTheme } from '@/providers/Theme/InitTheme'
+import { RevealObserver } from '@/components/Reveal/RevealObserver'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { draftMode } from 'next/headers'
 
 import './globals.css'
 import { getServerSideURL } from '@/utilities/getURL'
 
-const inter = Inter({
+/** Body and UI face — a humanist grotesque with a technical edge. */
+const plexSans = IBM_Plex_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  weight: ['400', '500', '600'],
+  style: ['normal', 'italic'],
+  variable: '--font-plex-sans',
   display: 'swap',
 })
 
+/** Labels, times and data. */
+const plexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-plex-mono',
+  display: 'swap',
+})
+
+/**
+ * Display serif: Zodiak (Indian Type Foundry, via Fontshare — self-hosted,
+ * licence in src/fonts/zodiak). Deliberately from outside the Google Fonts
+ * pool so the site's voice doesn't converge with template/AI-built sites.
+ */
+const zodiak = localFont({
+  src: [
+    { path: '../../fonts/zodiak/Zodiak-Variable.woff2', weight: '100 900', style: 'normal' },
+    { path: '../../fonts/zodiak/Zodiak-VariableItalic.woff2', weight: '100 900', style: 'italic' },
+  ],
+  variable: '--font-zodiak',
+  display: 'swap',
+})
+
+/** The wordmark face — kept for the brand lockup only. */
 const fraunces = Fraunces({
   subsets: ['latin'],
   variable: '--font-fraunces',
@@ -33,9 +62,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const brand = await getBrandSettings()
 
   return (
-    <html className={cn(inter.variable, fraunces.variable)} lang="en" suppressHydrationWarning>
+    <html
+      className={cn(plexSans.variable, plexMono.variable, zodiak.variable, fraunces.variable)}
+      lang="en"
+      suppressHydrationWarning
+    >
       <head>
         <InitTheme />
+        <InitMotion />
         <link
           href={brandAssetPath(brand.variant, 'favicon-32.png')}
           rel="icon"
@@ -52,7 +86,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <nav aria-label="Skip link">
           <a
-            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:outline-2 focus:outline-ring"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-background focus:px-4 focus:py-2 focus:text-foreground focus:outline-2 focus:outline-ring"
             href="#main-content"
           >
             Skip to main content
@@ -70,6 +104,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {children}
           </main>
           <Footer />
+          <RevealObserver />
         </Providers>
       </body>
     </html>
@@ -95,7 +130,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: '%s',
     },
     description:
-      'A UK Government-backed national programme transforming mental health research — connecting industry, researchers, patients and the public.',
+      'A UK Government-backed, UK-wide programme transforming mental health research — connecting industry, researchers, patients and the public.',
     twitter: {
       card: 'summary_large_image',
     },

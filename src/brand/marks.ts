@@ -1,5 +1,5 @@
 /**
- * Canonical geometry for the MHGP logo marks.
+ * Canonical geometry for the MHG logo marks.
  *
  * This module is the single source of truth: the React components in
  * `src/components/Logo` and the static asset generator in

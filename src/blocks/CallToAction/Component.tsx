@@ -5,17 +5,23 @@ import type { CallToActionBlock as CTABlockProps } from '@/payload-types'
 import RichText from '@/components/RichText'
 import { CMSLink } from '@/components/Link'
 
+/** A full-bleed deep-petrol band — the page's chapter break: one statement, one (or two) actions. */
 export const CallToActionBlock: React.FC<CTABlockProps> = ({ links, richText }) => {
   return (
-    <div className="container">
-      <div className="bg-card rounded border-border border p-4 flex flex-col gap-8 md:flex-row md:justify-between md:items-center">
-        <div className="max-w-[48rem] flex items-center">
-          {richText && <RichText className="mb-0" data={richText} enableGutter={false} />}
-        </div>
-        <div className="flex flex-col gap-8">
-          {(links || []).map(({ link }, i) => {
-            return <CMSLink key={i} size="lg" {...link} />
-          })}
+    <div className="bg-brand-deep text-white" data-theme="dark">
+      <div className="container">
+        <div
+          className="band grid grid-cols-1 gap-6 py-12 lg:grid-cols-12 lg:items-end lg:gap-x-10 lg:py-16"
+          data-reveal
+        >
+          <div className="lg:col-span-8 [&_p]:text-white/75">
+            {richText && <RichText data={richText} enableGutter={false} enableProse={false} />}
+          </div>
+          <div className="flex flex-wrap gap-3 lg:col-span-4 lg:justify-end">
+            {(links || []).map(({ link }, i) => {
+              return <CMSLink key={i} size="lg" {...link} />
+            })}
+          </div>
         </div>
       </div>
     </div>

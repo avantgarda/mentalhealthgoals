@@ -2,6 +2,7 @@ import React from 'react'
 
 import type { EventDetailsBlock as EventDetailsBlockProps } from '@/payload-types'
 
+/** Facts as a rule-row, the agenda as a timetable, outputs as ruled rows. */
 export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
   facts,
   agendaHeading,
@@ -10,69 +11,83 @@ export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
   outcomes,
 }) => {
   return (
-    <div className="container flex flex-col gap-14">
+    <div className="container flex flex-col gap-16">
       {facts && facts.length > 0 && (
-        <dl className="grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+        <dl
+          className="grid grid-cols-1 border-t-2 border-b border-foreground border-b-border sm:grid-cols-2 lg:grid-cols-4"
+          data-reveal
+        >
           {facts.map((fact, i) => (
-            <div key={i} className="bg-card px-6 py-5">
-              <dt className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1">
-                {fact.label}
-              </dt>
-              <dd className="text-sm font-medium leading-snug">{fact.value}</dd>
+            <div
+              className="flex flex-col gap-1.5 py-5 sm:pr-6 lg:border-r lg:border-border lg:last:border-r-0 lg:[&:not(:first-child)]:pl-6"
+              key={i}
+            >
+              <dt className="eyebrow">{fact.label}</dt>
+              <dd className="text-[0.95rem] leading-snug">{fact.value}</dd>
             </div>
           ))}
         </dl>
       )}
 
       {agenda && agenda.length > 0 && (
-        <div>
-          {agendaHeading && (
-            <h2 className="text-2xl md:text-3xl font-semibold mb-6">{agendaHeading}</h2>
-          )}
-          <div className="flex flex-col divide-y divide-border border-y border-border">
+        <div className="grid grid-cols-1 gap-y-6 border-t-2 border-foreground pt-5 lg:grid-cols-12 lg:gap-x-10">
+          <div className="lg:col-span-3">
+            {agendaHeading && (
+              <h2 className="display-2 lg:sticky lg:top-8" data-reveal>
+                {agendaHeading}
+              </h2>
+            )}
+          </div>
+          <ol className="lg:col-span-8 lg:col-start-5" data-reveal>
             {agenda.map((row, i) => (
-              <div key={i} className="py-4 flex gap-6 items-baseline">
-                <span className="font-mono text-sm text-brand-accent-text shrink-0 w-14">
+              <li
+                className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-4 border-b border-border py-3.5"
+                key={i}
+              >
+                <span className="pt-[0.2rem] font-mono text-[0.8rem] tabular-nums text-brand-accent-text">
                   {row.time || ''}
                 </span>
                 <span
                   className={
                     row.time
-                      ? 'text-sm md:text-base leading-relaxed'
-                      : 'text-sm md:text-base leading-relaxed text-muted-foreground'
+                      ? 'text-[0.98rem] leading-relaxed'
+                      : 'text-[0.95rem] leading-relaxed text-muted-foreground'
                   }
                 >
                   {row.item}
                 </span>
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       )}
 
       {outcomes && outcomes.length > 0 && (
-        <div>
-          {outcomesHeading && (
-            <h2 className="text-2xl md:text-3xl font-semibold mb-6">{outcomesHeading}</h2>
-          )}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-y-6 border-t-2 border-foreground pt-5 lg:grid-cols-12 lg:gap-x-10">
+          <div className="lg:col-span-3">
+            {outcomesHeading && (
+              <h2 className="display-2 lg:sticky lg:top-8" data-reveal>
+                {outcomesHeading}
+              </h2>
+            )}
+          </div>
+          <ul className="lg:col-span-8 lg:col-start-5">
             {outcomes.map((outcome, i) => (
-              <div
+              <li
+                className="grid grid-cols-1 gap-2 border-b border-border py-6 md:grid-cols-12 md:gap-x-8"
+                data-reveal
                 key={i}
-                className="rounded-xl border border-border bg-card p-6 flex flex-col gap-2"
+                style={{ transitionDelay: `${i * 60}ms` }}
               >
-                <span className="font-display text-xl text-brand-accent-text">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <h3 className="text-base font-semibold leading-snug">{outcome.title}</h3>
+                <h3 className="display-3 md:col-span-5">{outcome.title}</h3>
                 {outcome.description && (
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="text-[0.95rem] leading-relaxed text-muted-foreground md:col-span-7">
                     {outcome.description}
                   </p>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       )}
     </div>

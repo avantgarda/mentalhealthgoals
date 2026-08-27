@@ -25,7 +25,7 @@ const NEW_PEOPLE = [
   { order: 8, name: 'Sidharth Sanjeev', role: 'Research Assistant, AMT' },
 ]
 
-export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
+export async function up({ db }: MigrateUpArgs): Promise<void> {
   // 1. Schema — slug deliberately nullable at this point
   await db.execute(sql`
    CREATE TABLE "workstreams_primary_focus" (
@@ -79,57 +79,59 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
     ALTER TABLE "workstreams" ALTER COLUMN "slug" SET NOT NULL;
     CREATE UNIQUE INDEX "workstreams_slug_idx" ON "workstreams" USING btree ("slug");`)
 
-  // 4. Content backfill via the Local API — nested arrays are far safer to
-  //    write through Payload than by hand-rolled SQL inserts.
+  // 4. Content backfill in raw SQL. This originally went through the Payload
+  //    Local API, but the Local API queries against the *current* config — so
+  //    any array field added by a LATER migration (e.g. `resources`) makes
+  //    this step select a table that does not exist yet on a fresh database.
+  //    Raw SQL keeps the migration valid forever. On a fresh (empty) database
+  //    the SELECT finds nothing and every step is a no-op, which is correct:
+  //    the seed provides the content there.
+  const lists = [
+    ['workstreams_primary_focus', 'primaryFocus'],
+    ['workstreams_key_questions', 'keyQuestions'],
+    ['workstreams_differentiators', 'differentiators'],
+  ] as const
+
   for (const [slug, content] of Object.entries(workstreamContent)) {
-    const { docs } = await payload.find({
-      collection: 'workstreams',
-      where: { slug: { equals: slug } },
-      limit: 1,
-      req,
-    })
+    const found = (await db.execute(
+      sql`SELECT "id" FROM "workstreams" WHERE "slug" = ${slug} LIMIT 1;`,
+    )) as unknown as { rows: { id: number }[] }
+    if (!found.rows.length) continue
+    const parentId = found.rows[0].id
 
-    if (!docs.length) continue
+    await db.execute(
+      sql`UPDATE "workstreams" SET "boundary_statement" = ${content.boundaryStatement}, "generate_slug" = false WHERE "id" = ${parentId};`,
+    )
 
-    await payload.update({
-      collection: 'workstreams',
-      id: docs[0].id,
-      req,
-      context: { disableRevalidate: true },
-      data: {
-        // Pin the slug: without these two, Payload regenerates it from the
-        // title on update ("…-amt") and the URL would differ from the seed's.
-        slug,
-        generateSlug: false,
-        boundaryStatement: content.boundaryStatement,
-        primaryFocus: content.primaryFocus.map((point) => ({ point })),
-        keyQuestions: content.keyQuestions.map((point) => ({ point })),
-        differentiators: content.differentiators.map((point) => ({ point })),
-      },
-    })
+    for (const [table, key] of lists) {
+      await db.execute(
+        sql`DELETE FROM ${sql.raw(`"${table}"`)} WHERE "_parent_id" = ${parentId};`,
+      )
+      for (const [index, point] of content[key].entries()) {
+        await db.execute(
+          sql`INSERT INTO ${sql.raw(`"${table}"`)} ("_order", "_parent_id", "id", "point")
+              VALUES (${index + 1}, ${parentId}, gen_random_uuid()::text, ${point});`,
+        )
+      }
+    }
   }
 
-  // 5. Two additional team members (no email field exists on People)
+  // 5. Two additional team members (no email field exists on People) — raw
+  //    SQL for the same future-proofing reason as above.
   for (const person of NEW_PEOPLE) {
-    const { docs } = await payload.find({
-      collection: 'people',
-      where: { name: { equals: person.name } },
-      limit: 1,
-      req,
-    })
+    const existing = (await db.execute(
+      sql`SELECT "id" FROM "people" WHERE "name" = ${person.name} LIMIT 1;`,
+    )) as unknown as { rows: { id: number }[] }
+    if (existing.rows.length) continue
 
-    if (docs.length) continue
-
-    await payload.create({
-      collection: 'people',
-      req,
-      context: { disableRevalidate: true },
-      data: { ...person, organisation: 'King’s College London' },
-    })
+    await db.execute(
+      sql`INSERT INTO "people" ("name", "role", "organisation", "order", "updated_at", "created_at")
+          VALUES (${person.name}, ${person.role}, ${'King’s College London'}, ${person.order}, now(), now());`,
+    )
   }
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({ db }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "workstreams_primary_focus" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "workstreams_key_questions" DISABLE ROW LEVEL SECURITY;

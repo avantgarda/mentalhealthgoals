@@ -73,6 +73,16 @@ export const Workstreams: CollectionConfig = {
       },
     },
     {
+      name: 'group',
+      type: 'select',
+      label: 'Umbrella team',
+      admin: {
+        description:
+          'Workstreams delivered under a shared umbrella team are bracketed together in the index.',
+      },
+      options: [{ label: 'DIGIT — Data and Digital Industry Alliance Team', value: 'digit' }],
+    },
+    {
       name: 'boundaryStatement',
       type: 'textarea',
       label: 'Boundary statement',
@@ -92,6 +102,25 @@ export const Workstreams: CollectionConfig = {
       'How this differs from other infrastructure',
       'What distinguishes this workstream from the others and from the wider landscape.',
     ),
+    {
+      name: 'resources',
+      type: 'array',
+      label: 'External links',
+      labels: { singular: 'Link', plural: 'Links' },
+      admin: {
+        description:
+          'Related external sites shown on this workstream’s page (e.g. the GLAD Study, MHDI).',
+      },
+      fields: [
+        { name: 'label', type: 'text', required: true },
+        {
+          name: 'url',
+          type: 'text',
+          required: true,
+          admin: { description: 'Full URL, including https://' },
+        },
+      ],
+    },
     // URL for this workstream's own page, generated from the title
     slugField(),
   ],
