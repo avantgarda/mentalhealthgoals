@@ -99,6 +99,27 @@ export const strokeOpacityAt = (i: number, lines: number) =>
   0.92 - 0.72 * (i / Math.max(1, lines - 1))
 
 /**
+ * The box the drawn motif actually occupies, with a little air around it.
+ *
+ * The 800x600 surface carries a lot of empty sky above the goal, which is
+ * right when the motif fills a tall panel beside the copy and wasteful when it
+ * stands on its own — there it just makes the element taller than it needs to
+ * be. Fitting the viewBox to this instead trims the dead space without
+ * cropping anything.
+ */
+export const contentBounds = (
+  lines: number,
+  { goal = true }: { goal?: boolean } = {},
+): { x: number; y: number; width: number; height: number } => {
+  const margin = 8
+  // The highest ink: the goal if it is drawn, otherwise the taller apex.
+  const top = goal ? mapY(GOAL[1]) - 11 : Math.min(...SKYLINE.map(([, y]) => mapY(y)))
+  const bottom = FLOOR + Math.max(0, lines - 1) * LINE_DROP
+  const y = Math.max(0, top - margin)
+  return { x: 0, y, width: W, height: Math.min(H, bottom + margin) - y }
+}
+
+/**
  * A viewBox window of the given aspect ratio that contains the whole 800x600
  * composition. The motif is never cropped and never stretched — the window
  * simply gains ground on whichever axis is short. `bias` slides the content

@@ -1,6 +1,15 @@
 import React from 'react'
 
-import { buildRidgePaths, GOAL, H, mapX, mapY, strokeOpacityAt, W } from '@/brand/ridge'
+import {
+  buildRidgePaths,
+  contentBounds,
+  GOAL,
+  H,
+  mapX,
+  mapY,
+  strokeOpacityAt,
+  W,
+} from '@/brand/ridge'
 import { cn } from '@/utilities/ui'
 
 /**
@@ -19,11 +28,20 @@ type Props = {
   lines?: number
   /** Hide the amber goal (e.g. when used as a quiet divider). */
   goal?: boolean
+  /**
+   * `surface` keeps the full 800x600 drawing surface, so the motif has sky
+   * above it — right when it fills a tall panel beside the copy.
+   * `content` trims the viewBox to the ink, so a standalone motif is only as
+   * tall as it needs to be.
+   */
+  fit?: 'surface' | 'content'
 }
 
-export const Ridge: React.FC<Props> = ({ className, lines = 22, goal = true }) => {
+export const Ridge: React.FC<Props> = ({ className, lines = 22, goal = true, fit = 'surface' }) => {
   const paths = buildRidgePaths(lines)
   const [gx, gy] = [mapX(GOAL[0]), mapY(GOAL[1])]
+  const box =
+    fit === 'content' ? contentBounds(lines, { goal }) : { x: 0, y: 0, width: W, height: H }
 
   return (
     <svg
@@ -32,7 +50,7 @@ export const Ridge: React.FC<Props> = ({ className, lines = 22, goal = true }) =
       fill="none"
       focusable="false"
       preserveAspectRatio="xMidYMid meet"
-      viewBox={`0 0 ${W} ${H}`}
+      viewBox={`${box.x} ${box.y} ${box.width} ${box.height}`}
       xmlns="http://www.w3.org/2000/svg"
     >
       {paths.map((d, i) => (

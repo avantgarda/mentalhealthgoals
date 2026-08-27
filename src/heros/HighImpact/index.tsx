@@ -13,6 +13,12 @@ import { splitRichText } from '../splitRichText'
  * The Atlas hero: petrol ground, title and lede on the left, the ridge motif
  * rising on the right. The heading words rise in one by one and the ridge
  * draws itself when motion is on; both render complete otherwise.
+ *
+ * The ridge is placed twice, because the two layouts want opposite things of
+ * it. Wide, there is a column of empty ground beside the copy and the motif
+ * fills it. Narrow, there is no such column — a single column of type runs the
+ * width of the screen — so the motif goes *under* the copy as a horizon rather
+ * than behind it as a texture. Only one is ever rendered.
  */
 export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
   const { setHeaderTheme } = useHeaderTheme()
@@ -32,12 +38,12 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-[-12%] w-[88%] text-white/85 opacity-[0.28] sm:right-[-6%] sm:w-[70%] lg:right-[-2%] lg:w-[52%] lg:opacity-100"
+        className="pointer-events-none absolute inset-y-0 right-[-2%] hidden w-[52%] text-white/85 lg:block"
       >
-        <Ridge className="h-full w-full" lines={24} />
+        <Ridge className="h-full w-full" lines={22} />
       </div>
 
-      <div className="container relative z-10 grid min-h-[76vh] grid-cols-1 items-end gap-10 pb-14 pt-[7.5rem] lg:grid-cols-12 lg:pb-20 lg:pt-[9.5rem]">
+      <div className="container relative z-10 grid grid-cols-1 items-end gap-8 pb-0 pt-24 lg:min-h-[76vh] lg:gap-10 lg:grid-cols-12 lg:pb-20 lg:pt-[9.5rem]">
         <div className="flex flex-col gap-8 lg:col-span-7">
           {words.length > 0 ? (
             <h1 className="display-1 max-w-[14ch]">
@@ -83,6 +89,18 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
               })}
             </ul>
           )}
+        </div>
+
+        {/* Small screens: full-bleed, sitting on the boundary with the section
+            below. `data-reveal` holds the draw-in until it is scrolled to —
+            on a phone this sits below the fold, and an animation that has
+            already finished by the time it is seen is no animation at all. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none -mx-5 text-white/85 md:-mx-8 lg:hidden"
+          data-reveal
+        >
+          <Ridge className="h-auto w-full" fit="content" lines={14} />
         </div>
       </div>
     </div>

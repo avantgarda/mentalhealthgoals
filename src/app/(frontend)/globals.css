@@ -486,6 +486,12 @@ html[data-motion='on'] .ridge .ridge-goal {
   animation: ridge-goal 700ms var(--ease-out) forwards;
   animation-delay: 1100ms;
 }
+/* A ridge that has to be scrolled to draws itself on arrival rather than on
+   load — pausing holds it at time zero, including its stagger, until the
+   reveal observer marks it seen. */
+html.js-reveal[data-motion='on'] [data-reveal]:not(.is-in) :is(.ridge path, .ridge .ridge-goal) {
+  animation-play-state: paused;
+}
 /* Headline words rise once on load */
 @keyframes rise-in {
   from {
