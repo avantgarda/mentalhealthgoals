@@ -1612,7 +1612,7 @@ export const seed = async ({
                 heading('h2', text('Who we are')),
                 paragraph(
                   text(
-                    'The Mental Health Goals Programme is a UK research programme led from King’s College London with partner institutions across the UK. For the purposes of UK data protection law, the data controller for this website is [confirm: King’s College London].',
+                    'The Mental Health Goals Programme is a UK research programme led from King’s College London with partner institutions across the UK. For the purposes of UK data protection law, the data controller for this website is King’s College London.',
                   ),
                 ),
                 heading('h2', text('The information we collect')),
@@ -1633,7 +1633,7 @@ export const seed = async ({
                 heading('h2', text('Where it is stored and for how long')),
                 paragraph(
                   text(
-                    'Enquiries are stored securely with our website hosting and email providers and are accessible only to the programme team. We keep contact-form enquiries for [confirm retention period, e.g. 12 months] and then delete them.',
+                    'Enquiries are stored securely with our website hosting and email providers and are accessible only to the programme team. We keep contact-form enquiries for 12 months and then delete them.',
                   ),
                 ),
                 heading('h2', text('Your rights')),
@@ -1651,9 +1651,30 @@ export const seed = async ({
                     'mailto:enquiries@mentalhealthgoals.co.uk',
                   ),
                   text(
-                    ' or the King’s College London data protection team at [confirm DPO contact]. You can reach the ICO at ',
+                    ' or the King’s College London Information Compliance team — which includes the university’s Data Protection Officer — at ',
                   ),
+                  link('info-compliance@kcl.ac.uk', 'mailto:info-compliance@kcl.ac.uk'),
+                  text('. King’s explains its own approach in its '),
+                  link('Core Privacy Notice', 'https://www.kcl.ac.uk/terms/privacy', true),
+                  text('. You can reach the ICO at '),
                   link('ico.org.uk', 'https://ico.org.uk/', true),
+                  text('.'),
+                ),
+                // Operator statement (the footer's copyright names the programme,
+                // which is not a legal entity) and the OGL attribution required
+                // for the GOV.UK material adapted on About and in the articles.
+                // The licence permits attribution on a linked page rather than
+                // inline, so it lives here instead of cluttering the footer.
+                heading('h2', text('About this website')),
+                paragraph(
+                  text(
+                    'This website is operated by King’s College London on behalf of the Mental Health Goals Programme partners. Some pages adapt material published on GOV.UK — contains public sector information licensed under the ',
+                  ),
+                  link(
+                    'Open Government Licence v3.0',
+                    'https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/',
+                    true,
+                  ),
                   text('.'),
                 ),
               ),
