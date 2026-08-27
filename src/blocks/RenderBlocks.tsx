@@ -11,6 +11,7 @@ import { MediaBlock } from '@/blocks/MediaBlock/Component'
 import { PeopleBlockComponent } from '@/blocks/People/Component'
 import { StatsBlockComponent } from '@/blocks/Stats/Component'
 import { WorkstreamsBlockComponent } from '@/blocks/Workstreams/Component'
+import { blockAnchor } from '@/utilities/blockAnchor'
 
 const blockComponents = {
   archive: ArchiveBlock,
@@ -46,6 +47,7 @@ export const RenderBlocks: React.FC<{
   const { blocks } = props
 
   const hasBlocks = blocks && Array.isArray(blocks) && blocks.length > 0
+  const takenAnchors = new Set<string>()
 
   if (hasBlocks) {
     return (
@@ -76,8 +78,15 @@ export const RenderBlocks: React.FC<{
                 .filter(Boolean)
                 .join(' ')
 
+              const anchor = blockAnchor(block.blockName, takenAnchors)
+
               return (
-                <div className={margin} data-first-block={index === 0 ? '' : undefined} key={index}>
+                <div
+                  className={anchor ? `${margin} scroll-mt-16` : margin}
+                  data-first-block={index === 0 ? '' : undefined}
+                  id={anchor}
+                  key={index}
+                >
                   {/* @ts-expect-error there may be some mismatch between the expected types here */}
                   <Block {...block} disableInnerContainer />
                 </div>
