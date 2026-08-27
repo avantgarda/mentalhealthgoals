@@ -10,6 +10,7 @@ import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
 import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 import { searchFields } from '@/search/fieldOverrides'
 import { beforeSyncWithSearch } from '@/search/beforeSync'
+import { SEARCH_PRIORITIES, SEARCHED_COLLECTIONS } from '@/search/resultTypes'
 
 import { Page, Post } from '@/payload-types'
 import { getServerSideURL } from '@/utilities/getURL'
@@ -85,7 +86,12 @@ export const plugins: Plugin[] = [
     },
   }),
   searchPlugin({
-    collections: ['posts'],
+    // Pages, workstreams and people as well as posts — see src/search/resultTypes.ts.
+    // Widening this list changes the search document's polymorphic relationship,
+    // so it needs a migration; existing rows are backfilled with the Reindex
+    // button on the Search Results list in the admin.
+    collections: SEARCHED_COLLECTIONS,
+    defaultPriorities: SEARCH_PRIORITIES,
     beforeSync: beforeSyncWithSearch,
     searchOverrides: {
       fields: ({ defaultFields }) => {

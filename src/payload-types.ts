@@ -1029,10 +1029,35 @@ export interface Search {
   id: number;
   title?: string | null;
   priority?: number | null;
-  doc: {
-    relationTo: 'posts';
-    value: number | Post;
-  };
+  doc:
+    | {
+        relationTo: 'pages';
+        value: number | Page;
+      }
+    | {
+        relationTo: 'workstreams';
+        value: number | Workstream;
+      }
+    | {
+        relationTo: 'posts';
+        value: number | Post;
+      }
+    | {
+        relationTo: 'people';
+        value: number | Person;
+      };
+  /**
+   * Which kind of thing this result points at.
+   */
+  type?: ('page' | 'workstream' | 'post' | 'person') | null;
+  /**
+   * The URL a visitor is sent to when they choose this result.
+   */
+  path?: string | null;
+  /**
+   * Prose flattened out of the document so that a phrase from the middle of a page is findable, not just its title.
+   */
+  body?: string | null;
   slug?: string | null;
   meta?: {
     title?: string | null;
@@ -1772,6 +1797,9 @@ export interface SearchSelect<T extends boolean = true> {
   title?: T;
   priority?: T;
   doc?: T;
+  type?: T;
+  path?: T;
+  body?: T;
   slug?: T;
   meta?:
     | T

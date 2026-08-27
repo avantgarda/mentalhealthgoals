@@ -6,6 +6,7 @@ import type { PeopleBlockType, Person, Workstream } from '@/payload-types'
 import { Media } from '@/components/Media'
 import { SIZE_PERSON_CARD } from '@/components/Media/sizes'
 import { SectionHead } from '@/components/SectionHead'
+import { personAnchor } from '@/utilities/personAnchor'
 
 const HONORIFICS = new Set([
   'prof',
@@ -54,14 +55,6 @@ const GROUPS = [
     intro: 'The people industry and partners work with day to day.',
   },
 ] as const
-
-/** Stable anchor for a person, so their name can be linked from anywhere on the site. */
-export const personAnchor = (name: string) =>
-  name
-    .toLowerCase()
-    .replace(/prof\.?|dr\.?/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
 
 const workstreamTitles = (person: Person): string[] =>
   (person.workstreams || [])

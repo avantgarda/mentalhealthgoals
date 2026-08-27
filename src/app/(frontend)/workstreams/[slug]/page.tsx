@@ -8,7 +8,7 @@ import React, { cache } from 'react'
 
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { LinkifyEntities } from '@/utilities/linkifyEntities'
-import { personAnchor } from '@/blocks/People/Component'
+import { personAnchor } from '@/utilities/personAnchor'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
