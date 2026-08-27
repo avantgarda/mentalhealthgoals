@@ -8,6 +8,7 @@ import * as migration_20260821_084454_add_workstream_detail_fields from './20260
 import * as migration_20260826_103739_add_workstream_resources from './20260826_103739_add_workstream_resources';
 import * as migration_20260826_145839_team_groups_and_digit from './20260826_145839_team_groups_and_digit';
 import * as migration_20260826_163823_team_group_values from './20260826_163823_team_group_values';
+import * as migration_20260827_083749_team_workstream_leads_group from './20260827_083749_team_workstream_leads_group';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20260826_163823_team_group_values.up,
     down: migration_20260826_163823_team_group_values.down,
-    name: '20260826_163823_team_group_values'
+    name: '20260826_163823_team_group_values',
+  },
+  {
+    up: migration_20260827_083749_team_workstream_leads_group.up,
+    down: migration_20260827_083749_team_workstream_leads_group.down,
+    name: '20260827_083749_team_workstream_leads_group'
   },
 ];

@@ -6,7 +6,9 @@ import React, { Fragment } from 'react'
 
 import type { Post } from '@/payload-types'
 
-export type CardPostData = Pick<Post, 'slug' | 'categories' | 'meta' | 'title'>
+import { formatDisplayDate } from '@/utilities/formatDateTime'
+
+export type CardPostData = Pick<Post, 'slug' | 'categories' | 'meta' | 'publishedAt' | 'title'>
 
 /**
  * A news entry as a ruled row: category · title · standfirst · arrow. The
@@ -23,7 +25,7 @@ export const Card: React.FC<{
   const { card, link } = useClickableCard({})
   const { className, doc, relationTo, showCategories, title: titleFromProps } = props
 
-  const { slug, categories, meta, title } = doc || {}
+  const { slug, categories, meta, publishedAt, title } = doc || {}
   const { description } = meta || {}
 
   const hasCategories = categories && Array.isArray(categories) && categories.length > 0
@@ -39,7 +41,15 @@ export const Card: React.FC<{
       )}
       ref={card.ref}
     >
-      <div className="lg:col-span-2">
+      <div className="flex flex-col gap-1.5 lg:col-span-2">
+        {publishedAt && (
+          <time
+            className="font-mono text-xs tabular-nums text-muted-foreground"
+            dateTime={publishedAt}
+          >
+            {formatDisplayDate(publishedAt)}
+          </time>
+        )}
         {showCategories && hasCategories && (
           <p className="eyebrow">
             {categories?.map((category, index) => {

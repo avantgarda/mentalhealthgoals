@@ -963,7 +963,7 @@ export interface Person {
   /**
    * Which section of the Team page this person appears under.
    */
-  group: 'leadership' | 'digit' | 'delivery' | 'collaborators';
+  group: 'leadership' | 'digit' | 'workstream-leads' | 'delivery';
   /**
    * Workstreams this person leads or works on — also lists them on those workstream pages.
    */

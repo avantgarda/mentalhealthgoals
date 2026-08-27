@@ -115,7 +115,7 @@ export const seed = async ({
   const [newsCategory, eventsCategory, explainerCategory] = await Promise.all([
     payload.create({
       collection: 'categories',
-      data: { title: 'Programme news', slug: 'programme-news' },
+      data: { title: 'News', slug: 'news' },
     }),
     payload.create({
       collection: 'categories',
@@ -215,7 +215,7 @@ export const seed = async ({
       summary:
         'A world-first multi-omics resource across 20,000 deeply clinically characterised participants.',
       description:
-        'Two cohorts of equal standing: in severe depression, led from King’s College London building on the GLAD (Genetic Links to Anxiety and Depression) Study; and in psychosis, led from Cardiff University’s Centre for Neuropsychiatric Genetics and Genomics with the Universities of Cambridge and Edinburgh, which also leads multi-omic data generation across the cohort.',
+        'In severe depression, led from King’s College London, building on the GLAD (Genetic Links to Anxiety and Depression) Study. In psychosis, led from Cardiff University’s Centre for Neuropsychiatric Genetics and Genomics with the Universities of Cambridge and Edinburgh, which also leads multi-omic data generation. Together: biological and clinical data at unprecedented depth.',
       deliveredBy:
         'King’s College London · Cardiff University · Queen’s University Belfast · University of Edinburgh · University of Cambridge',
       resources: [
@@ -261,7 +261,7 @@ export const seed = async ({
   // programme contacts workbook: DIGIT is the funded project that delivers the
   // Alliance Management Team, Innovative Clinical Trials Hub and Lived
   // Experience Industry Partnership, so its lead and co-leads are their own
-  // section. Cohort, data and digital partners are collaborators, not DIGIT.
+  // section, and the cohort, data and digital workstream leads their own.
   //
   // Deliberately NOT published from the internal contacts workbook: email
   // addresses, executive assistants, university operations staff, and external
@@ -404,10 +404,10 @@ export const seed = async ({
       workstreams: [wsId['alliance-management-team']],
     },
 
-    // ——— Working with us ———
+    // ——— Workstream leads ———
     {
       order: 30,
-      group: 'collaborators' as const,
+      group: 'workstream-leads' as const,
       name: 'Prof. Gerome Breen',
       role: 'GLAD Study Lead and Principal Investigator',
       organisation: 'King’s College London',
@@ -417,7 +417,7 @@ export const seed = async ({
     },
     {
       order: 31,
-      group: 'collaborators' as const,
+      group: 'workstream-leads' as const,
       name: 'Prof. James Walters',
       role: 'Director, Centre for Neuropsychiatric Genetics and Genomics',
       organisation: 'Cardiff University',
@@ -426,7 +426,7 @@ export const seed = async ({
     },
     {
       order: 32,
-      group: 'collaborators' as const,
+      group: 'workstream-leads' as const,
       name: 'Prof. Ann John',
       role: 'DATAMIND Co-Director',
       organisation: 'Swansea University',
@@ -436,7 +436,7 @@ export const seed = async ({
     },
     {
       order: 33,
-      group: 'collaborators' as const,
+      group: 'workstream-leads' as const,
       name: 'Prof. Rob Stewart',
       role: 'DATAMIND Co-Director',
       organisation: 'King’s College London',
@@ -446,7 +446,7 @@ export const seed = async ({
     },
     {
       order: 34,
-      group: 'collaborators' as const,
+      group: 'workstream-leads' as const,
       name: 'Dr Pauline Whelan',
       role: 'DATAMIND Digitally Enhanced Trials Lead',
       organisation: 'University of Manchester',
@@ -456,7 +456,7 @@ export const seed = async ({
     },
     {
       order: 35,
-      group: 'collaborators' as const,
+      group: 'workstream-leads' as const,
       name: 'Dr Trina Histon',
       role: 'Health Psychologist and Digital Health Strategist',
       organisation: 'Percolating Health',
@@ -782,7 +782,7 @@ export const seed = async ({
                 heading('h2', text('The world’s largest integrated mental health dataset')),
                 paragraph(
                   text(
-                    'The programme is building two cohorts of equal standing, together adding 20,000 deeply characterised genomic samples. In severe depression, the work is led from King’s College London, building on the ',
+                    'The programme is building two cohorts, together adding 20,000 deeply characterised genomic samples. In severe depression, the work is led from King’s College London, building on the ',
                   ),
                   link(
                     'GLAD (Genetic Links to Anxiety and Depression) Study',
@@ -829,10 +829,10 @@ export const seed = async ({
                   ),
                   text('.'),
                 ),
-                heading('h2', text('Built on previous investments')),
+                heading('h2', text('The wider programme family')),
                 paragraph(
                   text(
-                    'The Goals programme builds on the Mental Health Mission, launched in May 2023 with a ',
+                    'MHG sits within a family of government investments in mental health research. The Mental Health Mission, launched in May 2023 with a ',
                   ),
                   link(
                     '£42.7 million investment',
@@ -858,7 +858,7 @@ export const seed = async ({
                     true,
                   ),
                   text(
-                    ' in Birmingham, with a further £18 million invested in November 2024 to expand the mood-disorder research network to 15 clinics across the UK. The Mission’s research collaboration is chaired by Professor Rachel Upthegrove of the University of Oxford, with Professor Jeremy Hall of Cardiff University as deputy chair; it remains a separate programme that MHG builds upon.',
+                    ' in Birmingham, and a network of mood-disorder research clinics across the UK. The Mission has its own leadership — chaired by Professor Rachel Upthegrove of the University of Oxford, with Professor Jeremy Hall of Cardiff University as deputy chair — and its own remit; the two programmes are designed to complement one another.',
                   ),
                 ),
                 paragraph(
@@ -1683,10 +1683,6 @@ export const seed = async ({
 
   payload.logger.info(`— Seeding posts...`)
 
-  const postAuthor = req.user?.id
-    ? req.user.id
-    : (await payload.find({ collection: 'users', limit: 1 })).docs[0]?.id
-
   const post1 = await payload.create({
     collection: 'posts',
     depth: 0,
@@ -1697,7 +1693,6 @@ export const seed = async ({
       title: 'A £50 million commitment to transform mental health research',
       heroImage: cardTealDoc.id,
       categories: [newsCategory.id],
-      authors: postAuthor ? [postAuthor] : [],
       publishedAt: '2026-07-01T09:00:00.000Z',
       content: root(
         paragraph(
@@ -1762,7 +1757,6 @@ export const seed = async ({
       title: 'MHG launches its Industry Engagement Forum',
       heroImage: cardAmberDoc.id,
       categories: [eventsCategory.id],
-      authors: postAuthor ? [postAuthor] : [],
       publishedAt: '2026-08-05T09:00:00.000Z',
       content: root(
         paragraph(
@@ -1795,12 +1789,12 @@ export const seed = async ({
   // history that never happened. Every factual claim carries its source link.
   const articles = [
     {
-      slug: 'the-mental-health-mission-foundations',
-      title: 'The Mental Health Mission: the foundations MHG builds on',
+      slug: 'mhg-and-the-mental-health-mission',
+      title: 'MHG and the Mental Health Mission: how they fit together',
       category: newsCategory.id,
       image: cardTealDoc.id,
       description:
-        'How the £42.7 million Mental Health Mission and its research centres laid the groundwork for the Mental Health Goals Programme.',
+        'Two programmes, two remits, one aim — a short guide to how the Mental Health Goals Programme and the Mental Health Mission relate.',
       content: root(
         paragraph(
           text('Launched in May 2023, the Mental Health Mission committed '),
@@ -1818,59 +1812,39 @@ export const seed = async ({
             true,
           ),
           text(
-            ' — a network of investigators specialising in mental health research. The Mission is a separate programme, chaired by Professor Rachel Upthegrove with Professor Jeremy Hall as deputy chair; the Mental Health Goals Programme (MHG) builds on the infrastructure it created.',
+            ' — a network of investigators specialising in mental health research, chaired by Professor Rachel Upthegrove with Professor Jeremy Hall as deputy chair.',
           ),
         ),
-        heading('h2', text('Two demonstrator sites')),
+        heading('h2', text('What the Mission does')),
         paragraph(
-          text('More than £20 million established two demonstrator sites. The '),
+          text('More than £20 million established two demonstrator sites: the '),
           link('Mental Health Research for Innovation Centre', 'https://mric.uk/', true),
-          text(' in Liverpool works on how mental, physical and social conditions interlink. The '),
+          text(
+            ' in Liverpool, which works on how mental, physical and social conditions interlink, and the ',
+          ),
           link(
             'Mental Health Mission Midlands Translational Centre',
             'https://www.birmingham.ac.uk/research/mental-health/themes/mhmtc/index.aspx',
             true,
           ),
           text(
-            ' supports research into novel treatments for early intervention in psychosis, depression, and children and young people.',
+            ' in Birmingham, which supports research into novel treatments for early intervention in psychosis, depression, and children and young people. The Mission also runs a ',
           ),
-        ),
-        heading('h2', text('What this means for MHG')),
-        paragraph(
-          text(
-            'The Mission built clinical research capacity; MHG adds the industry front door, the trials methodology and the data and cohort infrastructure that let that capacity be used at scale. ',
-          ),
-          link('Read how the programme fits together', '/about'),
-          text('.'),
-        ),
-      ),
-    },
-    {
-      slug: 'fifteen-mood-disorder-clinics-across-the-uk',
-      title: 'Fifteen mood-disorder research clinics across the UK',
-      category: newsCategory.id,
-      image: cardAmberDoc.id,
-      description:
-        'A £18 million expansion in November 2024 grew the mood-disorder clinic network to 15 sites in the areas with the highest levels of depression.',
-      content: root(
-        paragraph(
-          text('In November 2024, '),
-          link('a further £18 million', 'https://www.nihr.ac.uk/node/66916', true),
-          text(
-            ' expanded the Mental Health Mission’s mood-disorder network to a total of 15 research clinics, sited in areas of the UK with the highest levels of depression. The clinics run trials and studies for people with difficult-to-treat depression.',
-          ),
-        ),
-        heading('h2', text('Why a clinic network matters')),
-        paragraph(
-          text(
-            'Recruiting participants for mental health trials is one of the hardest parts of running them. A standing network of clinics, in the places where need is greatest, means studies can be set up faster and reach people who are typically underrepresented in research — which is exactly what industry partners tell us they need.',
-          ),
-        ),
-        paragraph(
           link(
-            'See how the Innovative Clinical Trials Hub works with industry',
-            '/workstreams/innovative-trials-hub',
+            'network of 15 mood-disorder research clinics',
+            'https://www.nihr.ac.uk/node/66916',
+            true,
           ),
+          text(
+            ', sited in areas of the UK with the highest levels of depression, for people with difficult-to-treat depression.',
+          ),
+        ),
+        heading('h2', text('Two remits, designed to complement')),
+        paragraph(
+          text(
+            'The Mental Health Goals Programme (MHG) has a different remit within the same family of investments: a UK-wide front door for industry, trials design and methodology, a new partnership between patients and industry, and cohort and data infrastructure. In the programme’s own words, its work focuses on challenges not addressed elsewhere — each programme with its own leadership, each designed to complement the other. ',
+          ),
+          link('Read how MHG is organised', '/about'),
           text('.'),
         ),
       ),
@@ -1956,11 +1930,11 @@ export const seed = async ({
       category: explainerCategory.id,
       image: cardAmberDoc.id,
       description:
-        'Two cohorts of equal standing — severe depression and psychosis — adding 20,000 deeply characterised genomic samples.',
+        'Severe depression and psychosis: two cohorts, 20,000 deeply characterised genomic samples.',
       content: root(
         paragraph(
           text(
-            'MHG is creating a nationally representative multi-omics resource across 20,000 deeply clinically characterised participants. It is built as two strands of equal standing, covering the two conditions where the need for new treatments is most acute.',
+            'MHG is creating a nationally representative multi-omics resource across 20,000 deeply clinically characterised participants, built as two strands covering the conditions where the need for new treatments is most acute.',
           ),
         ),
         heading('h2', text('Severe depression')),
@@ -2015,7 +1989,6 @@ export const seed = async ({
           title: article.title,
           heroImage: article.image,
           categories: [article.category],
-          authors: postAuthor ? [postAuthor] : [],
           publishedAt: new Date().toISOString(),
           content: article.content,
           meta: {

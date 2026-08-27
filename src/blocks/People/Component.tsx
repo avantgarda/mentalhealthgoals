@@ -43,15 +43,14 @@ const GROUPS = [
       'The Data and Digital Industry Alliance Team delivers the Alliance Management Team, Innovative Clinical Trials Hub and Lived Experience Industry Partnership.',
   },
   {
+    value: 'workstream-leads',
+    heading: 'Workstream leads',
+    intro: 'The cohort, data and digital workstreams, led from partner institutions across the UK.',
+  },
+  {
     value: 'delivery',
     heading: 'Delivery team',
     intro: 'The people industry and partners work with day to day.',
-  },
-  {
-    value: 'collaborators',
-    heading: 'Working with us',
-    intro:
-      'Cohort, data and digital leads across the UK whose work the programme builds on and with.',
   },
 ] as const
 

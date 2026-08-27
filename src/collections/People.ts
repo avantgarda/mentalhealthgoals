@@ -57,15 +57,15 @@ export const People: CollectionConfig = {
       name: 'group',
       type: 'select',
       required: true,
-      defaultValue: 'collaborators',
+      defaultValue: 'delivery',
       admin: {
         description: 'Which section of the Team page this person appears under.',
       },
       options: [
         { label: 'Programme leadership', value: 'leadership' },
         { label: 'DIGIT leadership', value: 'digit' },
+        { label: 'Workstream leads', value: 'workstream-leads' },
         { label: 'Delivery team', value: 'delivery' },
-        { label: 'Working with us', value: 'collaborators' },
       ],
     },
     {

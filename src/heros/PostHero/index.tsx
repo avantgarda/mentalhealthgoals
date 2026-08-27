@@ -1,4 +1,4 @@
-import { formatDateTime } from 'src/utilities/formatDateTime'
+import { formatDisplayDate } from 'src/utilities/formatDateTime'
 import React from 'react'
 
 import type { Post } from '@/payload-types'
@@ -42,21 +42,17 @@ export const PostHero: React.FC<{
             <h1 className="mb-6 text-3xl md:text-5xl lg:text-6xl">{title}</h1>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-4 md:gap-16">
-            {hasAuthors && (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm">Author</p>
-
-                  <p>{formatAuthors(populatedAuthors)}</p>
-                </div>
-              </div>
-            )}
+          <div className="flex flex-col gap-4 md:flex-row md:gap-16">
+            <div className="flex flex-col gap-1">
+              <p className="eyebrow !text-white/60">By</p>
+              {/* Articles are published collectively unless a named author is set */}
+              <p>{hasAuthors ? formatAuthors(populatedAuthors) : 'MHG Team'}</p>
+            </div>
             {publishedAt && (
               <div className="flex flex-col gap-1">
-                <p className="text-sm">Date Published</p>
+                <p className="eyebrow !text-white/60">Published</p>
 
-                <time dateTime={publishedAt}>{formatDateTime(publishedAt)}</time>
+                <time dateTime={publishedAt}>{formatDisplayDate(publishedAt)}</time>
               </div>
             )}
           </div>
