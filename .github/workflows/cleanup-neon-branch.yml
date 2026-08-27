@@ -15,8 +15,19 @@ name: Cleanup Neon preview branch
 # Requires the NEON_API_KEY repository secret (Neon console → organization
 # settings → API keys).
 
+# `pull_request_target`, not `pull_request`: workflow runs triggered by
+# Dependabot on `pull_request` get a read-only token and cannot read repository
+# secrets, so auto-merged dependency PRs used to leak their Neon branch.
+# `pull_request_target` is not subject to that restriction (verified: run
+# 33077691757 ran as dependabot[bot] with a write-capable token).
+#
+# Because `pull_request_target` runs with secrets and this repository is
+# public, the job is restricted to same-repository pull requests — otherwise
+# anyone could open a fork PR whose branch name matches an existing preview
+# and delete that database by closing it. Dependabot's branches live in this
+# repository, so they still qualify.
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
   delete:
 
@@ -24,11 +35,18 @@ permissions: {}
 
 jobs:
   delete-neon-branch:
-    # Dependabot branches never get Neon previews (vercel.json ignoreCommand)
-    # and dependabot-triggered runs cannot read repository secrets anyway.
+    # Dependabot branches DO get Neon previews, despite what an earlier version
+    # of this comment claimed. The `delete` trigger still skips Dependabot on
+    # purpose: the pull_request_target path above already cleaned that branch
+    # up, and `delete` is the one event whose secret availability under
+    # Dependabot is undocumented — running it would risk a weekly red run for
+    # no gain.
     if: >-
-      github.actor != 'dependabot[bot]' &&
-      (github.event_name == 'pull_request' || github.event.ref_type == 'branch')
+      (github.event_name == 'pull_request_target' &&
+       github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'delete' &&
+       github.event.ref_type == 'branch' &&
+       github.actor != 'dependabot[bot]')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -36,7 +54,7 @@ jobs:
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
           PROJECT_ID: royal-feather-31470094
-          GIT_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event.ref }}
+          GIT_BRANCH: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || github.event.ref }}
         run: |
           set -euo pipefail
 

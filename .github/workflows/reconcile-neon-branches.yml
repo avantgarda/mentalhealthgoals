@@ -1,0 +1,94 @@
+name: Reconcile Neon preview branches
+
+# Safety net for cleanup-neon-branch.yml.
+#
+# Event-driven cleanup can always miss: a run fails, an event does not fire,
+# a branch is deleted outside GitHub, or Vercel creates a preview branch for
+# something that never had a pull request. The Neon free plan's 10-branch cap
+# has broken preview provisioning twice, so the invariant is worth enforcing
+# rather than hoping for:
+#
+#   every `preview/*` Neon branch corresponds to a git branch that still
+#   exists on origin — anything else is a leak and is deleted.
+#
+# Safe by construction: only branches named `preview/*` are ever considered,
+# so Neon's `main` (the production database) can never match. Runs on a
+# schedule as the repository, so repository secrets are always available —
+# unlike Dependabot-triggered runs.
+#
+# Requires the NEON_API_KEY repository secret.
+
+on:
+  schedule:
+    # Mondays 08:00 UTC — an hour after Dependabot opens its weekly PRs, so a
+    # leak from that batch is cleared within the week rather than accumulating.
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'List what would be deleted without deleting anything'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete Neon preview branches whose git branch is gone
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          PROJECT_ID: royal-feather-31470094
+          REPO: ${{ github.repository }}
+          # Scheduled runs have no inputs, so default to actually deleting;
+          # manual runs default to a dry run and must opt in to deleting.
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$NEON_API_KEY" ]; then
+            echo "::error::NEON_API_KEY secret is not configured — cannot reconcile Neon branches. Create an API key in the Neon console (organization settings → API keys) and add it as a repository secret."
+            exit 1
+          fi
+
+          api="https://console.neon.tech/api/v2/projects/${PROJECT_ID}/branches"
+
+          # Live git branches on origin, without the refs/heads/ prefix.
+          git ls-remote --heads "https://github.com/${REPO}.git" \
+            | sed 's#.*refs/heads/##' | sort -u > /tmp/live-branches.txt
+          echo "Git branches on origin: $(wc -l < /tmp/live-branches.txt)"
+
+          curl -sf -H "Authorization: Bearer ${NEON_API_KEY}" "$api" \
+            | jq -r '.branches[] | select(.name | startswith("preview/")) | "\(.id)\t\(.name)"' \
+            > /tmp/preview-branches.txt
+          echo "Neon preview branches: $(wc -l < /tmp/preview-branches.txt)"
+
+          leaked=0
+          while IFS=$'\t' read -r id name; do
+            [ -n "$name" ] || continue
+            git_branch="${name#preview/}"
+
+            if grep -Fxq "$git_branch" /tmp/live-branches.txt; then
+              echo "keep   $name (git branch still exists)"
+              continue
+            fi
+
+            leaked=$((leaked + 1))
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "WOULD DELETE $name ($id) — no git branch '${git_branch}' on origin"
+              continue
+            fi
+
+            curl -sf -X DELETE -H "Authorization: Bearer ${NEON_API_KEY}" \
+              "${api}/${id}" > /dev/null
+            echo "deleted $name ($id) — no git branch '${git_branch}' on origin"
+          done < /tmp/preview-branches.txt
+
+          if [ "$leaked" -eq 0 ]; then
+            echo "No leaked Neon preview branches — nothing to reconcile."
+          else
+            echo "::notice::Reconciled ${leaked} leaked Neon preview branch(es)."
+          fi
