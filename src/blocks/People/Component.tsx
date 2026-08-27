@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 
 import type { PeopleBlockType, Person, Workstream } from '@/payload-types'
 import { Media } from '@/components/Media'
+import { SIZE_PERSON_CARD } from '@/components/Media/sizes'
 import { SectionHead } from '@/components/SectionHead'
 
 const HONORIFICS = new Set([
@@ -79,7 +80,11 @@ const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index
     >
       <div className="aspect-[4/5] w-full overflow-hidden bg-card">
         {person.photo && typeof person.photo === 'object' ? (
-          <Media imgClassName="h-full w-full object-cover" resource={person.photo} />
+          <Media
+            imgClassName="h-full w-full object-cover"
+            resource={person.photo}
+            size={SIZE_PERSON_CARD}
+          />
         ) : (
           <div
             aria-hidden="true"

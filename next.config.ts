@@ -23,7 +23,12 @@ const nextConfig: NextConfig = {
         pathname: '/api/media/file/**',
       },
     ],
-    qualities: [100],
+    // AVIF first (roughly 20% smaller than WebP at the same quality), WebP for
+    // browsers without it, original format as the final fallback.
+    formats: ['image/avif', 'image/webp'],
+    // 82 is the site default (visually lossless for photographs); 100 stays in
+    // the allowlist so URLs cached before the default changed keep resolving.
+    qualities: [82, 100],
     remotePatterns: [
       ...[NEXT_PUBLIC_SERVER_URL /* 'https://example.com' */].map((item) => {
         const url = new URL(item)
