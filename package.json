@@ -110,6 +110,10 @@
       "sharp",
       "esbuild",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "dompurify": "^3.4.13",
+      "@esbuild-kit/core-utils>esbuild": "^0.25.0"
+    }
   }
 }
