@@ -220,6 +220,21 @@ export interface Page {
     image?: (number | null) | Media;
     description?: string | null;
   };
+  /**
+   * A bar that follows the visitor down a long page. It appears once the hero has scrolled past, steps aside when the page reaches its own closing call to action, and can be dismissed.
+   */
+  stickyCta?: {
+    enabled?: boolean | null;
+    /**
+     * One short line — a date and a place, not a sentence.
+     */
+    message?: string | null;
+    label?: string | null;
+    /**
+     * A path such as /contact, or an anchor such as #register — name a block in the Content tab to create one.
+     */
+    href?: string | null;
+  };
   publishedAt?: string | null;
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
@@ -1236,6 +1251,14 @@ export interface PagesSelect<T extends boolean = true> {
         title?: T;
         image?: T;
         description?: T;
+      };
+  stickyCta?:
+    | T
+    | {
+        enabled?: T;
+        message?: T;
+        label?: T;
+        href?: T;
       };
   publishedAt?: T;
   generateSlug?: T;

@@ -8,6 +8,7 @@ import React, { cache } from 'react'
 import { homeStatic } from '@/endpoints/seed/home-static'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
+import { StickyCta } from '@/components/StickyCta'
 import { RenderHero } from '@/heros/RenderHero'
 import { generateMeta } from '@/utilities/generateMeta'
 import PageClient from './page.client'
@@ -79,6 +80,7 @@ export default async function Page({ params: paramsPromise }: Args) {
       {LEGAL_PAGE_NOUN[decodedSlug] && (
         <PublicationDates noun={LEGAL_PAGE_NOUN[decodedSlug]} page={page} />
       )}
+      {page.stickyCta && <StickyCta {...page.stickyCta} />}
     </article>
   )
 }

@@ -11,6 +11,13 @@
 @custom-variant 2xl (@media (width >= theme(--breakpoint-2xl)));
 
 @layer base {
+  /* The sticky call-to-action bar publishes its height here while it is on
+     screen, so an anchor jump or a focus move never lands behind it —
+     WCAG 2.2 SC 2.4.11, Focus Not Obscured. */
+  html {
+    scroll-padding-bottom: calc(var(--sticky-cta-h, 0px) + 1rem);
+  }
+
   h1,
   h2,
   h3,
