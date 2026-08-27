@@ -41,7 +41,7 @@ const scan = async (page: Page) => {
   )
 }
 
-const STATIC_PAGES = ['/', '/posts', '/contact', '/privacy', '/accessibility']
+const STATIC_PAGES = ['/', '/posts', '/contact', '/privacy', '/accessibility', '/search']
 
 test.describe('axe-core WCAG 2.2 AA scans', () => {
   for (const path of STATIC_PAGES) {

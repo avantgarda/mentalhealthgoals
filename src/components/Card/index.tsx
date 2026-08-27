@@ -18,12 +18,26 @@ export const Card: React.FC<{
   alignItems?: 'center'
   className?: string
   doc?: CardPostData
+  /** Small label in the left column, in place of the category list. Search
+   *  results use it for the kind of thing being pointed at. */
+  eyebrow?: string
+  /** Overrides the href built from `relationTo` and the slug — search results
+   *  span four collections and carry their own resolved path. */
+  href?: string
   relationTo?: 'posts'
   showCategories?: boolean
   title?: string
 }> = (props) => {
   const { card, link } = useClickableCard({})
-  const { className, doc, relationTo, showCategories, title: titleFromProps } = props
+  const {
+    className,
+    doc,
+    eyebrow,
+    href: hrefFromProps,
+    relationTo,
+    showCategories,
+    title: titleFromProps,
+  } = props
 
   const { slug, categories, meta, publishedAt, title } = doc || {}
   const { description } = meta || {}
@@ -31,7 +45,7 @@ export const Card: React.FC<{
   const hasCategories = categories && Array.isArray(categories) && categories.length > 0
   const titleToUse = titleFromProps || title
   const sanitizedDescription = description?.replace(/\s/g, ' ') // replace non-breaking space with white space
-  const href = `/${relationTo}/${slug}`
+  const href = hrefFromProps ?? `/${relationTo}/${slug}`
 
   return (
     <article
@@ -50,7 +64,8 @@ export const Card: React.FC<{
             {formatDisplayDate(publishedAt)}
           </time>
         )}
-        {showCategories && hasCategories && (
+        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+        {!eyebrow && showCategories && hasCategories && (
           <p className="eyebrow">
             {categories?.map((category, index) => {
               if (typeof category === 'object') {
