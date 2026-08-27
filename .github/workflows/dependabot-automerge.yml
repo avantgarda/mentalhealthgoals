@@ -1,0 +1,61 @@
+name: Dependabot auto-merge
+
+# Dependency bumps are reviewed by CI, not by reading a lockfile diff — the
+# main-protection ruleset already blocks any merge until all seven checks
+# pass. This workflow enables GitHub's auto-merge on the SAFE categories only,
+# so routine noise lands by itself and a human only sees the updates that can
+# actually change what visitors see.
+#
+# Auto-merged:
+#   - any update to a development dependency (never ships to users)
+#   - minor and patch updates to production dependencies
+#
+# Left for a human (this workflow does nothing, the PR just waits):
+#   - MAJOR updates to production dependencies — next, react, payload,
+#     @payloadcms/*, lucide-react and friends. A major means the author
+#     deliberately broke something.
+#
+# Auto-merge only *queues* the merge: GitHub still waits for every required
+# check, and a red check leaves the PR sitting open. It does not bypass the
+# ruleset.
+
+on: pull_request_target
+
+permissions: {}
+
+jobs:
+  automerge:
+    # Belt and braces: the event is restricted to Dependabot's own PRs before
+    # any job runs, so pull_request_target can never execute on a fork PR.
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Read what Dependabot is proposing
+        id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge for the safe categories
+        if: |
+          steps.meta.outputs.dependency-type == 'direct:development' ||
+          steps.meta.outputs.update-type == 'version-update:semver-minor' ||
+          steps.meta.outputs.update-type == 'version-update:semver-patch'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Explain why a major bump is waiting
+        if: |
+          steps.meta.outputs.dependency-type != 'direct:development' &&
+          steps.meta.outputs.update-type == 'version-update:semver-major'
+        run: |
+          gh pr comment "$PR_URL" --body \
+            "Left for human review: this is a **major** update to a production dependency (\`${{ steps.meta.outputs.dependency-names }}\`), so it is not auto-merged. CI still runs — if all checks are green, check the Vercel preview and merge."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
