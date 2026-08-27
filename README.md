@@ -105,7 +105,9 @@ setting, and the field shows a live preview of each option.
 Geometry lives in `src/brand/marks.ts` and colours in `src/brand/tokens.ts`.
 That module is the single source of truth: the React components in
 `src/components/Logo` and the exported files are both generated from it, so they
-cannot drift apart.
+cannot drift apart. The ridge motif works the same way — `src/brand/ridge.ts`
+feeds both `src/components/Ridge` on the page and the placeholder imagery
+generator.
 
 ```bash
 # Regenerate every static asset (favicons, app icons, avatars, OG cards, lockups)
@@ -145,20 +147,21 @@ before sending artwork to print.
 
 ## Useful scripts
 
-| Script                               | What it does                                                    |
-| ------------------------------------ | --------------------------------------------------------------- |
-| `pnpm dev`                           | Dev server with HMR                                             |
-| `pnpm build` / `pnpm start`          | Production build / serve                                        |
-| `pnpm build:deploy`                  | Migrate then build (Vercel build command)                       |
-| `pnpm seed`                          | Reset content to the MHGP starter seed                          |
-| `pnpm generate:types`                | Regenerate `src/payload-types.ts` after schema changes          |
-| `pnpm generate:brand`                | Regenerate all logo asset files in `public/brand`               |
-| `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields            |
-| `pnpm lint` / `pnpm typecheck`       | ESLint / TypeScript                                             |
-| `pnpm format` / `pnpm format:check`  | Prettier write / verify                                         |
-| `pnpm test:int` / `pnpm test:e2e`    | Vitest integration tests / Playwright e2e (port 3210)           |
-| `pnpm check:types-drift`             | Fail if `payload-types.ts` is stale                             |
-| `pnpm check:migrations`              | Fail if the Payload config has schema changes with no migration |
+| Script                               | What it does                                                     |
+| ------------------------------------ | ---------------------------------------------------------------- |
+| `pnpm dev`                           | Dev server with HMR                                              |
+| `pnpm build` / `pnpm start`          | Production build / serve                                         |
+| `pnpm build:deploy`                  | Migrate then build (Vercel build command)                        |
+| `pnpm seed`                          | Reset content to the MHGP starter seed                           |
+| `pnpm generate:types`                | Regenerate `src/payload-types.ts` after schema changes           |
+| `pnpm generate:brand`                | Regenerate all logo asset files in `public/brand`                |
+| `pnpm generate:seed-imagery`         | Regenerate the seed's placeholder images from the ridge geometry |
+| `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields             |
+| `pnpm lint` / `pnpm typecheck`       | ESLint / TypeScript                                              |
+| `pnpm format` / `pnpm format:check`  | Prettier write / verify                                          |
+| `pnpm test:int` / `pnpm test:e2e`    | Vitest integration tests / Playwright e2e (port 3210)            |
+| `pnpm check:types-drift`             | Fail if `payload-types.ts` is stale                              |
+| `pnpm check:migrations`              | Fail if the Payload config has schema changes with no migration  |
 
 ## Quality gates
 
@@ -180,6 +183,10 @@ If you change collections or fields: run `pnpm payload migrate:create <name>` an
   documents that should not be published.
 - Site content was drafted from the MHGP brochure and programme documents. **Review all copy,
   names and contact details with the team before go-live.**
+- The images in the Media library are **generated placeholders, not photographs** — the ridge
+  motif rendered from `src/brand/ridge.ts` by `pnpm generate:seed-imagery`. They exist so the
+  layouts hold something on-brand until a shoot happens. **Commission real photography before
+  launch** and replace them in the admin; no code change is needed to swap them.
 - A **Content-Security-Policy runs in report-only mode** (production builds only): nothing is
   blocked, violations are POSTed to `/csp-report` and appear in the Vercel function logs (search
   for `csp-report`). Once the logs stay quiet across real editing sessions, rename the header in

@@ -79,21 +79,21 @@ export const seed = async ({
       payload.create({
         collection: 'media',
         data: {
-          alt: 'Abstract concentric rings on a deep teal background — the Mental Health Goals motif',
+          alt: 'The Mental Health Goals ridge — contour lines rising to a twin summit, the amber goal above it, on a deep petrol ground',
         },
         file: localFile('mhg-hero.webp'),
       }),
       payload.create({
         collection: 'media',
         data: {
-          alt: 'Abstract concentric rings on a teal background',
+          alt: 'The Mental Health Goals ridge — contour lines rising to a twin summit, on a petrol ground',
         },
         file: localFile('mhg-card-teal.webp'),
       }),
       payload.create({
         collection: 'media',
         data: {
-          alt: 'Abstract concentric rings on a teal and amber background',
+          alt: 'The Mental Health Goals ridge drawn in amber — contour lines rising to a twin summit, the goal above it, on a deep petrol ground',
         },
         file: localFile('mhg-card-amber.webp'),
       }),
@@ -1776,7 +1776,11 @@ export const seed = async ({
       slug: 'mhg-launches-its-industry-engagement-forum',
       _status: 'published',
       title: 'MHG launches its Industry Engagement Forum',
-      heroImage: cardAmberDoc.id,
+      // The teal card, not the amber one: post heroes crop to roughly 2:1, which
+      // lifts the amber goal to the very top of the frame and sits it behind the
+      // navigation. The amber card is kept for the Forum page, where it is shown
+      // uncropped and the goal is the point.
+      heroImage: cardTealDoc.id,
       categories: [eventsCategory.id],
       publishedAt: '2026-08-05T09:00:00.000Z',
       content: root(
