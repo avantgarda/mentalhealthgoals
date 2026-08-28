@@ -18,7 +18,18 @@ const scan = async (page: Page) => {
   await page.waitForFunction(() => document.title.length > 0)
   // Let entrance animations and scroll reveals finish — axe measures colour
   // contrast on the current frame, and a word mid-fade is not a real failure.
+  //
+  // Waiting on `getAnimations()` alone is not enough: a `[data-reveal]` element
+  // below the fold has no transition running yet, so there is nothing to wait
+  // for, and it is still sitting at `opacity: 0` when axe reads it. Put every
+  // reveal in the state the visitor eventually sees first — the same thing the
+  // observer does on scroll, and what `data-motion="off"` does immediately —
+  // then let anything already in flight settle. Without this the scan is a
+  // race, and it lost under load on CI.
   await page.evaluate(async () => {
+    document
+      .querySelectorAll('[data-reveal]:not(.is-in)')
+      .forEach((element) => element.classList.add('is-in'))
     await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)))
   })
 
