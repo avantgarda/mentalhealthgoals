@@ -50,7 +50,7 @@ export const StickyCta: React.FC<NonNullable<Page['stickyCta']>> = ({
   const pathname = usePathname()
   const ref = useRef<HTMLDivElement>(null)
   const [past, setPast] = useState(false)
-  const [atClosingCta, setAtClosingCta] = useState(false)
+  const [askIsOnScreen, setAtClosingCta] = useState(false)
 
   const storageKey = `sticky-cta-dismissed:${pathname}`
 
@@ -109,8 +109,16 @@ export const StickyCta: React.FC<NonNullable<Page['stickyCta']>> = ({
   useEffect(() => {
     if (!enabled || !('IntersectionObserver' in window)) return
 
-    const bands = Array.from(document.querySelectorAll('[data-cta-band]'))
-    if (bands.length === 0) return
+    // Stand down while the ask is already in front of the visitor: the page's
+    // own closing CTA band, and — when the bar points at an anchor on this
+    // page — the block it points at. Asking someone to go somewhere they are
+    // already standing is just clutter.
+    const targets = new Set(document.querySelectorAll('[data-cta-band]'))
+    if (href?.startsWith('#')) {
+      const destination = document.getElementById(href.slice(1))
+      if (destination) targets.add(destination)
+    }
+    if (targets.size === 0) return
 
     const seen = new Set<Element>()
     const observer = new IntersectionObserver(
@@ -123,11 +131,11 @@ export const StickyCta: React.FC<NonNullable<Page['stickyCta']>> = ({
       },
       { threshold: 0.1 },
     )
-    bands.forEach((band) => observer.observe(band))
+    targets.forEach((target) => observer.observe(target))
     return () => observer.disconnect()
-  }, [enabled])
+  }, [enabled, href])
 
-  const visible = Boolean(enabled && href && label && past && !atClosingCta && !dismissed)
+  const visible = Boolean(enabled && href && label && past && !askIsOnScreen && !dismissed)
 
   // Publishes its own height so anchor jumps and focus moves clear the bar —
   // WCAG 2.2 SC 2.4.11, Focus Not Obscured.

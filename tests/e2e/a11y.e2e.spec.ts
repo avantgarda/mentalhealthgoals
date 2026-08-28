@@ -41,7 +41,16 @@ const scan = async (page: Page) => {
   )
 }
 
-const STATIC_PAGES = ['/', '/posts', '/contact', '/privacy', '/accessibility', '/search']
+const STATIC_PAGES = [
+  '/',
+  '/posts',
+  '/contact',
+  '/privacy',
+  '/accessibility',
+  '/search',
+  // Carries the registration form and the sticky call-to-action bar.
+  '/industry-engagement-forum',
+]
 
 test.describe('axe-core WCAG 2.2 AA scans', () => {
   for (const path of STATIC_PAGES) {
