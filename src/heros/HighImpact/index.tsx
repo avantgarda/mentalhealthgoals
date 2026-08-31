@@ -36,11 +36,18 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
       data-hero-theme="dark"
       data-theme="dark"
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-[-2%] hidden w-[52%] text-white/85 lg:block"
-      >
-        <Ridge className="h-full w-full" lines={22} />
+      {/* Wide screens: measured against the container, not the viewport.
+          Positioned against the viewport its left edge sat at 50vw whatever
+          the container was doing, so between `lg` and about 1200px it ran
+          straight through the lede. Starting at 58.33% — where the copy's
+          seven of twelve columns end — it cannot reach the text at any width,
+          while still running off the right and bottom edges of the ground. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden lg:block">
+        <div className="container relative h-full">
+          <div className="absolute inset-y-0 left-[58.333%] w-[60%] text-white/85">
+            <Ridge className="h-full w-full" lines={22} />
+          </div>
+        </div>
       </div>
 
       <div className="container relative z-10 grid grid-cols-1 items-end gap-8 pb-0 pt-24 lg:min-h-[76vh] lg:gap-10 lg:grid-cols-12 lg:pb-20 lg:pt-[9.5rem]">
