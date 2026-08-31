@@ -125,7 +125,10 @@ before sending artwork to print.
 2. **Create a Postgres database** — in Vercel: Storage → Create → Postgres (Neon). This adds
    `DATABASE_URL` (or `POSTGRES_URL` — if so, copy its value into a `DATABASE_URL` env var).
 3. **Create a Blob store** — Storage → Create → Blob. This adds `BLOB_READ_WRITE_TOKEN`, which
-   automatically switches media uploads to Vercel Blob.
+   automatically switches media uploads to Vercel Blob. **Give preview deployments their own
+   store** (create a second Blob store and scope each store's token to one environment): unlike
+   the database, Blob has no preview branching, so with a shared store a preview's media
+   uploads, deletes and reseeds act on the same files production serves.
 4. **Set the remaining environment variables** (Project → Settings → Environment Variables):
    - `PAYLOAD_SECRET` — a long random string (generate with `openssl rand -hex 24`)
    - `NEXT_PUBLIC_SERVER_URL` — `https://mentalhealthgoals.co.uk`
@@ -187,6 +190,11 @@ If you change collections or fields: run `pnpm payload migrate:create <name>` an
   motif rendered from `src/brand/ridge.ts` by `pnpm generate:seed-imagery`. They exist so the
   layouts hold something on-brand until a shoot happens. **Commission real photography before
   launch** and replace them in the admin; no code change is needed to swap them.
+- **How images are served:** pages hand the _original_ upload to Next's image optimizer, which
+  resizes per viewport/DPR on demand and caches the result. Payload generates only two
+  derivatives — `og` (the social-sharing card) and `thumbnail` (the admin preview). Don't judge
+  image quality by opening a `/api/media/file/…` derivative directly; the original is what
+  visitors see.
 - A **Content-Security-Policy runs in report-only mode** (production builds only): nothing is
   blocked, violations are POSTed to `/csp-report` and appear in the Vercel function logs (search
   for `csp-report`). Once the logs stay quiet across real editing sessions, rename the header in

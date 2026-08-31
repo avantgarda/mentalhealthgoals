@@ -15,16 +15,25 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 /**
- * Sharp's defaults (webp quality 80) are tuned for photographs and are visibly
- * too low for flat colour and hairline strokes — the programme's ridge artwork
- * came out of the resize with roughly twice the error of a q95 encode, and it
- * showed as pixelation along the contour lines.
+ * How images work on this site — read before adding sizes here.
  *
- * Applied to every size rather than only the ones the frontend reads: all of
- * them are served publicly from `/api/media/file/...`, so any of them can be
- * opened and judged, and a derivative that exists should be worth looking at.
- * It does mean paying for quality on sizes nothing currently reads, which is
- * an argument for shortening this list rather than for encoding it badly.
+ * Pages serve the ORIGINAL upload through Next's image optimizer, which
+ * resizes on demand for each viewport/DPR and caches the result (see
+ * `src/components/Media/ImageMedia`). Payload's `imageSizes` play no part in
+ * that, so this list holds only the two derivatives something actually reads:
+ *
+ * - `og` — the 1200x630 social card, read by `generateMeta` and fetched by
+ *   LinkedIn/Teams/Slack when a page is shared.
+ * - `thumbnail` — what the admin panel shows as an upload's preview.
+ *
+ * The website template shipped five more (square/small/medium/large/xlarge);
+ * nothing referenced them, they tripled storage and upload time, and opening
+ * one directly at `/api/media/file/...` invited judging the site by files the
+ * site never serves. Re-adding a size is a config change plus a migration.
+ *
+ * `formatOptions`: sharp's webp default (quality 80) is tuned for photographs
+ * and visibly degrades flat colour and hairline strokes — the ridge artwork
+ * came out with roughly twice the error of a q95 encode.
  */
 const CRISP_WEBP = {
   format: 'webp',
@@ -66,32 +75,6 @@ export const Media: CollectionConfig = {
       {
         name: 'thumbnail',
         width: 300,
-        formatOptions: CRISP_WEBP,
-      },
-      {
-        name: 'square',
-        width: 500,
-        height: 500,
-        formatOptions: CRISP_WEBP,
-      },
-      {
-        name: 'small',
-        width: 600,
-        formatOptions: CRISP_WEBP,
-      },
-      {
-        name: 'medium',
-        width: 900,
-        formatOptions: CRISP_WEBP,
-      },
-      {
-        name: 'large',
-        width: 1400,
-        formatOptions: CRISP_WEBP,
-      },
-      {
-        name: 'xlarge',
-        width: 1920,
         formatOptions: CRISP_WEBP,
       },
       {
