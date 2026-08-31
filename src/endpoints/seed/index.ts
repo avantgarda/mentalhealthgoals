@@ -64,7 +64,17 @@ export const seed = async ({
   )
 
   for (const collection of collections) {
-    await payload.db.deleteMany({ collection, req, where: {} })
+    // Media goes through the collection operation, not the db adapter: file
+    // deletion runs in the collection's delete hooks, so a db-level wipe
+    // strands every uploaded file. Locally those strays then make each
+    // filename "taken" and the next seed uploads eric-lynch-1, -2, -3...;
+    // on Vercel Blob they overwrite silently but orphan any old size that is
+    // no longer generated. Everything else stays db-level for speed.
+    if (collection === 'media') {
+      await payload.delete({ collection, depth: 0, req, where: {} })
+    } else {
+      await payload.db.deleteMany({ collection, req, where: {} })
+    }
   }
 
   for (const collection of collections) {
