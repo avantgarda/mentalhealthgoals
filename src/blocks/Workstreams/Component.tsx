@@ -58,7 +58,7 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
   const row = (ws: Workstream, i: number) => (
     <li data-reveal key={ws.id} style={{ transitionDelay: `${Math.min(i, 6) * 50}ms` }}>
       <Link
-        className="group grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-4 gap-y-2 border-b border-border py-6 transition-colors duration-[var(--dur-ui)] hover:bg-foreground/[0.03] lg:grid-cols-12 lg:gap-x-8 lg:py-7"
+        className="group grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-4 gap-y-2 border-b border-border px-4 py-6 transition-colors duration-[var(--dur-ui)] hover:bg-foreground/[0.03] lg:grid-cols-12 lg:gap-x-8 lg:px-6 lg:py-7"
         href={`/workstreams/${ws.slug}`}
       >
         <span
@@ -75,7 +75,7 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
         <p className="col-start-2 text-[0.95rem] leading-relaxed text-muted-foreground lg:col-span-4 lg:col-start-6">
           {detailed ? ws.description || ws.summary : ws.summary}
         </p>
-        <div className="col-start-2 flex flex-col gap-1 lg:col-span-3 lg:col-start-10 lg:items-end lg:pr-4 lg:text-right">
+        <div className="col-start-2 flex flex-col gap-1 lg:col-span-3 lg:col-start-10 lg:items-end lg:text-right">
           <span className="eyebrow">Delivered by</span>
           <span className="text-sm leading-snug">{ws.deliveredBy}</span>
           <span aria-hidden="true" className="arrow mt-1 text-muted-foreground">
@@ -101,12 +101,12 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
             <section
               className={
                 umbrella
-                  ? 'border-l-2 border-primary/50 bg-primary/[0.04] pl-4 lg:pl-6'
-                  : 'border-l-2 border-border pl-4 lg:pl-6'
+                  ? 'border-l-2 border-primary/50 bg-primary/[0.04]'
+                  : 'border-l-2 border-border'
               }
               key={runIndex}
             >
-              <div className="flex items-start gap-4 py-4" data-reveal>
+              <div className="flex items-start gap-4 px-4 py-4 lg:px-6" data-reveal>
                 {umbrella ? (
                   <>
                     <DigitMark className="mt-0.5 h-9 w-9 text-primary" />
