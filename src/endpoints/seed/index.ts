@@ -2212,7 +2212,11 @@ function localFile(name: string): File {
     extension === 'png' ? 'image/png' : extension === 'jpg' ? 'image/jpeg' : 'image/webp'
 
   return {
-    name,
+    // Basename only: `name` becomes the stored filename and its public URL,
+    // and Payload strips path separators — passing 'images/ann-john.jpg'
+    // through produced 'imagesann-john.jpg'. People's names in image URLs
+    // should read cleanly, for humans and image search alike.
+    name: path.basename(name),
     data,
     mimetype,
     size: data.byteLength,
