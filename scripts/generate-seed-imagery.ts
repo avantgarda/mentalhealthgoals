@@ -20,6 +20,15 @@
  * area, which reads as pixelation. 3.4px keeps it a hairline on retina
  * (~1.7 CSS px) while giving DPR-1 enough ink to hold an edge.
  *
+ * PNG, not webp — deliberately. Payload treats every webp upload as
+ * potentially animated and routes it through sharp, whose toBuffer() re-encodes
+ * at quality 80: our q95 webp masters were being silently degraded at the door
+ * (207KB in, ~100KB stored; verified by hash). PNG takes neither of Payload's
+ * transform branches, so the stored original is byte-identical to the file in
+ * this repo — hash-checkable end to end — and Next encodes what visitors see
+ * from a lossless source. Measured on the delivered AVIF: RMSE 0.80 against
+ * the master, versus 1.31 through the old webp double-encode.
+ *
  * No amber goal in any of these: they are used as cover-cropped backgrounds
  * (post heroes crop 3:2 to roughly 2:1, the og size crops to 1200x630), so
  * where the goal lands is luck — cut at the frame edge more often than not.
@@ -54,7 +63,7 @@ interface Asset {
 
 const assets: Asset[] = [
   {
-    file: 'mhg-hero.webp',
+    file: 'mhg-hero.png',
     width: 3840,
     height: 2160,
     note: 'full-bleed 16:9 — home CTA band and media blocks (mountain only, no goal)',
@@ -71,7 +80,7 @@ const assets: Asset[] = [
     }),
   },
   {
-    file: 'mhg-card-teal.webp',
+    file: 'mhg-card-teal.png',
     width: 3840,
     height: 2560,
     note: '3:2 — post heroes and card art, the quieter of the two',
@@ -87,7 +96,7 @@ const assets: Asset[] = [
     }),
   },
   {
-    file: 'mhg-card-amber.webp',
+    file: 'mhg-card-amber.png',
     width: 3840,
     height: 2560,
     note: '3:2 — the Forum hero and card art, drawn in amber',
@@ -109,9 +118,9 @@ const run = async (): Promise<void> => {
     const out = path.join(SEED_DIR, file)
     await sharp(Buffer.from(svg), { density: 96 })
       .resize(width, height)
-      // Near-lossless: these are flat colour and thin strokes, where WebP's
-      // lossy mode smears the contour lines and bands the ground.
-      .webp({ quality: 95, effort: 6 })
+      // Lossless: flat colour and thin strokes compress well, and Payload
+      // stores PNG untouched — see the note above.
+      .png({ compressionLevel: 9 })
       .toFile(out)
 
     const { size } = await fs.stat(out)
