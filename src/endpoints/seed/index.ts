@@ -125,6 +125,13 @@ export const seed = async ({
   // profile — provenance and licence status in images/SOURCES.md. People
   // without an entry here render as initials until a photo is supplied.
   const teamPhotoFiles: Record<string, { alt: string; file: string }> = {
+    'Prof. Kathryn Abel': { alt: 'Professor Kathryn Abel', file: 'kathryn-abel.jpg' },
+    'Dr Matthias Pierce': { alt: 'Dr Matthias Pierce', file: 'matthias-pierce.jpg' },
+    'Prof. Paula Williamson': { alt: 'Professor Paula Williamson', file: 'paula-williamson.jpg' },
+    'Prof. Edward Harcourt': { alt: 'Professor Edward Harcourt', file: 'edward-harcourt.jpg' },
+    'Prof. James Walters': { alt: 'Professor James Walters', file: 'james-walters.jpg' },
+    'Dr Trina Histon': { alt: 'Dr Trina Histon', file: 'trina-histon.jpg' },
+    'Non Hill': { alt: 'Non Hill', file: 'non-hill.jpg' },
     'Prof. Husseini Manji': { alt: 'Professor Husseini Manji', file: 'husseini-manji.jpg' },
     'Dr Vaibhav Narayan': { alt: 'Dr Vaibhav Narayan', file: 'vaibhav-narayan.jpg' },
     'Prof. Richard Emsley': { alt: 'Professor Richard Emsley', file: 'richard-emsley.jpg' },
