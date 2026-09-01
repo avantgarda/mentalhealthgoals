@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
   // Next.js can't trace a computed readFileSync path, so include them explicitly —
   // without this the admin Seed button throws "Seed asset not found" in production.
   outputFileTracingIncludes: {
-    '/next/seed': ['./src/endpoints/seed/*.webp'],
+    '/next/seed': ['./src/endpoints/seed/*.png', './src/endpoints/seed/images/*.jpg'],
   },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {

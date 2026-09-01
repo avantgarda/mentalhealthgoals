@@ -92,21 +92,21 @@ export const seed = async ({
         data: {
           alt: 'The Mental Health Goals ridge — contour lines rising to a twin summit on a deep petrol ground',
         },
-        file: localFile('mhg-hero.webp'),
+        file: localFile('mhg-hero.png'),
       }),
       payload.create({
         collection: 'media',
         data: {
           alt: 'The Mental Health Goals ridge — contour lines rising to a twin summit, on a petrol ground',
         },
-        file: localFile('mhg-card-teal.webp'),
+        file: localFile('mhg-card-teal.png'),
       }),
       payload.create({
         collection: 'media',
         data: {
           alt: 'The Mental Health Goals ridge drawn in amber — contour lines rising to a twin summit on a deep petrol ground',
         },
-        file: localFile('mhg-card-amber.webp'),
+        file: localFile('mhg-card-amber.png'),
       }),
       payload.create({
         collection: 'media',
