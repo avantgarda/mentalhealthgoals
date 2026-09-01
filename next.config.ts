@@ -86,10 +86,16 @@ const nextConfig: NextConfig = {
                   "script-src 'self' 'unsafe-inline' https://vercel.live",
                   "style-src 'self' 'unsafe-inline'",
                   // gravatar: the admin panel loads user avatars from there
-                  // (first real /csp-report finding, 2026-08-20)
-                  "img-src 'self' blob: data: https://www.gravatar.com",
-                  "font-src 'self' data:",
-                  "connect-src 'self' https://vercel.live",
+                  // (first real /csp-report finding, 2026-08-20). The
+                  // vercel.live / vercel.com / pusher entries are the Vercel
+                  // toolbar, which injects itself into preview deployments and
+                  // warns when a CSP would block its assets — harmless while
+                  // this header is report-only, but adding them keeps the
+                  // /csp-report logs clean and means enforcing later will not
+                  // break previews.
+                  "img-src 'self' blob: data: https://www.gravatar.com https://vercel.live https://vercel.com",
+                  "font-src 'self' data: https://vercel.live https://assets.vercel.com",
+                  "connect-src 'self' https://vercel.live wss://ws-us3.pusher.com",
                   "frame-src 'self' https://vercel.live",
                   "worker-src 'self' blob:",
                   "object-src 'none'",
