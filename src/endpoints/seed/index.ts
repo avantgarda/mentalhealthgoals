@@ -121,6 +121,30 @@ export const seed = async ({
     ],
   )
 
+  // Team headshots, each from the person's own institutional or programme
+  // profile — provenance and licence status in images/SOURCES.md. People
+  // without an entry here render as initials until a photo is supplied.
+  const teamPhotoFiles: Record<string, { alt: string; file: string }> = {
+    'Prof. Husseini Manji': { alt: 'Professor Husseini Manji', file: 'husseini-manji.jpg' },
+    'Dr Vaibhav Narayan': { alt: 'Dr Vaibhav Narayan', file: 'vaibhav-narayan.jpg' },
+    'Prof. Richard Emsley': { alt: 'Professor Richard Emsley', file: 'richard-emsley.jpg' },
+    'Dr Siân Rees': { alt: 'Dr Siân Rees', file: 'sian-rees.jpg' },
+    'Eoin Gogarty': { alt: 'Eoin Gogarty', file: 'eoin-gogarty.jpg' },
+    'Prof. Gerome Breen': { alt: 'Professor Gerome Breen', file: 'gerome-breen.jpg' },
+    'Prof. Ann John': { alt: 'Professor Ann John', file: 'ann-john.jpg' },
+    'Prof. Rob Stewart': { alt: 'Professor Rob Stewart', file: 'rob-stewart.jpg' },
+    'Dr Pauline Whelan': { alt: 'Dr Pauline Whelan', file: 'pauline-whelan.jpg' },
+  }
+  const teamPhotos: Record<string, number> = {}
+  for (const [personName, { alt, file }] of Object.entries(teamPhotoFiles)) {
+    const doc = await payload.create({
+      collection: 'media',
+      data: { alt },
+      file: localFile(`images/${file}`),
+    })
+    teamPhotos[personName] = doc.id
+  }
+
   payload.logger.info(`— Seeding categories...`)
 
   const [newsCategory, eventsCategory, explainerCategory] = await Promise.all([
@@ -481,7 +505,7 @@ export const seed = async ({
       payload.create({
         collection: 'people',
         context: { disableRevalidate: true },
-        data,
+        data: { ...data, photo: teamPhotos[data.name] ?? data.photo },
       }),
     ),
   )

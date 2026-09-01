@@ -74,7 +74,13 @@ const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index
       <div className="aspect-[4/5] w-full overflow-hidden bg-card">
         {person.photo && typeof person.photo === 'object' ? (
           <Media
+            // Every layer between the 4/5 frame and the img must carry full
+            // height — Media's wrapper div and the picture element — or
+            // object-cover has no box to cover, and any non-4/5 photo
+            // letterboxes on the card ground instead of cropping.
+            className="block h-full w-full"
             imgClassName="h-full w-full object-cover"
+            pictureClassName="block h-full w-full"
             resource={person.photo}
             size={SIZE_PERSON_CARD}
           />
