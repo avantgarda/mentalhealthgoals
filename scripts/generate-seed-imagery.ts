@@ -9,9 +9,10 @@
  * right. They exist so the layouts have something honest in them before a
  * shoot happens, and so they can be swapped in the admin without touching code.
  *
- * They are deliberately rendered at roughly twice the widest slot each one
- * lands in, because the earlier set (1600px wide) was being asked to fill 2700
- * device pixels on the Forum hero and read as soft. The grounds are flat: a
+ * They are rendered at 3840 wide — the largest width Next's optimizer will
+ * ever request — so no screen receives an upscale. The earlier sets (1600,
+ * then 2800) were being stretched ~1.4x on retina laptops, and interpolation
+ * smears exactly what this artwork is made of: hairline strokes. The grounds are flat: a
  * gradient at this size posterises into visible bands, and the contour field
  * is what carries the depth anyway.
  *
@@ -42,12 +43,12 @@ interface Asset {
 const assets: Asset[] = [
   {
     file: 'mhg-hero.webp',
-    width: 3200,
-    height: 1800,
+    width: 3840,
+    height: 2160,
     note: 'full-bleed 16:9 — home CTA band and media blocks',
     svg: ridgeSVG({
-      width: 3200,
-      height: 1800,
+      width: 3840,
+      height: 2160,
       ground: BRAND_COLORS.deep,
       stroke: BRAND_COLORS.reversed,
       accent: BRAND_COLORS.amberOnDark,
@@ -60,12 +61,12 @@ const assets: Asset[] = [
   },
   {
     file: 'mhg-card-teal.webp',
-    width: 2800,
-    height: 1867,
+    width: 3840,
+    height: 2560,
     note: '3:2 — post heroes and card art, the quieter of the two',
     svg: ridgeSVG({
-      width: 2800,
-      height: 1867,
+      width: 3840,
+      height: 2560,
       ground: BRAND_COLORS.petrol,
       stroke: BRAND_COLORS.reversed,
       lines: MAX_UNCLIPPED_LINES,
@@ -76,12 +77,12 @@ const assets: Asset[] = [
   },
   {
     file: 'mhg-card-amber.webp',
-    width: 2800,
-    height: 1867,
+    width: 3840,
+    height: 2560,
     note: '3:2 — the Forum hero and anything that should carry the goal',
     svg: ridgeSVG({
-      width: 2800,
-      height: 1867,
+      width: 3840,
+      height: 2560,
       ground: BRAND_COLORS.deep,
       stroke: BRAND_COLORS.amberOnDark,
       accent: BRAND_COLORS.amberOnDark,
