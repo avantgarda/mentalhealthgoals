@@ -12,7 +12,19 @@
  * They are rendered at 3840 wide — the largest width Next's optimizer will
  * ever request — so no screen receives an upscale. The earlier sets (1600,
  * then 2800) were being stretched ~1.4x on retina laptops, and interpolation
- * smears exactly what this artwork is made of: hairline strokes. The grounds are flat: a
+ * smears exactly what this artwork is made of: hairline strokes.
+ *
+ * Stroke weights are chosen for the WORST display, not the best: a DPR-1
+ * screen shows these at half the master's pixels, and a 2.4px master stroke
+ * lands there as 1.2 devices pixels — a line that is mostly anti-aliasing by
+ * area, which reads as pixelation. 3.4px keeps it a hairline on retina
+ * (~1.7 CSS px) while giving DPR-1 enough ink to hold an edge.
+ *
+ * No amber goal in any of these: they are used as cover-cropped backgrounds
+ * (post heroes crop 3:2 to roughly 2:1, the og size crops to 1200x630), so
+ * where the goal lands is luck — cut at the frame edge more often than not.
+ * The goal appears only in the live svg heroes, where composition is
+ * controlled. The grounds are flat: a
  * gradient at this size posterises into visible bands, and the contour field
  * is what carries the depth anyway.
  *
@@ -45,15 +57,14 @@ const assets: Asset[] = [
     file: 'mhg-hero.webp',
     width: 3840,
     height: 2160,
-    note: 'full-bleed 16:9 — home CTA band and media blocks',
+    note: 'full-bleed 16:9 — home CTA band and media blocks (mountain only, no goal)',
     svg: ridgeSVG({
       width: 3840,
       height: 2160,
       ground: BRAND_COLORS.deep,
       stroke: BRAND_COLORS.reversed,
-      accent: BRAND_COLORS.amberOnDark,
       lines: MAX_UNCLIPPED_LINES,
-      strokePx: 2.6,
+      strokePx: 3.6,
       fieldOpacity: 0.68,
       // Pushed right, so the flat left third stays clear for overlaid type.
       bias: 0.55,
@@ -70,7 +81,7 @@ const assets: Asset[] = [
       ground: BRAND_COLORS.petrol,
       stroke: BRAND_COLORS.reversed,
       lines: MAX_UNCLIPPED_LINES,
-      strokePx: 2.4,
+      strokePx: 3.4,
       fieldOpacity: 0.5,
       bias: -0.35,
     }),
@@ -79,15 +90,14 @@ const assets: Asset[] = [
     file: 'mhg-card-amber.webp',
     width: 3840,
     height: 2560,
-    note: '3:2 — the Forum hero and anything that should carry the goal',
+    note: '3:2 — the Forum hero and card art, drawn in amber',
     svg: ridgeSVG({
       width: 3840,
       height: 2560,
       ground: BRAND_COLORS.deep,
       stroke: BRAND_COLORS.amberOnDark,
-      accent: BRAND_COLORS.amberOnDark,
       lines: MAX_UNCLIPPED_LINES,
-      strokePx: 2.4,
+      strokePx: 3.4,
       fieldOpacity: 0.62,
       bias: 0.2,
     }),

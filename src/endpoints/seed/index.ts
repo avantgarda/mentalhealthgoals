@@ -90,7 +90,7 @@ export const seed = async ({
       payload.create({
         collection: 'media',
         data: {
-          alt: 'The Mental Health Goals ridge — contour lines rising to a twin summit, the amber goal above it, on a deep petrol ground',
+          alt: 'The Mental Health Goals ridge — contour lines rising to a twin summit on a deep petrol ground',
         },
         file: localFile('mhg-hero.webp'),
       }),
@@ -104,7 +104,7 @@ export const seed = async ({
       payload.create({
         collection: 'media',
         data: {
-          alt: 'The Mental Health Goals ridge drawn in amber — contour lines rising to a twin summit, the goal above it, on a deep petrol ground',
+          alt: 'The Mental Health Goals ridge drawn in amber — contour lines rising to a twin summit on a deep petrol ground',
         },
         file: localFile('mhg-card-amber.webp'),
       }),
