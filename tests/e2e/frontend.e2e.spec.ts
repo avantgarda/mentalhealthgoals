@@ -37,6 +37,21 @@ test.describe('Frontend', () => {
     await expect(page.getByRole('heading', { name: /key questions/i })).toBeVisible()
   })
 
+  test('the well-known icon paths follow the brand', async ({ request }) => {
+    // Fetchers that never read the <link> tags — browsers guessing
+    // /favicon.ico, dashboard icon scrapers — must still get the current
+    // mark, not a stale file shadowing the path from public/.
+    for (const path of ['/favicon.ico', '/favicon.png', '/favicon.svg', '/apple-touch-icon.png']) {
+      const response = await request.get(path, { maxRedirects: 0 })
+      expect(response.status(), path).toBe(302)
+      // NextResponse.redirect emits an absolute URL
+      expect(response.headers()['location'], path).toMatch(/\/brand\/[a-zA-Z]+\//)
+
+      const followed = await request.get(path)
+      expect(followed.status(), path).toBe(200)
+    }
+  })
+
   test('unknown pages return the 404 page', async ({ page }) => {
     const response = await page.goto('/definitely-not-a-page')
     expect(response?.status()).toBe(404)
