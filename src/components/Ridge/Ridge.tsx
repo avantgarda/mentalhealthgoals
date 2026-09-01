@@ -70,7 +70,6 @@ export const Ridge: React.FC<Props> = ({
         <path
           d={d}
           key={i}
-          pathLength={1}
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"

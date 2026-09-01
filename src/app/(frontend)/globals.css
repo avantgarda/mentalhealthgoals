@@ -462,23 +462,28 @@ html[data-motion='off'] *::after {
 }
 
 /* The ridge motif: contour lines drawn in once, staggered; static otherwise.
-   The dash that creates the draw-in lives ONLY inside these keyframes, never
-   in the resting style. With `vector-effect: non-scaling-stroke`, browsers
-   rescale the dash pattern along with the stroke — so a dasharray meant to
-   cover the whole path (pathLength=1) develops gaps once the svg renders at
-   roughly twice its viewBox size (wide viewports, zoomed-out pages), and both
-   Chromium and WebKit painted lines with their middles missing. `backwards`
-   fill keeps paths hidden through their stagger delay and drops the dash the
-   moment the animation ends, so the resting state is a plain stroked path at
-   any scale. */
+
+   The draw-in is a left-to-right clip wipe, not the usual stroke-dash trick.
+   These paths carry `vector-effect: non-scaling-stroke`, and browsers rescale
+   dash patterns along with the stroke — so any dash-based draw develops gaps
+   or ragged tails once the svg renders larger than its viewBox (wide
+   viewports, zoomed-out pages): first as missing bands at rest, then as a
+   stepped tail during the animation's last frames. Clip geometry is immune to
+   stroke scaling, and since every contour is a function of x sampled left to
+   right, a horizontal wipe is visually the same as drawing along the line.
+
+   The insets are in user units (the 800x600 viewBox space). The -8px margins
+   keep the clip clear of the stroke itself — a path's reference box hugs its
+   centreline, so a zero inset would slice the line lengthwise — and the from
+   state's 105% right inset makes the region empty, so nothing shows through
+   the stagger delay (`backwards` fill holds that frame). After the animation
+   the clip is gone entirely: the resting state is a plain stroked path. */
 @keyframes ridge-draw {
   from {
-    stroke-dasharray: 1 1;
-    stroke-dashoffset: 1;
+    clip-path: inset(-8px 105% -8px -8px);
   }
   to {
-    stroke-dasharray: 1 1;
-    stroke-dashoffset: 0;
+    clip-path: inset(-8px -8px -8px -8px);
   }
 }
 @keyframes ridge-goal {
