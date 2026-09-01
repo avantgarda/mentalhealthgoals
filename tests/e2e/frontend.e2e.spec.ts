@@ -42,13 +42,11 @@ test.describe('Frontend', () => {
     // /favicon.ico, dashboard icon scrapers — must still get the current
     // mark, not a stale file shadowing the path from public/.
     for (const path of ['/favicon.ico', '/favicon.png', '/favicon.svg', '/apple-touch-icon.png']) {
+      // A direct 200, not a redirect: icon scrapers refuse to follow them.
       const response = await request.get(path, { maxRedirects: 0 })
-      expect(response.status(), path).toBe(302)
-      // NextResponse.redirect emits an absolute URL
-      expect(response.headers()['location'], path).toMatch(/\/brand\/[a-zA-Z]+\//)
-
-      const followed = await request.get(path)
-      expect(followed.status(), path).toBe(200)
+      expect(response.status(), path).toBe(200)
+      expect(response.headers()['content-type'], path).toMatch(/^image\//)
+      expect((await response.body()).length, path).toBeGreaterThan(100)
     }
   })
 
