@@ -1944,16 +1944,16 @@ export const seed = async ({
           ),
         ),
         heading('h2', text('Who leads it')),
+        // People never link out — at most to their card on the Team page
+        // (institutions may). See tests/unit/editorialLinks.spec.ts.
         paragraph(
-          text('DATAMIND is led by Co-Directors Professor Ann John of '),
-          link('Swansea University', 'https://www.swansea.ac.uk/staff/a.john/', true),
-          text(' and Professor Rob Stewart of '),
-          link(
-            'King’s College London',
-            'https://www.kcl.ac.uk/people/professor-robert-stewart',
-            true,
+          text('DATAMIND is led by Co-Directors '),
+          link('Professor Ann John', '/people#ann-john'),
+          text(' of Swansea University and '),
+          link('Professor Rob Stewart', '/people#rob-stewart'),
+          text(
+            ' of King’s College London, who between them cover population health data science and clinical informatics.',
           ),
-          text(', who between them cover population health data science and clinical informatics.'),
         ),
         heading('h2', text('How it connects to the Data Observatory')),
         paragraph(
