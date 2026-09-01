@@ -22,7 +22,7 @@ photo can be swapped in `/admin` with no code change.
 | Dr Matthias Pierce     | matthias-pierce.jpg  | supplied internally (`matthias.jpg`, cropped from group)                 |
 | Eric Lynch             | eric-lynch.jpg       | MHG brochure pptx (programme-owned)                                      |
 | Non Hill               | non-hill.jpg         | supplied internally (`non.jpeg`)                                         |
-| Eoin Gogarty           | eoin-gogarty.jpg     | https://www.kcl.ac.uk/people/eoin-gogarty (official KCL headshot)        |
+| Eoin Gogarty           | eoin-gogarty.jpg     | supplied internally (`eoin.png`)                                         |
 | Prof. Gerome Breen     | gerome-breen.jpg     | https://kclpure.kcl.ac.uk/portal/en/persons/gerome-breen                 |
 | Prof. James Walters    | james-walters.jpg    | supplied internally (`james.jpeg`)                                       |
 | Prof. Ann John         | ann-john.jpg         | https://datamind.org.uk/portfolio/professor-ann-john/                    |
