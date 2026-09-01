@@ -142,14 +142,28 @@ export const seed = async ({
     'Prof. Rob Stewart': { alt: 'Professor Rob Stewart', file: 'rob-stewart.jpg' },
     'Dr Pauline Whelan': { alt: 'Dr Pauline Whelan', file: 'pauline-whelan.jpg' },
   }
+  // Uploaded in small parallel batches, not sequentially: the admin Seed
+  // button runs inside one Vercel function capped at 60 seconds on the Hobby
+  // plan (maxDuration in next/seed/route.ts is already at that maximum), and
+  // eighteen sequential sharp-resize-plus-blob-upload rounds spent most of
+  // that budget before pages, posts or the closing cache revalidation ran —
+  // one production seed completed its writes and was killed on the final
+  // revalidate, leaving the static pages pointing at deleted files. Batches
+  // of five keep the lambda's memory in check while cutting the wall clock
+  // to roughly a quarter.
   const teamPhotos: Record<string, number> = {}
-  for (const [personName, { alt, file }] of Object.entries(teamPhotoFiles)) {
-    const doc = await payload.create({
-      collection: 'media',
-      data: { alt },
-      file: localFile(`images/${file}`),
-    })
-    teamPhotos[personName] = doc.id
+  const photoEntries = Object.entries(teamPhotoFiles)
+  for (let i = 0; i < photoEntries.length; i += 5) {
+    await Promise.all(
+      photoEntries.slice(i, i + 5).map(async ([personName, { alt, file }]) => {
+        const doc = await payload.create({
+          collection: 'media',
+          data: { alt },
+          file: localFile(`images/${file}`),
+        })
+        teamPhotos[personName] = doc.id
+      }),
+    )
   }
 
   payload.logger.info(`— Seeding categories...`)
