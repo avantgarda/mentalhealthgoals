@@ -461,12 +461,23 @@ html[data-motion='off'] *::after {
   transition-duration: 0.01ms !important;
 }
 
-/* The ridge motif: contour lines drawn in once, staggered; static otherwise. */
+/* The ridge motif: contour lines drawn in once, staggered; static otherwise.
+   The dash that creates the draw-in lives ONLY inside these keyframes, never
+   in the resting style. With `vector-effect: non-scaling-stroke`, browsers
+   rescale the dash pattern along with the stroke — so a dasharray meant to
+   cover the whole path (pathLength=1) develops gaps once the svg renders at
+   roughly twice its viewBox size (wide viewports, zoomed-out pages), and both
+   Chromium and WebKit painted lines with their middles missing. `backwards`
+   fill keeps paths hidden through their stagger delay and drops the dash the
+   moment the animation ends, so the resting state is a plain stroked path at
+   any scale. */
 @keyframes ridge-draw {
   from {
+    stroke-dasharray: 1 1;
     stroke-dashoffset: 1;
   }
   to {
+    stroke-dasharray: 1 1;
     stroke-dashoffset: 0;
   }
 }
@@ -481,9 +492,7 @@ html[data-motion='off'] *::after {
   }
 }
 html[data-motion='on'] .ridge path {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: ridge-draw 1300ms var(--ease-out) forwards;
+  animation: ridge-draw 1300ms var(--ease-out) backwards;
   animation-delay: calc(var(--i, 0) * 42ms);
 }
 html[data-motion='on'] .ridge .ridge-goal {
