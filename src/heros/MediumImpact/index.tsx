@@ -4,6 +4,7 @@ import type { Page } from '@/payload-types'
 
 import { CMSLink } from '@/components/Link'
 import { Media } from '@/components/Media'
+import { SIZE_CONTAINER } from '@/components/Media/sizes'
 import RichText from '@/components/RichText'
 import { splitRichText } from '../splitRichText'
 
@@ -50,7 +51,7 @@ export const MediumImpactHero: React.FC<Page['hero']> = ({ links, media, richTex
 
       {media && typeof media === 'object' && (
         <figure className="m-0 border-t border-border pt-6">
-          <Media imgClassName="w-full" priority resource={media} />
+          <Media imgClassName="w-full" priority resource={media} size={SIZE_CONTAINER} />
           {media?.caption && (
             <figcaption className="mt-3 text-sm text-muted-foreground">
               <RichText data={media.caption} enableGutter={false} enableProse={false} />

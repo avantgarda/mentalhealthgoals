@@ -220,6 +220,21 @@ export interface Page {
     image?: (number | null) | Media;
     description?: string | null;
   };
+  /**
+   * A bar that follows the visitor down a long page. It appears once the hero has scrolled past, steps aside when the page reaches its own closing call to action, and can be dismissed.
+   */
+  stickyCta?: {
+    enabled?: boolean | null;
+    /**
+     * One short line — a date and a place, not a sentence.
+     */
+    message?: string | null;
+    label?: string | null;
+    /**
+     * A path such as /contact, or an anchor such as #register — name a block in the Content tab to create one.
+     */
+    href?: string | null;
+  };
   publishedAt?: string | null;
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
@@ -316,46 +331,6 @@ export interface Media {
   focalY?: number | null;
   sizes?: {
     thumbnail?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    square?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    small?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    medium?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    large?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    xlarge?: {
       url?: string | null;
       width?: number | null;
       height?: number | null;
@@ -1029,10 +1004,35 @@ export interface Search {
   id: number;
   title?: string | null;
   priority?: number | null;
-  doc: {
-    relationTo: 'posts';
-    value: number | Post;
-  };
+  doc:
+    | {
+        relationTo: 'pages';
+        value: number | Page;
+      }
+    | {
+        relationTo: 'workstreams';
+        value: number | Workstream;
+      }
+    | {
+        relationTo: 'posts';
+        value: number | Post;
+      }
+    | {
+        relationTo: 'people';
+        value: number | Person;
+      };
+  /**
+   * Which kind of thing this result points at.
+   */
+  type?: ('page' | 'workstream' | 'post' | 'person') | null;
+  /**
+   * The URL a visitor is sent to when they choose this result.
+   */
+  path?: string | null;
+  /**
+   * Prose flattened out of the document so that a phrase from the middle of a page is findable, not just its title.
+   */
+  body?: string | null;
   slug?: string | null;
   meta?: {
     title?: string | null;
@@ -1211,6 +1211,14 @@ export interface PagesSelect<T extends boolean = true> {
         title?: T;
         image?: T;
         description?: T;
+      };
+  stickyCta?:
+    | T
+    | {
+        enabled?: T;
+        message?: T;
+        label?: T;
+        href?: T;
       };
   publishedAt?: T;
   generateSlug?: T;
@@ -1425,56 +1433,6 @@ export interface MediaSelect<T extends boolean = true> {
     | T
     | {
         thumbnail?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        square?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        small?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        medium?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        large?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        xlarge?:
           | T
           | {
               url?: T;
@@ -1772,6 +1730,9 @@ export interface SearchSelect<T extends boolean = true> {
   title?: T;
   priority?: T;
   doc?: T;
+  type?: T;
+  path?: T;
+  body?: T;
   slug?: T;
   meta?:
     | T

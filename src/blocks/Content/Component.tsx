@@ -38,7 +38,7 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
           <ol>
             {columns.map((col, index) => (
               <li
-                className="door group relative grid grid-cols-1 gap-4 border-b border-foreground/25 py-7 transition-colors duration-[var(--dur-ui)] first:border-t first:border-t-foreground/25 hover:bg-foreground/[0.04] lg:grid-cols-12 lg:gap-x-10 lg:py-8"
+                className="door group relative grid grid-cols-1 gap-4 border-b border-foreground/25 px-4 py-7 transition-colors duration-[var(--dur-ui)] first:border-t first:border-t-foreground/25 hover:bg-foreground/[0.04] lg:grid-cols-12 lg:gap-x-10 lg:px-6 lg:py-8"
                 data-reveal
                 key={index}
                 style={{ transitionDelay: `${index * 60}ms` }}
@@ -53,7 +53,7 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
                     />
                   )}
                 </div>
-                <div className="flex lg:col-span-3 lg:items-end lg:justify-end lg:pr-4">
+                <div className="flex lg:col-span-3 lg:items-end lg:justify-end">
                   {col.link && (
                     <CMSLink
                       {...col.link}

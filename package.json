@@ -28,6 +28,7 @@
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
     "generate:brand": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/generate-brand-assets.ts",
+    "generate:seed-imagery": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/generate-seed-imagery.ts",
     "prepare": "husky"
   },
   "lint-staged": {

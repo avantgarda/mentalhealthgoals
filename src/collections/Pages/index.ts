@@ -25,6 +25,9 @@ import {
   PreviewField,
 } from '@payloadcms/plugin-seo/fields'
 
+/** What the sticky CTA's own validators can see of their group. */
+type StickyCtaSiblings = { siblingData?: { enabled?: boolean | null } }
+
 export const Pages: CollectionConfig<'pages'> = {
   slug: 'pages',
   access: {
@@ -121,6 +124,60 @@ export const Pages: CollectionConfig<'pages'> = {
               descriptionPath: 'meta.description',
             }),
           ],
+        },
+      ],
+    },
+    {
+      name: 'stickyCta',
+      type: 'group',
+      label: 'Sticky call to action',
+      admin: {
+        position: 'sidebar',
+        description:
+          'A bar that follows the visitor down a long page. It appears once the hero has scrolled past, steps aside when the page reaches its own closing call to action, and can be dismissed.',
+      },
+      fields: [
+        {
+          name: 'enabled',
+          type: 'checkbox',
+          label: 'Show the sticky bar',
+        },
+        {
+          name: 'message',
+          type: 'text',
+          label: 'Message',
+          admin: {
+            condition: (_, siblingData) => Boolean(siblingData?.enabled),
+            description: 'One short line — a date and a place, not a sentence.',
+          },
+        },
+        {
+          name: 'label',
+          type: 'text',
+          label: 'Button text',
+          admin: {
+            condition: (_, siblingData) => Boolean(siblingData?.enabled),
+          },
+          // Not `required`, which would apply whether the bar is on or off and
+          // block every page from saving. Enforced only once it is switched on.
+          validate: (value: string | null | undefined, { siblingData }: StickyCtaSiblings) =>
+            siblingData?.enabled && !value
+              ? 'Add the button text, or switch the sticky bar off.'
+              : true,
+        },
+        {
+          name: 'href',
+          type: 'text',
+          label: 'Links to',
+          admin: {
+            condition: (_, siblingData) => Boolean(siblingData?.enabled),
+            description:
+              'A path such as /contact, or an anchor such as #register — name a block in the Content tab to create one.',
+          },
+          validate: (value: string | null | undefined, { siblingData }: StickyCtaSiblings) =>
+            siblingData?.enabled && !value
+              ? 'Add where the button goes, or switch the sticky bar off.'
+              : true,
         },
       ],
     },

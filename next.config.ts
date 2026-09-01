@@ -23,7 +23,12 @@ const nextConfig: NextConfig = {
         pathname: '/api/media/file/**',
       },
     ],
-    qualities: [100],
+    // AVIF first (roughly 20% smaller than WebP at the same quality), WebP for
+    // browsers without it, original format as the final fallback.
+    formats: ['image/avif', 'image/webp'],
+    // 82 is the site default (visually lossless for photographs); 100 stays in
+    // the allowlist so URLs cached before the default changed keep resolving.
+    qualities: [82, 100],
     remotePatterns: [
       ...[NEXT_PUBLIC_SERVER_URL /* 'https://example.com' */].map((item) => {
         const url = new URL(item)
@@ -81,10 +86,16 @@ const nextConfig: NextConfig = {
                   "script-src 'self' 'unsafe-inline' https://vercel.live",
                   "style-src 'self' 'unsafe-inline'",
                   // gravatar: the admin panel loads user avatars from there
-                  // (first real /csp-report finding, 2026-08-20)
-                  "img-src 'self' blob: data: https://www.gravatar.com",
-                  "font-src 'self' data:",
-                  "connect-src 'self' https://vercel.live",
+                  // (first real /csp-report finding, 2026-08-20). The
+                  // vercel.live / vercel.com / pusher entries are the Vercel
+                  // toolbar, which injects itself into preview deployments and
+                  // warns when a CSP would block its assets — harmless while
+                  // this header is report-only, but adding them keeps the
+                  // /csp-report logs clean and means enforcing later will not
+                  // break previews.
+                  "img-src 'self' blob: data: https://www.gravatar.com https://vercel.live https://vercel.com",
+                  "font-src 'self' data: https://vercel.live https://assets.vercel.com",
+                  "connect-src 'self' https://vercel.live wss://ws-us3.pusher.com",
                   "frame-src 'self' https://vercel.live",
                   "worker-src 'self' blob:",
                   "object-src 'none'",

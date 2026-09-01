@@ -14,6 +14,8 @@ export interface Props {
   onLoad?: () => void
   loading?: 'lazy' | 'eager' // for NextImage only
   priority?: boolean // for NextImage only
+  /** 1-100; defaults to 82, which is visually lossless for photographs. */
+  quality?: number // for NextImage only
   ref?: Ref<HTMLImageElement | HTMLVideoElement | null>
   resource?: MediaType | string | number | null // for Payload media
   size?: string // for NextImage only

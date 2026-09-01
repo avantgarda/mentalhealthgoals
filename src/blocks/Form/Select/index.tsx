@@ -33,13 +33,20 @@ export const Select: React.FC<
       </Label>
       <Controller
         control={control}
-        defaultValue={defaultValue}
+        // Empty string rather than undefined: without it the select starts
+        // uncontrolled and flips to controlled on the first choice, which React
+        // warns about. Radix reads '' as "nothing chosen", which is what an
+        // untouched select is.
+        defaultValue={defaultValue ?? ''}
         name={name}
         render={({ field: { onChange, value } }) => {
           const controlledValue = options.find((t) => t.value === value)
 
           return (
-            <SelectComponent onValueChange={(val) => onChange(val)} value={controlledValue?.value}>
+            <SelectComponent
+              onValueChange={(val) => onChange(val)}
+              value={controlledValue?.value ?? ''}
+            >
               <SelectTrigger className="w-full" id={name}>
                 <SelectValue placeholder={label} />
               </SelectTrigger>

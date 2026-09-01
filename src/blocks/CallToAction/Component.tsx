@@ -8,7 +8,9 @@ import { CMSLink } from '@/components/Link'
 /** A full-bleed deep-petrol band — the page's chapter break: one statement, one (or two) actions. */
 export const CallToActionBlock: React.FC<CTABlockProps> = ({ links, richText }) => {
   return (
-    <div className="bg-brand-deep text-white" data-theme="dark">
+    // `data-cta-band` lets the sticky call-to-action bar hide while this is on
+    // screen, so the same ask is never made twice at once.
+    <div className="bg-brand-deep text-white" data-cta-band data-theme="dark">
       <div className="container">
         <div
           className="band grid grid-cols-1 gap-6 py-12 lg:grid-cols-12 lg:items-end lg:gap-x-10 lg:py-16"

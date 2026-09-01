@@ -9,6 +9,9 @@ import * as migration_20260826_103739_add_workstream_resources from './20260826_
 import * as migration_20260826_145839_team_groups_and_digit from './20260826_145839_team_groups_and_digit';
 import * as migration_20260826_163823_team_group_values from './20260826_163823_team_group_values';
 import * as migration_20260827_083749_team_workstream_leads_group from './20260827_083749_team_workstream_leads_group';
+import * as migration_20260827_154700_widen_search_index from './20260827_154700_widen_search_index';
+import * as migration_20260827_161758_add_page_sticky_cta from './20260827_161758_add_page_sticky_cta';
+import * as migration_20260831_200523_trim_media_sizes from './20260831_200523_trim_media_sizes';
 
 export const migrations = [
   {
@@ -64,6 +67,21 @@ export const migrations = [
   {
     up: migration_20260827_083749_team_workstream_leads_group.up,
     down: migration_20260827_083749_team_workstream_leads_group.down,
-    name: '20260827_083749_team_workstream_leads_group'
+    name: '20260827_083749_team_workstream_leads_group',
+  },
+  {
+    up: migration_20260827_154700_widen_search_index.up,
+    down: migration_20260827_154700_widen_search_index.down,
+    name: '20260827_154700_widen_search_index',
+  },
+  {
+    up: migration_20260827_161758_add_page_sticky_cta.up,
+    down: migration_20260827_161758_add_page_sticky_cta.down,
+    name: '20260827_161758_add_page_sticky_cta',
+  },
+  {
+    up: migration_20260831_200523_trim_media_sizes.up,
+    down: migration_20260831_200523_trim_media_sizes.down,
+    name: '20260831_200523_trim_media_sizes'
   },
 ];

@@ -1,6 +1,35 @@
 import { Field } from 'payload'
 
+import { RESULT_TYPES } from './resultTypes'
+
 export const searchFields: Field[] = [
+  {
+    name: 'type',
+    type: 'select',
+    index: true,
+    admin: {
+      readOnly: true,
+      description: 'Which kind of thing this result points at.',
+    },
+    options: RESULT_TYPES.map(({ label, value }) => ({ label, value })),
+  },
+  {
+    name: 'path',
+    type: 'text',
+    admin: {
+      readOnly: true,
+      description: 'The URL a visitor is sent to when they choose this result.',
+    },
+  },
+  {
+    name: 'body',
+    type: 'textarea',
+    admin: {
+      readOnly: true,
+      description:
+        'Prose flattened out of the document so that a phrase from the middle of a page is findable, not just its title.',
+    },
+  },
   {
     name: 'slug',
     type: 'text',

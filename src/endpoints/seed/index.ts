@@ -5,6 +5,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { contactForm as contactFormData } from './contact-form'
+import { registerInterestForm as registerInterestFormData } from './register-interest-form'
 import { bold, bullets, heading, link, paragraph, root, text } from './lexical'
 import { workstreamContent } from './workstream-content'
 
@@ -63,7 +64,17 @@ export const seed = async ({
   )
 
   for (const collection of collections) {
-    await payload.db.deleteMany({ collection, req, where: {} })
+    // Media goes through the collection operation, not the db adapter: file
+    // deletion runs in the collection's delete hooks, so a db-level wipe
+    // strands every uploaded file. Locally those strays then make each
+    // filename "taken" and the next seed uploads eric-lynch-1, -2, -3...;
+    // on Vercel Blob they overwrite silently but orphan any old size that is
+    // no longer generated. Everything else stays db-level for speed.
+    if (collection === 'media') {
+      await payload.delete({ collection, depth: 0, req, where: {} })
+    } else {
+      await payload.db.deleteMany({ collection, req, where: {} })
+    }
   }
 
   for (const collection of collections) {
@@ -79,21 +90,21 @@ export const seed = async ({
       payload.create({
         collection: 'media',
         data: {
-          alt: 'Abstract concentric rings on a deep teal background — the Mental Health Goals motif',
+          alt: 'The Mental Health Goals ridge — contour lines rising to a twin summit on a deep petrol ground',
         },
         file: localFile('mhg-hero.webp'),
       }),
       payload.create({
         collection: 'media',
         data: {
-          alt: 'Abstract concentric rings on a teal background',
+          alt: 'The Mental Health Goals ridge — contour lines rising to a twin summit, on a petrol ground',
         },
         file: localFile('mhg-card-teal.webp'),
       }),
       payload.create({
         collection: 'media',
         data: {
-          alt: 'Abstract concentric rings on a teal and amber background',
+          alt: 'The Mental Health Goals ridge drawn in amber — contour lines rising to a twin summit on a deep petrol ground',
         },
         file: localFile('mhg-card-amber.webp'),
       }),
@@ -475,7 +486,13 @@ export const seed = async ({
     ),
   )
 
-  payload.logger.info(`— Seeding contact form...`)
+  payload.logger.info(`— Seeding forms...`)
+
+  const registerInterestForm = await payload.create({
+    collection: 'forms',
+    depth: 0,
+    data: registerInterestFormData,
+  })
 
   const contactForm = await payload.create({
     collection: 'forms',
@@ -1346,12 +1363,28 @@ export const seed = async ({
           ],
         },
         {
-          blockType: 'cta',
-          richText: root(
-            heading('h3', text('Join the conversation')),
+          // `blockName` becomes the block's id, so the sticky bar below can
+          // send people to #register without leaving the page.
+          blockName: 'Register',
+          blockType: 'formBlock',
+          form: registerInterestForm.id,
+          enableIntro: true,
+          introContent: root(
+            heading('h2', text('Register your interest')),
             paragraph(
               text(
-                'To confirm your attendance or ask a question about the Industry Engagement Forum, get in touch with the Alliance Management Team.',
+                'Places at the launch meeting are limited and allocated by the Alliance Management Team. Tell us who you are and we will confirm your place and send joining details.',
+              ),
+            ),
+          ),
+        },
+        {
+          blockType: 'cta',
+          richText: root(
+            heading('h3', text('Questions about the Forum?')),
+            paragraph(
+              text(
+                'The Alliance Management Team can talk through the agenda, the audience or how your organisation might take part.',
               ),
             ),
           ),
@@ -1367,6 +1400,12 @@ export const seed = async ({
           ],
         },
       ],
+      stickyCta: {
+        enabled: true,
+        message: 'Forum — 8 October 2026, King’s College London',
+        label: 'Register your interest',
+        href: '#register',
+      },
       meta: {
         title: 'Industry Engagement Forum',
         description:
@@ -1622,6 +1661,11 @@ export const seed = async ({
                   ),
                 ),
                 paragraph(
+                  text(
+                    'When you register your interest in the Industry Engagement Forum we collect your name, organisation, role, email address and whether you intend to attend. You can also tell us about access or dietary requirements. That box is optional, and anything you write in it may reveal information about your health, a disability or your beliefs, so please share only what you want us to act on.',
+                  ),
+                ),
+                paragraph(
                   text('This website does not use analytics, advertising or tracking cookies.'),
                 ),
                 heading('h2', text('How we use it')),
@@ -1630,10 +1674,20 @@ export const seed = async ({
                     'We use the information you send us to respond to your enquiry and, where relevant, to manage follow-up conversations about the programme. Our lawful basis is our legitimate interest in responding to enquiries sent to us. We do not sell your information or use it for marketing.',
                   ),
                 ),
+                paragraph(
+                  text(
+                    'Forum registrations are used to allocate places, plan the day and contact you about it. Where you tell us about access or dietary requirements, we use that only to make the arrangements you have asked for, and share it with the venue and caterers only so far as it takes to do so.',
+                  ),
+                ),
                 heading('h2', text('Where it is stored and for how long')),
                 paragraph(
                   text(
                     'Enquiries are stored securely with our website hosting and email providers and are accessible only to the programme team. We keep contact-form enquiries for 12 months and then delete them.',
+                  ),
+                ),
+                paragraph(
+                  text(
+                    'Forum registrations are kept for 12 months after the event so that we can follow up on what came out of it. Access and dietary requirements are deleted once the event has taken place.',
                   ),
                 ),
                 heading('h2', text('Your rights')),
@@ -1776,7 +1830,11 @@ export const seed = async ({
       slug: 'mhg-launches-its-industry-engagement-forum',
       _status: 'published',
       title: 'MHG launches its Industry Engagement Forum',
-      heroImage: cardAmberDoc.id,
+      // The teal card, not the amber one: post heroes crop to roughly 2:1, which
+      // lifts the amber goal to the very top of the frame and sits it behind the
+      // navigation. The amber card is kept for the Forum page, where it is shown
+      // uncropped and the goal is the point.
+      heroImage: cardTealDoc.id,
       categories: [eventsCategory.id],
       publishedAt: '2026-08-05T09:00:00.000Z',
       content: root(

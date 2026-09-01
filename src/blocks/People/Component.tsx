@@ -4,7 +4,9 @@ import { getPayload } from 'payload'
 
 import type { PeopleBlockType, Person, Workstream } from '@/payload-types'
 import { Media } from '@/components/Media'
+import { SIZE_PERSON_CARD } from '@/components/Media/sizes'
 import { SectionHead } from '@/components/SectionHead'
+import { personAnchor } from '@/utilities/personAnchor'
 
 const HONORIFICS = new Set([
   'prof',
@@ -54,14 +56,6 @@ const GROUPS = [
   },
 ] as const
 
-/** Stable anchor for a person, so their name can be linked from anywhere on the site. */
-export const personAnchor = (name: string) =>
-  name
-    .toLowerCase()
-    .replace(/prof\.?|dr\.?/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-
 const workstreamTitles = (person: Person): string[] =>
   (person.workstreams || [])
     .map((entry) => (typeof entry === 'object' ? (entry as Workstream).title : null))
@@ -79,7 +73,11 @@ const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index
     >
       <div className="aspect-[4/5] w-full overflow-hidden bg-card">
         {person.photo && typeof person.photo === 'object' ? (
-          <Media imgClassName="h-full w-full object-cover" resource={person.photo} />
+          <Media
+            imgClassName="h-full w-full object-cover"
+            resource={person.photo}
+            size={SIZE_PERSON_CARD}
+          />
         ) : (
           <div
             aria-hidden="true"
