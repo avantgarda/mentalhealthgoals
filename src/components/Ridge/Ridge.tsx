@@ -35,9 +35,22 @@ type Props = {
    * tall as it needs to be.
    */
   fit?: 'surface' | 'content'
+  /**
+   * Where the drawing sits when its box is wider than 4:3. `right` presses it
+   * against the box's right edge — the hero anchors that edge just past the
+   * viewport, so the floor lines always run off screen while the summit stays
+   * fully in view. `center` for symmetric placements.
+   */
+  align?: 'center' | 'right'
 }
 
-export const Ridge: React.FC<Props> = ({ className, lines = 22, goal = true, fit = 'surface' }) => {
+export const Ridge: React.FC<Props> = ({
+  className,
+  lines = 22,
+  goal = true,
+  fit = 'surface',
+  align = 'center',
+}) => {
   const paths = buildRidgePaths(lines)
   const [gx, gy] = [mapX(GOAL[0]), mapY(GOAL[1])]
   const box =
@@ -49,7 +62,7 @@ export const Ridge: React.FC<Props> = ({ className, lines = 22, goal = true, fit
       className={cn('ridge block', className)}
       fill="none"
       focusable="false"
-      preserveAspectRatio="xMidYMid meet"
+      preserveAspectRatio={align === 'right' ? 'xMaxYMid meet' : 'xMidYMid meet'}
       viewBox={`${box.x} ${box.y} ${box.width} ${box.height}`}
       xmlns="http://www.w3.org/2000/svg"
     >

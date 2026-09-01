@@ -36,16 +36,21 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
       data-hero-theme="dark"
       data-theme="dark"
     >
-      {/* Wide screens: measured against the container, not the viewport.
-          Positioned against the viewport its left edge sat at 50vw whatever
-          the container was doing, so between `lg` and about 1200px it ran
-          straight through the lede. Starting at 58.33% — where the copy's
-          seven of twelve columns end — it cannot reach the text at any width,
-          while still running off the right and bottom edges of the ground. */}
+      {/* Wide screens. Two anchors, one per edge, because the two edges answer
+          to different things. The LEFT sits at 58.33% of the container — where
+          the copy's seven of twelve columns end — so the motif can never reach
+          the text at any width (anchored to the viewport it sat at 50vw and
+          ran through the lede between `lg` and ~1200px). The RIGHT sits just
+          past the viewport edge — `(100% - 100vw)/2` walks out through the
+          container's margin — and the drawing presses against it, so the floor
+          lines always run off screen while the summit and its right shoulder
+          stay fully in view. Width-anchored boxes did neither: a box wide
+          enough to bleed at 1280 chopped the right shoulder off, and one sized
+          for 1440 detached from the edge entirely past 2200. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden lg:block">
         <div className="container relative h-full">
-          <div className="absolute inset-y-0 left-[58.333%] w-[60%] text-white/85">
-            <Ridge className="h-full w-full" lines={22} />
+          <div className="absolute inset-y-0 left-[58.333%] right-[calc((100%-100vw)/2-2vw)] text-white/85">
+            <Ridge align="right" className="h-full w-full" lines={22} />
           </div>
         </div>
       </div>
