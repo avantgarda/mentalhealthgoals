@@ -173,17 +173,20 @@ export const seed = async ({
   // owner's consent is clear — logos/LOGOS.md has the provenance and the
   // permissions still to confirm. A partner without a logo renders as a text
   // lockup, which is how the funder appears until OLS supply theirs.
-  const [kclLogo, digitLogo, gladLogo, datamindLogo, mhdiLogo] = await Promise.all(
-    [
-      ['King’s College London', 'kings-college-london.svg'],
-      ['DIGIT', 'digit.svg'],
-      ['GLAD Study — Genetic Links to Anxiety and Depression', 'glad-study.png'],
-      ['DATAMIND — the Health Data Research Hub for Mental Health', 'datamind.svg'],
-      ['MHDI — Mental Health Digital Innovation', 'mhdi.png'],
-    ].map(([alt, file]) =>
-      payload.create({ collection: 'media', data: { alt }, file: localFile(`logos/${file}`) }),
-    ),
-  )
+  const [olsLogo, mrcLogo, kclLogo, digitLogo, gladLogo, datamindLogo, mhdiLogo] =
+    await Promise.all(
+      [
+        ['Office for Life Sciences', 'office-for-life-sciences.png'],
+        ['UK Research and Innovation — Medical Research Council', 'medical-research-council.png'],
+        ['King’s College London', 'kings-college-london.svg'],
+        ['DIGIT', 'digit.svg'],
+        ['GLAD Study — Genetic Links to Anxiety and Depression', 'glad-study.png'],
+        ['DATAMIND — the Health Data Research Hub for Mental Health', 'datamind.svg'],
+        ['MHDI — Mental Health Digital Innovation', 'mhdi.png'],
+      ].map(([alt, file]) =>
+        payload.create({ collection: 'media', data: { alt }, file: localFile(`logos/${file}`) }),
+      ),
+    )
 
   const [
     olsPartner,
@@ -201,24 +204,31 @@ export const seed = async ({
           strapline: 'UK Government',
           role: 'funder',
           url: 'https://www.gov.uk/government/organisations/office-for-life-sciences',
+          logo: olsLogo.id,
+          // Crest over two lines of wordmark: it needs the height
+          // before "Office for Life Sciences" is readable at all.
+          logoScale: 1.5,
           showInFooter: true,
           order: 1,
           usageNote:
-            'The GOV.UK identity is the Royal Arms crest — Crown copyright, outside the Open Government Licence. Shown as text until OLS comms supply the approved lockup; upload it here and it replaces the text.',
+            'The OLS lockup (Royal Arms crest over the wordmark), taken from OLS’s own GOV.UK publication “Life science competitiveness indicators 2016”. The crest is Crown copyright and sits outside the Open Government Licence, so acknowledging our funder is the use it exists for — but OLS comms should confirm it, and can supply higher-resolution artwork than this.',
         },
         {
           // The About page states the programme is funded by OLS and
           // delivered by the MRC, so the band has to name the MRC or it
-          // contradicts the site's own copy. UKRI brand rules require their
-          // supplied artwork, so it is a text lockup like the funder.
+          // contradicts the site's own copy.
           name: 'Medical Research Council',
           strapline: 'UK Research and Innovation',
           role: 'delivery',
           url: 'https://www.ukri.org/councils/mrc/',
+          logo: mrcLogo.id,
+          // UKRI publish this mark stacked, so it needs more height than a
+          // wordmark before "Medical Research Council" is readable.
+          logoScale: 1.5,
           showInFooter: true,
           order: 2,
           usageNote:
-            'UKRI/MRC artwork must come from UKRI and follow their brand rules; shown as a text lockup until they supply it.',
+            'Official UKRI Medical Research Council logo from ukri.org. Acknowledging a funder or delivery body is the use this mark exists for; follow UKRI brand rules (no recolouring, keep clear space) and ask brand@ukri.org for vector artwork if a larger rendering is needed.',
         },
         {
           name: 'King’s College London',

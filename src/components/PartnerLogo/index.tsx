@@ -7,8 +7,12 @@ import { getMediaUrl } from '@/utilities/getMediaUrl'
 
 type Size = 'regular' | 'compact'
 
-/** Standard logo height in px per size; individual partners scale from here. */
-const HEIGHT: Record<Size, number> = { regular: 44, compact: 30 }
+/**
+ * Standard logo height in px per size; individual partners scale from here.
+ * Sized so a wordmark's smallest type is still readable rather than merely
+ * recognisable — a partner shown too small to read is worse than a name.
+ */
+const HEIGHT: Record<Size, number> = { regular: 60, compact: 42 }
 
 const isMedia = (logo: Partner['logo']): logo is Media =>
   typeof logo === 'object' && logo !== null && 'url' in logo
