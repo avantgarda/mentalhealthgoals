@@ -69,7 +69,14 @@ export const Media: CollectionConfig = {
   upload: {
     // Upload to the public/media directory in Next.js making them publicly accessible even outside of Payload
     staticDir: path.resolve(dirname, '../../public/media'),
-    adminThumbnail: 'thumbnail',
+    // sharp derives no sizes from SVG, so a vector logo would otherwise show
+    // as a blank tile in the media library — exactly where editors manage
+    // partner artwork. Fall back to the original file for those.
+    adminThumbnail: ({ doc }) =>
+      typeof doc?.mimeType === 'string' && doc.mimeType === 'image/svg+xml'
+        ? (doc.url as string)
+        : ((doc?.sizes as { thumbnail?: { url?: string } } | undefined)?.thumbnail?.url ??
+          (doc?.url as string)),
     focalPoint: true,
     imageSizes: [
       {

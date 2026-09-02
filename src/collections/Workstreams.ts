@@ -103,6 +103,17 @@ export const Workstreams: CollectionConfig = {
       'What distinguishes this workstream from the others and from the wider landscape.',
     ),
     {
+      name: 'partners',
+      type: 'relationship',
+      relationTo: 'partners',
+      hasMany: true,
+      admin: {
+        description:
+          'Organisations this workstream is delivered with, shown as a logo row in the body. Use it only where the set is complete — the institutions in “Delivered by” stay as text, because showing a logo for one of several co-equal universities would imply a hierarchy the programme does not claim.',
+      },
+    },
+
+    {
       name: 'resources',
       type: 'array',
       label: 'External links',

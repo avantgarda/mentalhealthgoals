@@ -9,6 +9,7 @@ import { EventDetails } from '../../blocks/EventDetails/config'
 import { FormBlock } from '../../blocks/Form/config'
 import { MediaBlock } from '../../blocks/MediaBlock/config'
 import { PeopleBlock } from '../../blocks/People/config'
+import { PartnerLogos } from '../../blocks/PartnerLogos/config'
 import { Stats } from '../../blocks/Stats/config'
 import { WorkstreamsBlock } from '../../blocks/Workstreams/config'
 import { hero } from '@/heros/config'
@@ -89,6 +90,7 @@ export const Pages: CollectionConfig<'pages'> = {
                 WorkstreamsBlock,
                 PeopleBlock,
                 EventDetails,
+                PartnerLogos,
               ],
               required: true,
               admin: {

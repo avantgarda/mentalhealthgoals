@@ -8,6 +8,7 @@ import { ContentBlock, isDoorsLayout } from '@/blocks/Content/Component'
 import { EventDetailsBlockComponent } from '@/blocks/EventDetails/Component'
 import { FormBlock } from '@/blocks/Form/Component'
 import { MediaBlock } from '@/blocks/MediaBlock/Component'
+import { PartnerLogosBlockComponent } from '@/blocks/PartnerLogos/Component'
 import { PeopleBlockComponent } from '@/blocks/People/Component'
 import { StatsBlockComponent } from '@/blocks/Stats/Component'
 import { WorkstreamsBlockComponent } from '@/blocks/Workstreams/Component'
@@ -20,6 +21,7 @@ const blockComponents = {
   eventDetails: EventDetailsBlockComponent,
   formBlock: FormBlock,
   mediaBlock: MediaBlock,
+  partnerLogos: PartnerLogosBlockComponent,
   peopleBlock: PeopleBlockComponent,
   stats: StatsBlockComponent,
   workstreamsBlock: WorkstreamsBlockComponent,
@@ -34,6 +36,7 @@ const spacing: Partial<Record<keyof typeof blockComponents, string>> = {
   content: 'my-16 lg:my-24',
   workstreamsBlock: 'my-20 lg:my-28',
   peopleBlock: 'my-16 lg:my-24',
+  partnerLogos: 'my-16 lg:my-24',
   eventDetails: 'my-16 lg:my-24',
 }
 

@@ -105,8 +105,17 @@
    the single signal (the goal dot, the active mark).
    ------------------------------------------------------------------ */
 :root {
-  --background: oklch(97.3% 0.004 200deg);
-  --foreground: oklch(22% 0.026 220deg);
+  /* The light palette's load-bearing values, named separately because the dark
+     block below overrides --background/--foreground but never these. Anything
+     that must stay light in both themes (see .partner-plate) reads from here,
+     so there is still one source of truth. */
+  --paper-bg: oklch(97.3% 0.004 200deg);
+  --paper-ink: oklch(22% 0.026 220deg);
+  --paper-muted: oklch(45% 0.024 215deg);
+  --paper-border: oklch(85.5% 0.013 200deg);
+
+  --background: var(--paper-bg);
+  --foreground: var(--paper-ink);
   --card: oklch(94.6% 0.009 200deg);
   --card-foreground: oklch(22% 0.026 220deg);
   --popover: oklch(98.5% 0.003 200deg);
@@ -116,12 +125,12 @@
   --secondary: oklch(92.5% 0.016 200deg);
   --secondary-foreground: oklch(30% 0.045 210deg);
   --muted: oklch(93.5% 0.009 200deg);
-  --muted-foreground: oklch(45% 0.024 215deg);
+  --muted-foreground: var(--paper-muted);
   --accent: oklch(92.5% 0.016 200deg);
   --accent-foreground: oklch(30% 0.045 210deg);
   --destructive: oklch(57.7% 0.245 27.325deg);
   --destructive-foreground: oklch(57.7% 0.245 27.325deg);
-  --border: oklch(85.5% 0.013 200deg);
+  --border: var(--paper-border);
   --input: oklch(82% 0.016 200deg);
   --ring: oklch(48% 0.06 205deg);
   --brand-deep: oklch(26% 0.046 215deg);
@@ -577,4 +586,21 @@ html[data-motion='on'] .rise {
   .aside-note p + p {
     margin-top: 0.6rem;
   }
+}
+
+/* ------------------------------------------------------------------
+   Partner artwork is supplied for light grounds only: DATAMIND's mark is
+   black ink, GLAD's badge is dark type. On the dark theme's near-black
+   ground those marks disappear while their links stay focusable. A logo
+   surface therefore pins itself to the light palette instead of following
+   the theme, so cleared artwork always sits on the ground it was drawn for
+   — and the labels inside it stay legible with it.
+   ------------------------------------------------------------------ */
+.partner-plate {
+  --background: var(--paper-bg);
+  --foreground: var(--paper-ink);
+  --muted-foreground: var(--paper-muted);
+  --border: var(--paper-border);
+  background-color: var(--background);
+  color: var(--foreground);
 }
