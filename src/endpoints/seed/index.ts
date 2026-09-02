@@ -205,9 +205,7 @@ export const seed = async ({
           role: 'funder',
           url: 'https://www.gov.uk/government/organisations/office-for-life-sciences',
           logo: olsLogo.id,
-          // Crest over two lines of wordmark: it needs the height
-          // before "Office for Life Sciences" is readable at all.
-          logoScale: 1.5,
+          logoScale: 1.07,
           showInFooter: true,
           order: 1,
           usageNote:
@@ -222,9 +220,7 @@ export const seed = async ({
           role: 'delivery',
           url: 'https://www.ukri.org/councils/mrc/',
           logo: mrcLogo.id,
-          // UKRI publish this mark stacked, so it needs more height than a
-          // wordmark before "Medical Research Council" is readable.
-          logoScale: 1.5,
+          logoScale: 0.88,
           showInFooter: true,
           order: 2,
           usageNote:
@@ -235,9 +231,7 @@ export const seed = async ({
           role: 'delivery',
           url: 'https://www.kcl.ac.uk',
           logo: kclLogo.id,
-          // Parity with the DIGIT mark beside it: at 1.3 the solid red block
-          // out-massed everything in the band, including the funder.
-          logoScale: 1,
+          logoScale: 1.17,
           showInFooter: true,
           order: 3,
           usageNote:
@@ -250,6 +244,8 @@ export const seed = async ({
           url: '/about',
           logo: digitLogo.id,
           showNameWithLogo: true,
+          // Below what the mark's square ratio alone suggests: what a reader
+          // sees is the mark plus the name beside it, a much wider lockup.
           logoScale: 1,
           showInFooter: true,
           order: 4,
@@ -261,7 +257,7 @@ export const seed = async ({
           role: 'partner',
           url: 'https://gladstudy.org.uk',
           logo: gladLogo.id,
-          logoScale: 1.15,
+          logoScale: 1.03,
           order: 10,
           usageNote:
             'Header logo from gladstudy.org.uk (raster; no vector published). Confirm use with the GLAD team and ask for vector artwork.',
@@ -272,6 +268,7 @@ export const seed = async ({
           role: 'partner',
           url: 'https://datamind.org.uk',
           logo: datamindLogo.id,
+          logoScale: 0.85,
           order: 11,
           usageNote:
             'Official vector from datamind.org.uk (DATAMIND_black_cmyk.svg). Confirm use with DATAMIND comms.',
@@ -282,7 +279,7 @@ export const seed = async ({
           role: 'partner',
           url: 'https://www.mhdi.uk',
           logo: mhdiLogo.id,
-          logoScale: 0.9,
+          logoScale: 0.81,
           order: 12,
           usageNote:
             'Site lockup from mhdi.uk (raster; no vector published). Confirm use with MHDI and ask for vector artwork.',

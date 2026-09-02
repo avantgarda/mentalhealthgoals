@@ -883,7 +883,7 @@ export interface Partner {
    */
   showNameWithLogo?: boolean | null;
   /**
-   * Optical balance against the other logos in a row: 1 is the standard height, 1.3 makes a compact mark read as large as a wide wordmark.
+   * Optical balance against the other logos in a row. 1 is the standard height. Logos of different shapes do not look the same size at the same height, so these are set from each mark’s aspect ratio — wide wordmarks come down, square marks go up — part-way between matching heights and matching area.
    */
   logoScale?: number | null;
   /**

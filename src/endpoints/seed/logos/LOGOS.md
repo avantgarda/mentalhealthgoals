@@ -36,14 +36,21 @@ API.
 | DATAMIND                 | datamind.svg                 | Official vector `DATAMIND_black_cmyk.svg` from datamind.org.uk                                                                                                | Confirm with DATAMIND comms. A white variant exists on their site if a dark ground is ever needed.                                                                                                                                                    |
 | MHDI                     | mhdi.png                     | The site lockup from mhdi.uk (raster; Wix, no vector published), white ground removed to transparency                                                         | Confirm with MHDI; ask for vector artwork.                                                                                                                                                                                                            |
 
-**A note on finding the two government marks.** Neither is on a logo-download
-page. The OLS organisation page on GOV.UK renders its name as _text_ — it is a
-joint unit of DHSC and DSIT and carries no crest there, unlike DHSC's own page —
-and current OLS documents use the unified "UK Government" crest rather than an
-OLS lockup. The OLS lockup does exist and OLS uses it on its own publications,
-which is where this copy comes from. The MRC mark is published by UKRI as a
-stacked logo; both it and the OLS lockup therefore need extra height before
-their wordmarks are readable, which is what their `logoScale` of 1.5 is for.
+**A note on the two government marks.** Neither is on a logo-download page.
+The OLS organisation page on GOV.UK renders its name as _text_ — it is a joint
+unit of DHSC and DSIT and carries no crest there, unlike DHSC's own page — and
+current OLS documents use the unified "UK Government" crest. UKRI's logo library
+is a Frontify app that serves nothing to a fetch. Both marks are published by
+partner organisations that carry them properly, which is where these copies come
+from, and both are the horizontal lockups rather than the stacked variants, so
+they sit in a row without needing extra height.
+
+**Sizing.** Logos of different shapes do not look the same size at the same
+height: a wide wordmark set to a square mark's height dwarfs it. Each partner's
+`logoScale` is therefore derived from its aspect ratio, part-way between
+matching heights and matching areas, so the row balances by visual mass. DIGIT
+is set below what its square mark alone suggests, because what a reader sees is
+the mark plus the name beside it — a much wider lockup.
 
 **What these organisations are.** GLAD, DATAMIND and MHDI are independent
 organisations and studies the programme builds on and delivers with — not

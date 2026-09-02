@@ -8,11 +8,13 @@ import { getMediaUrl } from '@/utilities/getMediaUrl'
 type Size = 'regular' | 'compact'
 
 /**
- * Standard logo height in px per size; individual partners scale from here.
- * Sized so a wordmark's smallest type is still readable rather than merely
- * recognisable — a partner shown too small to read is worse than a name.
+ * Standard logo height in px per size. Individual partners scale from here so
+ * the row balances by visual mass rather than by height: a wide wordmark and a
+ * square mark set to the same height do not look the same size. Each partner's
+ * `logoScale` is set from its aspect ratio, part-way between equal-height and
+ * equal-area — see the note on that field in the Partners collection.
  */
-const HEIGHT: Record<Size, number> = { regular: 60, compact: 42 }
+const HEIGHT: Record<Size, number> = { regular: 72, compact: 48 }
 
 const isMedia = (logo: Partner['logo']): logo is Media =>
   typeof logo === 'object' && logo !== null && 'url' in logo
@@ -58,11 +60,12 @@ export const PartnerLogo: React.FC<{
         width={width}
       />
       {showNameWithLogo && (
+        // Sized from the mark it sits beside, not fixed: a mark-only partner is
+        // a lockup of two parts, and they have to grow together or the name
+        // shrinks away as the mark gets bigger.
         <span
-          className={cn(
-            'font-display leading-none text-foreground',
-            size === 'compact' ? 'text-[1.05rem]' : 'text-[1.35rem]',
-          )}
+          className="font-display leading-none text-foreground"
+          style={{ fontSize: Math.round(height * 0.34) }}
         >
           {name}
         </span>
