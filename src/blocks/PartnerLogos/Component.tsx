@@ -35,7 +35,9 @@ export const PartnerLogosBlockComponent: React.FC<
   return (
     <section className={cn('container', className)}>
       <div
-        className="partner-plate chapter-rule border-t-2 border-foreground px-5 py-5"
+        // A quiet hairline, not the heavy chapter rule: a logo row is a credit
+        // under the section it follows, not a new chapter of its own.
+        className="partner-plate border-t border-border px-5 py-6"
         data-reveal
       >
         <PartnerGroup label={heading} partners={list} />

@@ -64,7 +64,10 @@ export const PartnerLogo: React.FC<{
         // a lockup of two parts, and they have to grow together or the name
         // shrinks away as the mark gets bigger.
         <span
-          className="font-display leading-none text-foreground"
+          // A bold sans, not our display serif: this text stands in for the
+          // partner's own wordmark, so it should read as their identity — and
+          // DIGIT sets its name exactly this way on the capabilities database.
+          className="font-sans font-bold leading-none tracking-tight text-foreground"
           style={{ fontSize: Math.round(height * 0.34) }}
         >
           {name}
@@ -128,7 +131,10 @@ export const PartnerGroup: React.FC<{
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       {label && (
-        <p className="eyebrow" id={labelId}>
+        // A touch larger than a standard eyebrow: this label is doing real
+        // work — "Funded by" versus "Delivered by" is the whole claim — and at
+        // the default size it sat too quietly under a row of full-size logos.
+        <p className="eyebrow !text-[0.78rem]" id={labelId}>
           {label}
         </p>
       )}
