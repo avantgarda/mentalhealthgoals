@@ -5,16 +5,17 @@ import React from 'react'
 import { cn } from '@/utilities/ui'
 import { getMediaUrl } from '@/utilities/getMediaUrl'
 
-type Size = 'regular' | 'compact'
-
 /**
- * Standard logo height in px per size. Individual partners scale from here so
- * the row balances by visual mass rather than by height: a wide wordmark and a
- * square mark set to the same height do not look the same size. Each partner's
- * `logoScale` is set from its aspect ratio, part-way between equal-height and
- * equal-area — see the note on that field in the Partners collection.
+ * Standard logo height in px. Individual partners scale from here so a row
+ * balances by visual mass rather than by height: a wide wordmark and a square
+ * mark set to the same height do not look the same size. See the note on
+ * `logoScale` in the Partners collection.
+ *
+ * One size for every surface, deliberately. Logo rows all sit in a content
+ * column — the band, a page row, a workstream body, an article — so a partner
+ * is the same size wherever a reader meets it.
  */
-const HEIGHT: Record<Size, number> = { regular: 72, compact: 48 }
+const HEIGHT = 72
 
 const isMedia = (logo: Partner['logo']): logo is Media =>
   typeof logo === 'object' && logo !== null && 'url' in logo
@@ -31,10 +32,9 @@ const isMedia = (logo: Partner['logo']): logo is Media =>
 export const PartnerLogo: React.FC<{
   className?: string
   partner: Partner
-  size?: Size
-}> = ({ className, partner, size = 'regular' }) => {
+}> = ({ className, partner }) => {
   const { logo, logoScale, name, showNameWithLogo, strapline, url } = partner
-  const height = Math.round(HEIGHT[size] * (logoScale || 1))
+  const height = Math.round(HEIGHT * (logoScale || 1))
   const media = isMedia(logo) ? logo : null
   const width =
     media?.width && media?.height ? Math.round((height * media.width) / media.height) : undefined
@@ -76,14 +76,7 @@ export const PartnerLogo: React.FC<{
     </span>
   ) : (
     <span className="flex flex-col gap-0.5">
-      <span
-        className={cn(
-          'font-display leading-tight text-foreground',
-          size === 'compact' ? 'text-[1.05rem]' : 'text-[1.35rem]',
-        )}
-      >
-        {name}
-      </span>
+      <span className="font-display text-[1.35rem] leading-tight text-foreground">{name}</span>
       {strapline && <span className="eyebrow !normal-case !tracking-[0.06em]">{strapline}</span>}
     </span>
   )
@@ -122,8 +115,7 @@ export const PartnerGroup: React.FC<{
   className?: string
   label?: string | null
   partners: Partner[]
-  size?: Size
-}> = ({ className, label, partners, size = 'regular' }) => {
+}> = ({ className, label, partners }) => {
   if (partners.length === 0) return null
   // "Funded by" versus "Delivered by" is the whole point of the band, so the
   // label has to name the list programmatically, not just sit above it.
@@ -140,14 +132,11 @@ export const PartnerGroup: React.FC<{
       )}
       <ul
         aria-labelledby={labelId}
-        className={cn(
-          'm-0 flex list-none flex-wrap items-center p-0',
-          size === 'compact' ? 'gap-x-8 gap-y-4' : 'gap-x-12 gap-y-6',
-        )}
+        className="m-0 flex list-none flex-wrap items-center gap-x-12 gap-y-6 p-0"
       >
         {partners.map((partner) => (
           <li className="m-0 p-0" key={partner.id}>
-            <PartnerLogo partner={partner} size={size} />
+            <PartnerLogo partner={partner} />
           </li>
         ))}
       </ul>

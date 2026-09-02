@@ -24,10 +24,8 @@ export const PartnerLogosBlockComponent: React.FC<
       // `not-prose`: inside an article this sits within Tailwind Typography's
       // prose scope, which would give the logo list bullets and paragraph
       // margins. The row is a figure, not body copy.
-      <div
-        className={cn('partner-plate not-prose my-8 border-y border-border px-5 py-6', className)}
-      >
-        <PartnerGroup label={heading} partners={list} size="compact" />
+      <div className={cn('partner-plate not-prose my-10 px-5 py-6', className)}>
+        <PartnerGroup label={heading} partners={list} />
       </div>
     )
   }
@@ -35,9 +33,9 @@ export const PartnerLogosBlockComponent: React.FC<
   return (
     <section className={cn('container', className)}>
       <div
-        // A quiet hairline, not the heavy chapter rule: a logo row is a credit
-        // under the section it follows, not a new chapter of its own.
-        className="partner-plate border-t border-border px-5 py-6"
+        // No rule at all: a logo row is a credit under the section it follows,
+        // and the air around it separates it perfectly well.
+        className="partner-plate px-5 py-6"
         data-reveal
       >
         <PartnerGroup label={heading} partners={list} />

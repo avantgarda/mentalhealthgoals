@@ -256,7 +256,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
 
             {workstreamPartners.length > 0 && (
               <div className="partner-plate border-y border-border px-5 py-6" data-reveal>
-                <PartnerGroup label="Delivered with" partners={workstreamPartners} size="compact" />
+                <PartnerGroup label="Delivered with" partners={workstreamPartners} />
               </div>
             )}
 
