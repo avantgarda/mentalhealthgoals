@@ -8,11 +8,7 @@ test.describe('Partner logos', () => {
       await page.goto(path)
       const band = page.getByRole('region', { name: 'Funded and delivered by' })
       await expect(band).toBeVisible()
-      // The funder has no cleared artwork yet, so it renders as a text lockup —
-      // the permission switch working as designed.
-      await expect(band.getByText('Office for Life Sciences')).toBeVisible()
-      await expect(band.getByText('UK Government')).toBeVisible()
-      // The delivery lead has artwork: a real image named for the organisation.
+      await expect(band.getByRole('img', { name: /Office for Life Sciences/ })).toBeVisible()
       await expect(band.getByRole('img', { name: /King’s College London/ })).toBeVisible()
     }
   })
@@ -25,7 +21,7 @@ test.describe('Partner logos', () => {
       '_blank',
     )
     // DIGIT points at our own /about — a new tab would be wrong.
-    const digit = band.getByRole('link', { name: /DIGIT/ })
+    const digit = band.getByRole('link', { name: 'DIGIT' })
     await expect(digit).toHaveAttribute('href', '/about')
     await expect(digit).not.toHaveAttribute('target', '_blank')
   })
@@ -55,10 +51,9 @@ test.describe('Partner logos', () => {
     const band = page.getByRole('region', { name: 'Funded and delivered by' })
     // The About page says the programme is funded by OLS and delivered by the
     // MRC; the band must not contradict it.
-    await expect(band.getByText('Medical Research Council')).toBeVisible()
-    // Each group names its own list rather than relying on visual grouping.
     const delivered = band.getByRole('list', { name: 'Delivered by' })
-    await expect(delivered.getByText('Medical Research Council')).toBeVisible()
+    await expect(delivered.getByRole('img', { name: /Medical Research Council/ })).toBeVisible()
+    // Each group names its own list rather than relying on visual grouping.
     await expect(band.getByRole('list', { name: 'Funded by' })).toBeVisible()
   })
 
