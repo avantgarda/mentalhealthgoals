@@ -74,6 +74,7 @@ export interface Config {
     users: User;
     workstreams: Workstream;
     people: Person;
+    partners: Partner;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -97,6 +98,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     workstreams: WorkstreamsSelect<false> | WorkstreamsSelect<true>;
     people: PeopleSelect<false> | PeopleSelect<true>;
+    partners: PartnersSelect<false> | PartnersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -211,6 +213,7 @@ export interface Page {
     | WorkstreamsBlockType
     | PeopleBlockType
     | EventDetailsBlock
+    | PartnerLogosBlock
   )[];
   meta?: {
     title?: string | null;
@@ -841,6 +844,65 @@ export interface EventDetailsBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PartnerLogosBlock".
+ */
+export interface PartnerLogosBlock {
+  /**
+   * Short label above the row, e.g. "Working with" or "Hosted by".
+   */
+  heading?: string | null;
+  partners: (number | Partner)[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'partnerLogos';
+}
+/**
+ * Funders, delivery partners and programme partners. Leave the logo empty to show the name as text until the organisation has confirmed its logo may be used.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partners".
+ */
+export interface Partner {
+  id: number;
+  name: string;
+  /**
+   * Optional second line for the text lockup, e.g. "UK Government" under "Office for Life Sciences". Also read out with the logo.
+   */
+  strapline?: string | null;
+  /**
+   * The organisation’s own website. Opens in a new tab.
+   */
+  url?: string | null;
+  role: 'funder' | 'delivery' | 'partner';
+  /**
+   * SVG preferred. For light backgrounds. Leave empty to show the name as text.
+   */
+  logo?: (number | null) | Media;
+  /**
+   * For marks without a wordmark — shows the name beside the logo.
+   */
+  showNameWithLogo?: boolean | null;
+  /**
+   * Optical balance against the other logos in a row: 1 is the standard height, 1.3 makes a compact mark read as large as a wide wordmark.
+   */
+  logoScale?: number | null;
+  /**
+   * The footer band is for accountability — who funds and who delivers. Programme partners belong in a Partner logos block on a page.
+   */
+  showInFooter?: boolean | null;
+  /**
+   * Lower numbers come first.
+   */
+  order?: number | null;
+  /**
+   * Internal. Where the artwork came from, who confirmed it may be used and any brand rules (clear space, no recolouring). Not published.
+   */
+  usageNote?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "workstreams".
  */
 export interface Workstream {
@@ -897,6 +959,10 @@ export interface Workstream {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Organisations this workstream is delivered with, shown as a logo row in the body. Use it only where the set is complete — the institutions in “Delivered by” stay as text, because showing a logo for one of several co-equal universities would imply a hierarchy the programme does not claim.
+   */
+  partners?: (number | Partner)[] | null;
   /**
    * Related external sites shown on this workstream’s page (e.g. the GLAD Study, MHDI).
    */
@@ -1103,6 +1169,10 @@ export interface PayloadLockedDocument {
         value: number | Person;
       } | null)
     | ({
+        relationTo: 'partners';
+        value: number | Partner;
+      } | null)
+    | ({
         relationTo: 'redirects';
         value: number | Redirect;
       } | null)
@@ -1204,6 +1274,7 @@ export interface PagesSelect<T extends boolean = true> {
         workstreamsBlock?: T | WorkstreamsBlockTypeSelect<T>;
         peopleBlock?: T | PeopleBlockTypeSelect<T>;
         eventDetails?: T | EventDetailsBlockSelect<T>;
+        partnerLogos?: T | PartnerLogosBlockSelect<T>;
       };
   meta?:
     | T
@@ -1381,6 +1452,16 @@ export interface EventDetailsBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PartnerLogosBlock_select".
+ */
+export interface PartnerLogosBlockSelect<T extends boolean = true> {
+  heading?: T;
+  partners?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
@@ -1528,6 +1609,7 @@ export interface WorkstreamsSelect<T extends boolean = true> {
         point?: T;
         id?: T;
       };
+  partners?: T;
   resources?:
     | T
     | {
@@ -1554,6 +1636,24 @@ export interface PeopleSelect<T extends boolean = true> {
   workstreams?: T;
   photo?: T;
   order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partners_select".
+ */
+export interface PartnersSelect<T extends boolean = true> {
+  name?: T;
+  strapline?: T;
+  url?: T;
+  role?: T;
+  logo?: T;
+  showNameWithLogo?: T;
+  logoScale?: T;
+  showInFooter?: T;
+  order?: T;
+  usageNote?: T;
   updatedAt?: T;
   createdAt?: T;
 }

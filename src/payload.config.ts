@@ -9,6 +9,7 @@ import { Categories } from './collections/Categories'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { People } from './collections/People'
+import { Partners } from './collections/Partners'
 import { Posts } from './collections/Posts'
 import { Users } from './collections/Users'
 import { Workstreams } from './collections/Workstreams'
@@ -68,7 +69,7 @@ export default buildConfig({
     },
     push: process.env.NODE_ENV === 'development', // Auto-sync schema in dev, use migrations in production
   }),
-  collections: [Pages, Posts, Media, Categories, Users, Workstreams, People],
+  collections: [Pages, Posts, Media, Categories, Users, Workstreams, People, Partners],
   // Without an adapter Payload writes emails to the console — fine in dev,
   // but production (password resets, contact-form notifications) needs Resend.
   // The mentalhealthgoals.co.uk domain must be verified in Resend before

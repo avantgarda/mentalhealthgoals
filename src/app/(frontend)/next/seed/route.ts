@@ -7,7 +7,13 @@ import { headers } from 'next/headers'
 export const maxDuration = 60 // This function can run for a maximum of 60 seconds
 
 /** Cache tags for everything the seed replaces (nav globals + sitemaps). */
-export const SEED_CACHE_TAGS = ['global_header', 'global_footer', 'pages-sitemap', 'posts-sitemap']
+export const SEED_CACHE_TAGS = [
+  'global_header',
+  'global_footer',
+  'partners',
+  'pages-sitemap',
+  'posts-sitemap',
+]
 
 export async function POST(): Promise<Response> {
   const payload = await getPayload({ config })

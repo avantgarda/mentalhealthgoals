@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url'
 
 import { contactForm as contactFormData } from './contact-form'
 import { registerInterestForm as registerInterestFormData } from './register-interest-form'
-import { bold, bullets, heading, link, paragraph, root, text } from './lexical'
+import { block, bold, bullets, heading, link, paragraph, root, text } from './lexical'
 import { workstreamContent } from './workstream-content'
 
 const filename = fileURLToPath(import.meta.url)
@@ -25,6 +25,7 @@ const collections: CollectionSlug[] = [
   'workstreams',
   'people',
   'categories',
+  'partners',
   'media',
 ]
 
@@ -166,6 +167,126 @@ export const seed = async ({
     )
   }
 
+  payload.logger.info(`— Seeding partners...`)
+
+  // Who funds, delivers and works with the programme. Artwork only where the
+  // owner's consent is clear — logos/LOGOS.md has the provenance and the
+  // permissions still to confirm. A partner without a logo renders as a text
+  // lockup, which is how the funder appears until OLS supply theirs.
+  const [kclLogo, digitLogo, gladLogo, datamindLogo, mhdiLogo] = await Promise.all(
+    [
+      ['King’s College London', 'kings-college-london.svg'],
+      ['DIGIT', 'digit.svg'],
+      ['GLAD Study — Genetic Links to Anxiety and Depression', 'glad-study.png'],
+      ['DATAMIND — the Health Data Research Hub for Mental Health', 'datamind.svg'],
+      ['MHDI — Mental Health Digital Innovation', 'mhdi.png'],
+    ].map(([alt, file]) =>
+      payload.create({ collection: 'media', data: { alt }, file: localFile(`logos/${file}`) }),
+    ),
+  )
+
+  const [
+    olsPartner,
+    mrcPartner,
+    kclPartner,
+    digitPartner,
+    gladPartner,
+    datamindPartner,
+    mhdiPartner,
+  ] = await Promise.all(
+    (
+      [
+        {
+          name: 'Office for Life Sciences',
+          strapline: 'UK Government',
+          role: 'funder',
+          url: 'https://www.gov.uk/government/organisations/office-for-life-sciences',
+          showInFooter: true,
+          order: 1,
+          usageNote:
+            'The GOV.UK identity is the Royal Arms crest — Crown copyright, outside the Open Government Licence. Shown as text until OLS comms supply the approved lockup; upload it here and it replaces the text.',
+        },
+        {
+          // The About page states the programme is funded by OLS and
+          // delivered by the MRC, so the band has to name the MRC or it
+          // contradicts the site's own copy. UKRI brand rules require their
+          // supplied artwork, so it is a text lockup like the funder.
+          name: 'Medical Research Council',
+          strapline: 'UK Research and Innovation',
+          role: 'delivery',
+          url: 'https://www.ukri.org/councils/mrc/',
+          showInFooter: true,
+          order: 2,
+          usageNote:
+            'UKRI/MRC artwork must come from UKRI and follow their brand rules; shown as a text lockup until they supply it.',
+        },
+        {
+          name: 'King’s College London',
+          role: 'delivery',
+          url: 'https://www.kcl.ac.uk',
+          logo: kclLogo.id,
+          // Parity with the DIGIT mark beside it: at 1.3 the solid red block
+          // out-massed everything in the band, including the funder.
+          logoScale: 1,
+          showInFooter: true,
+          order: 3,
+          usageNote:
+            'Official logo from kcl.ac.uk. Delivery lead; already used in the programme brochure. KCL brand rules: no recolouring, keep clear space.',
+        },
+        {
+          name: 'DIGIT',
+          strapline: 'Data and Digital Industry Alliance Team',
+          role: 'delivery',
+          url: '/about',
+          logo: digitLogo.id,
+          showNameWithLogo: true,
+          logoScale: 1,
+          showInFooter: true,
+          order: 4,
+          usageNote: 'The programme’s own mark, redrawn as a vector from the team’s PNG.',
+        },
+        {
+          name: 'GLAD Study',
+          strapline: 'Genetic Links to Anxiety and Depression',
+          role: 'partner',
+          url: 'https://gladstudy.org.uk',
+          logo: gladLogo.id,
+          logoScale: 1.15,
+          order: 10,
+          usageNote:
+            'Header logo from gladstudy.org.uk (raster; no vector published). Confirm use with the GLAD team and ask for vector artwork.',
+        },
+        {
+          name: 'DATAMIND',
+          strapline: 'The Health Data Research Hub for Mental Health',
+          role: 'partner',
+          url: 'https://datamind.org.uk',
+          logo: datamindLogo.id,
+          order: 11,
+          usageNote:
+            'Official vector from datamind.org.uk (DATAMIND_black_cmyk.svg). Confirm use with DATAMIND comms.',
+        },
+        {
+          name: 'MHDI',
+          strapline: 'Mental Health Digital Innovation',
+          role: 'partner',
+          url: 'https://www.mhdi.uk',
+          logo: mhdiLogo.id,
+          logoScale: 0.9,
+          order: 12,
+          usageNote:
+            'Site lockup from mhdi.uk (raster; no vector published). Confirm use with MHDI and ask for vector artwork.',
+        },
+      ] as const
+    ).map((data) =>
+      payload.create({ collection: 'partners', context: { disableRevalidate: true }, data }),
+    ),
+  )
+  // These three appear only in the footer band, via showInFooter.
+  void olsPartner
+  void mrcPartner
+  void digitPartner
+
   payload.logger.info(`— Seeding categories...`)
 
   const [newsCategory, eventsCategory, explainerCategory] = await Promise.all([
@@ -246,6 +367,7 @@ export const seed = async ({
       summary: 'Helps digital health technology launch, adopt and scale in the NHS.',
       description:
         'The Digital Innovation workstream supports digital health technologies through launch, adoption and scale in the NHS — creating clear pathways for digital therapeutics and measurement tools to reach the people who need them.',
+      partners: [mhdiPartner.id],
       deliveredBy: 'University of Manchester',
       resources: [{ label: 'Mental Health Digital Innovation (MHDI)', url: 'https://www.mhdi.uk' }],
     },
@@ -256,6 +378,7 @@ export const seed = async ({
       summary: 'An industry-facing platform for trial feasibility and AI-driven analytics.',
       description:
         'Delivered with DATAMIND — the UK Hub for Mental Health Informatics Research Development — the Data Observatory provides feasibility and protocol-design services over UK-wide data assets, supporting site selection, recruitment planning and AI-driven analytics inside secure data environments.',
+      partners: [datamindPartner.id],
       deliveredBy: 'University of Manchester · Swansea University',
       resources: [
         {
@@ -272,6 +395,7 @@ export const seed = async ({
         'A world-first multi-omics resource across 20,000 deeply clinically characterised participants.',
       description:
         'In severe depression, led from King’s College London, building on the GLAD (Genetic Links to Anxiety and Depression) Study. In psychosis, led from Cardiff University’s Centre for Neuropsychiatric Genetics and Genomics with the Universities of Cambridge and Edinburgh, which also leads multi-omic data generation. Together: biological and clinical data at unprecedented depth.',
+      partners: [gladPartner.id],
       deliveredBy:
         'King’s College London · Cardiff University · Queen’s University Belfast · University of Edinburgh · University of Cambridge',
       resources: [
@@ -712,6 +836,12 @@ export const seed = async ({
           ],
         },
         {
+          blockType: 'partnerLogos',
+          blockName: 'Working with',
+          heading: 'Working with',
+          partners: [gladPartner.id, datamindPartner.id, mhdiPartner.id],
+        },
+        {
           blockType: 'cta',
           richText: root(
             heading('h3', text('Industry Engagement Forum — launching October 2026')),
@@ -958,6 +1088,12 @@ export const seed = async ({
           ],
         },
         {
+          blockType: 'partnerLogos',
+          blockName: 'Working with',
+          heading: 'Working with',
+          partners: [gladPartner.id, datamindPartner.id, mhdiPartner.id],
+        },
+        {
           blockType: 'cta',
           richText: root(
             heading('h3', text('Meet the team')),
@@ -1127,6 +1263,12 @@ export const seed = async ({
           ],
         },
         {
+          blockType: 'partnerLogos',
+          blockName: 'Working with',
+          heading: 'Working with',
+          partners: [gladPartner.id, datamindPartner.id, mhdiPartner.id],
+        },
+        {
           blockType: 'cta',
           richText: root(
             heading('h3', text('Join us at the Industry Engagement Forum')),
@@ -1217,6 +1359,12 @@ export const seed = async ({
               ),
             },
           ],
+        },
+        {
+          blockType: 'partnerLogos',
+          blockName: 'Building on',
+          heading: 'Building on',
+          partners: [gladPartner.id],
         },
         {
           blockType: 'cta',
@@ -1390,6 +1538,12 @@ export const seed = async ({
                 'Immediate actions, ownership and follow-up working groups, refined with live input from attendees.',
             },
           ],
+        },
+        {
+          blockType: 'partnerLogos',
+          blockName: 'Hosted by',
+          heading: 'Hosted by',
+          partners: [kclPartner.id],
         },
         {
           blockType: 'content',
@@ -2008,6 +2162,14 @@ export const seed = async ({
             ' is delivered with DATAMIND: an industry-facing layer over UK-wide data assets that answers feasibility and protocol-design questions — site selection, recruitment planning, AI-driven analytics — inside secure data environments, without moving patient data.',
           ),
         ),
+        // A logo row inside the article: the same block editors can drop into
+        // any rich text from the toolbar.
+        block({
+          blockType: 'partnerLogos',
+          blockName: 'DATAMIND',
+          heading: 'About DATAMIND',
+          partners: [datamindPartner.id],
+        }),
       ),
     },
     {
@@ -2097,6 +2259,12 @@ export const seed = async ({
           link('More about the Multi-omics workstream', '/workstreams/multi-omics'),
           text('.'),
         ),
+        block({
+          blockType: 'partnerLogos',
+          blockName: 'GLAD',
+          heading: 'Building on',
+          partners: [gladPartner.id],
+        }),
       ),
     },
   ]
@@ -2223,7 +2391,13 @@ function localFile(name: string): File {
   const data = fs.readFileSync(filePath)
   const extension = name.split('.').pop()?.toLowerCase()
   const mimetype =
-    extension === 'png' ? 'image/png' : extension === 'jpg' ? 'image/jpeg' : 'image/webp'
+    extension === 'png'
+      ? 'image/png'
+      : extension === 'jpg'
+        ? 'image/jpeg'
+        : extension === 'svg'
+          ? 'image/svg+xml'
+          : 'image/webp'
 
   return {
     // Basename only: `name` becomes the stored filename and its public URL,

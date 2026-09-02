@@ -2,6 +2,7 @@ import type { Block, Field } from 'payload'
 
 import {
   FixedToolbarFeature,
+  BlocksFeature,
   HeadingFeature,
   InlineToolbarFeature,
   lexicalEditor,
@@ -9,6 +10,7 @@ import {
 
 import { link } from '@/fields/link'
 
+import { PartnerLogos } from '../PartnerLogos/config'
 const columnFields: Field[] = [
   {
     name: 'size',
@@ -41,6 +43,7 @@ const columnFields: Field[] = [
         return [
           ...rootFeatures,
           HeadingFeature({ enabledHeadingSizes: ['h2', 'h3', 'h4'] }),
+          BlocksFeature({ blocks: [PartnerLogos] }),
           FixedToolbarFeature(),
           InlineToolbarFeature(),
         ]

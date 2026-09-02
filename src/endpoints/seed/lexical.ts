@@ -78,3 +78,11 @@ export const root = (...children: any[]): any => ({
     version: 1,
   },
 })
+
+/** A block node inside rich text — e.g. a partner logo row within an article. */
+export const block = (fields: Record<string, unknown>): any => ({
+  type: 'block',
+  fields,
+  format: '',
+  version: 2,
+})

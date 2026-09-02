@@ -2,7 +2,12 @@ import type { Metadata } from 'next'
 
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
+
 import Link from 'next/link'
+
+import { PartnerGroup } from '@/components/PartnerLogo'
+import { getCachedPartners } from '@/utilities/getPartners'
+
 import { notFound } from 'next/navigation'
 import React, { cache } from 'react'
 
@@ -122,8 +127,27 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
 
   if (!workstream) notFound()
 
-  const { number, title, summary, description, deliveredBy, boundaryStatement, resources } =
-    workstream
+  const {
+    number,
+    title,
+    summary,
+    description,
+    deliveredBy,
+    boundaryStatement,
+    partners,
+    resources,
+  } = workstream
+  // The workstream query runs at depth 0, so `partners` arrives as IDs — and
+  // raising the depth far enough to reach each partner's logo would pull the
+  // whole graph for every workstream page. Resolve them from the cached
+  // partner list instead, which the footer has already warmed, keeping the
+  // seeded order rather than the relationship's.
+  const partnerIds = new Set(
+    (partners ?? []).map((p) => (typeof p === 'object' && p !== null ? p.id : p)),
+  )
+  const workstreamPartners = partnerIds.size
+    ? (await getCachedPartners()).filter((p) => partnerIds.has(p.id))
+    : []
   const all = await queryAllWorkstreams()
   const team = await queryWorkstreamPeople({ id: workstream.id })
   const index = all.findIndex((w) => w.slug === workstream.slug)
@@ -144,6 +168,12 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
             </span>
             <div className="flex flex-col gap-1.5">
               <span className="eyebrow">Delivered by</span>
+              {/* Institutions stay as text, deliberately. A workstream's
+                  delivery list is a set of co-equal institutions, and we only
+                  hold cleared artwork for one of them — showing King's as a
+                  logo above four plain university names would invent a
+                  hierarchy the programme does not claim. Logos belong where
+                  the set is complete: the footer band and curated rows. */}
               <ul className="flex flex-col gap-1 text-sm leading-snug">
                 {deliveredBy
                   .split('·')
@@ -222,6 +252,12 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
               <p className="lede max-w-[66ch]" data-reveal>
                 <LinkifyEntities text={description} />
               </p>
+            )}
+
+            {workstreamPartners.length > 0 && (
+              <div className="partner-plate border-y border-border px-5 py-6" data-reveal>
+                <PartnerGroup label="Delivered with" partners={workstreamPartners} size="compact" />
+              </div>
             )}
 
             {SECTIONS.map((s) => (
