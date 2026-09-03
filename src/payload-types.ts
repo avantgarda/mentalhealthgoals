@@ -921,7 +921,7 @@ export interface Workstream {
    */
   description?: string | null;
   /**
-   * Lead institution(s), e.g. "King’s College London"
+   * Lead institution(s), e.g. "University of Manchester · Swansea University"
    */
   deliveredBy: string;
   /**
@@ -1004,7 +1004,7 @@ export interface Person {
   /**
    * Which section of the Team page this person appears under.
    */
-  group: 'leadership' | 'digit' | 'workstream-leads' | 'delivery';
+  group: 'leadership' | 'workstream-leads' | 'delivery';
   /**
    * Workstreams this person leads or works on — also lists them on those workstream pages.
    */
@@ -1979,7 +1979,7 @@ export interface Brand {
   createdAt?: string | null;
 }
 /**
- * Contact details for the programme as a whole — shown in the site footer. People and their individual contact details live in the People collection.
+ * The programme’s own description and contact details — shown in the site footer. People and their individual contact details live in the People collection.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "programmeDetails".
@@ -1990,7 +1990,10 @@ export interface ProgrammeDetail {
    * Used in the footer copyright line.
    */
   name: string;
-  organisation?: string | null;
+  /**
+   * The sentence under the logo in the footer.
+   */
+  description?: string | null;
   email?: string | null;
   phone?: string | null;
   /**
@@ -2063,7 +2066,7 @@ export interface BrandSelect<T extends boolean = true> {
  */
 export interface ProgrammeDetailsSelect<T extends boolean = true> {
   name?: T;
-  organisation?: T;
+  description?: T;
   email?: T;
   phone?: T;
   address?: T;

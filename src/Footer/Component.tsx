@@ -9,6 +9,7 @@ import { CMSLink } from '@/components/Link'
 import { Logo } from '@/components/Logo/Logo'
 import { PartnerGroup } from '@/components/PartnerLogo'
 import { getCachedPartners } from '@/utilities/getPartners'
+import { FOOTER_DESCRIPTION } from '@/ProgrammeDetails/config'
 
 export async function Footer() {
   const footerData = await getCachedGlobal('footer', 1)()
@@ -44,9 +45,7 @@ export async function Footer() {
                 <Logo showTagline={brand.showTagline} variant={brand.variant} />
               </Link>
               <p className="text-[0.95rem] leading-relaxed text-white/75">
-                A UK Government-backed, UK-wide programme transforming mental health research —
-                delivered by King&apos;s College London with university, NHS, industry and lived
-                experience partners across all four nations.
+                {details?.description || FOOTER_DESCRIPTION}
               </p>
             </div>
 

@@ -37,6 +37,18 @@ test.describe('Frontend', () => {
     await expect(page.getByRole('heading', { name: /key questions/i })).toBeVisible()
   })
 
+  test('the workstreams index explains its umbrella team without logos', async ({ page }) => {
+    await page.goto('/workstreams')
+    await page.getByRole('link', { name: /About DIGIT/ }).click()
+    await page.waitForURL(/\/digit$/)
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(
+      /Data and Digital Industry Alliance Team/i,
+    )
+    // Typographic by design: a page about one team inside the programme does
+    // not get a logo the other workstreams' teams do not have.
+    await expect(page.locator('main').getByRole('img')).toHaveCount(0)
+  })
+
   test('the well-known icon paths follow the brand', async ({ request }) => {
     // Fetchers that never read the <link> tags — browsers guessing
     // /favicon.ico, dashboard icon scrapers — must still get the current

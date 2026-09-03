@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('Partner logos', () => {
-  test('the accountability band names the funder and shows the delivery lead on every page', async ({
+  test('the accountability band names the funder and the delivery body on every page', async ({
     page,
   }) => {
     for (const path of ['/', '/about', '/search']) {
@@ -9,20 +9,32 @@ test.describe('Partner logos', () => {
       const band = page.getByRole('region', { name: 'Funded and delivered by' })
       await expect(band).toBeVisible()
       await expect(band.getByRole('img', { name: /Office for Life Sciences/ })).toBeVisible()
-      await expect(band.getByRole('img', { name: /King’s College London/ })).toBeVisible()
+      await expect(band.getByRole('img', { name: /Medical Research Council/ })).toBeVisible()
     }
+  })
+
+  test('the band names no delivery institution or team', async ({ page }) => {
+    // Nine institutions deliver the programme. The band is the site's one
+    // every-page claim, so naming one of them there would read as precedence
+    // over the other eight — and DIGIT is a team within the programme rather
+    // than a funder or delivery body.
+    await page.goto('/')
+    const band = page.getByRole('region', { name: 'Funded and delivered by' })
+    await expect(band.getByRole('img', { name: /King’s College London/ })).toHaveCount(0)
+    await expect(band.getByRole('link', { name: 'DIGIT' })).toHaveCount(0)
   })
 
   test('outbound partner links open in a new tab; internal ones do not', async ({ page }) => {
     await page.goto('/')
     const band = page.getByRole('region', { name: 'Funded and delivered by' })
-    await expect(band.getByRole('link', { name: /King’s College London/ })).toHaveAttribute(
+    await expect(band.getByRole('link', { name: /Medical Research Council/ })).toHaveAttribute(
       'target',
       '_blank',
     )
-    // DIGIT points at our own /about — a new tab would be wrong.
-    const digit = band.getByRole('link', { name: 'DIGIT' })
-    await expect(digit).toHaveAttribute('href', '/about')
+    // The workstreams index links DIGIT to our own page — a new tab would be wrong.
+    await page.goto('/workstreams')
+    const digit = page.getByRole('link', { name: /About DIGIT/ })
+    await expect(digit).toHaveAttribute('href', '/digit')
     await expect(digit).not.toHaveAttribute('target', '_blank')
   })
 

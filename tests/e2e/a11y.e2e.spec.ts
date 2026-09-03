@@ -56,6 +56,7 @@ const STATIC_PAGES = [
   '/',
   '/posts',
   '/contact',
+  '/digit',
   '/privacy',
   '/accessibility',
   '/search',

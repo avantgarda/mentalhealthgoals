@@ -39,15 +39,9 @@ const GROUPS = [
       'Setting the strategic direction of the programme and representing it across the UK and internationally.',
   },
   {
-    value: 'digit',
-    heading: 'DIGIT leadership',
-    intro:
-      'The Data and Digital Industry Alliance Team delivers the Alliance Management Team, Innovative Clinical Trials Hub and Lived Experience Industry Partnership.',
-  },
-  {
     value: 'workstream-leads',
     heading: 'Workstream leads',
-    intro: 'The cohort, data and digital workstreams, led from partner institutions across the UK.',
+    intro: 'The leads of the six workstreams, from partner institutions across the UK.',
   },
   {
     value: 'delivery',
@@ -106,7 +100,7 @@ const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index
   )
 }
 
-/** The team, in sections: leadership, workstream leads, alliance team, collaborators. */
+/** The team, in sections: programme leadership, workstream leads, delivery team. */
 export const PeopleBlockComponent: React.FC<PeopleBlockType> = async ({ heading, intro }) => {
   const payload = await getPayload({ config: configPromise })
 

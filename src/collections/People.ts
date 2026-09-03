@@ -63,7 +63,6 @@ export const People: CollectionConfig = {
       },
       options: [
         { label: 'Programme leadership', value: 'leadership' },
-        { label: 'DIGIT leadership', value: 'digit' },
         { label: 'Workstream leads', value: 'workstream-leads' },
         { label: 'Delivery team', value: 'delivery' },
       ],

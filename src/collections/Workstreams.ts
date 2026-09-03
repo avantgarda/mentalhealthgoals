@@ -69,7 +69,7 @@ export const Workstreams: CollectionConfig = {
       required: true,
       label: 'Delivered by',
       admin: {
-        description: 'Lead institution(s), e.g. "King’s College London"',
+        description: 'Lead institution(s), e.g. "University of Manchester · Swansea University"',
       },
     },
     {
