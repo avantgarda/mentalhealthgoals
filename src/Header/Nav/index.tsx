@@ -20,7 +20,7 @@ export const HeaderNav: React.FC<{ className?: string; data: HeaderType }> = ({
   return (
     <nav
       aria-label="Main navigation"
-      className={cn('items-center gap-x-6 text-[0.9rem] font-medium', className)}
+      className={cn('items-center gap-x-6 text-[0.95rem] font-medium', className)}
     >
       {navItems.map(({ link }, i) => {
         const href = resolveHref(link)

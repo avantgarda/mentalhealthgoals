@@ -257,7 +257,12 @@ body:has([data-hero-theme='dark']) > header:not([data-theme]) {
   body {
     @apply bg-background text-foreground min-h-[100vh] flex flex-col;
     font-family: var(--font-sans);
-    font-size: 1.0625rem;
+    /* 18px. WCAG sets no minimum size — it asks only that text scales (1.4.4)
+       and survives spacing overrides (1.4.12) — so this is a design call
+       measured against the closest peer: GOV.UK's Design System sets body at
+       19px on every screen, having removed its small-screen drop because
+       shrinking type on phones hurts exactly the people it should not. */
+    font-size: 1.125rem;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
@@ -282,7 +287,10 @@ html[data-theme='light'] {
 @layer components {
   .eyebrow {
     font-family: var(--font-sans);
-    font-size: 0.68rem;
+    /* The site's smallest type, and it labels things everywhere — section
+       gutters, "Delivered by", footer column heads. At 0.68rem it was under
+       11px. */
+    font-size: 0.78rem;
     font-weight: 600;
     line-height: 1.3;
     letter-spacing: 0.16em;

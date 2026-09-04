@@ -174,7 +174,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
                   logo above four plain university names would invent a
                   hierarchy the programme does not claim. Logos belong where
                   the set is complete: the footer band and curated rows. */}
-              <ul className="flex flex-col gap-1 text-sm leading-snug">
+              <ul className="flex flex-col gap-1 text-[0.95rem] leading-snug">
                 {deliveredBy
                   .split('·')
                   .map((institution) => institution.trim())
@@ -187,7 +187,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
             {resources && resources.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <span className="eyebrow">Links</span>
-                <ul className="flex flex-col text-sm leading-snug">
+                <ul className="flex flex-col text-[0.95rem] leading-snug">
                   {resources.map((resource) => (
                     <li key={resource.id || resource.url}>
                       <a
@@ -222,7 +222,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
                 className="flex flex-col gap-3 border-t border-border pt-3 lg:sticky lg:top-8"
               >
                 <p className="eyebrow">On this page</p>
-                <ul className="flex flex-col gap-2 text-sm">
+                <ul className="flex flex-col gap-2 text-[0.95rem]">
                   {sections.map((s) => (
                     <li key={s.id}>
                       <a

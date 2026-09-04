@@ -126,7 +126,7 @@ export const Card: React.FC<{
       </div>
       <div className="flex items-start justify-between gap-6 lg:col-span-5">
         {description && (
-          <p className="text-[0.95rem] leading-relaxed text-muted-foreground">
+          <p className="text-[1rem] leading-relaxed text-muted-foreground">
             {sanitizedDescription}
           </p>
         )}

@@ -73,12 +73,12 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
             {ws.title}
           </RowHeading>
         </div>
-        <p className="col-start-2 text-[0.95rem] leading-relaxed text-muted-foreground lg:col-span-4 lg:col-start-6">
+        <p className="col-start-2 text-[1rem] leading-relaxed text-muted-foreground lg:col-span-4 lg:col-start-6">
           {detailed ? ws.description || ws.summary : ws.summary}
         </p>
         <div className="col-start-2 flex flex-col gap-1 lg:col-span-3 lg:col-start-10 lg:items-end lg:text-right">
           <span className="eyebrow">Delivered by</span>
-          <span className="text-sm leading-snug">{ws.deliveredBy}</span>
+          <span className="text-[0.95rem] leading-snug">{ws.deliveredBy}</span>
           <span aria-hidden="true" className="arrow mt-1 text-muted-foreground">
             →
           </span>

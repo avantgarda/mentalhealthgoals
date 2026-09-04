@@ -89,7 +89,7 @@ const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index
       </div>
       <div>
         <h3 className="font-display text-[1.2rem] leading-tight">{person.name}</h3>
-        <p className="mt-1 text-sm font-medium leading-snug">{person.role}</p>
+        <p className="mt-1 text-[1rem] font-medium leading-snug">{person.role}</p>
         <p className="eyebrow mt-1.5">{person.organisation}</p>
       </div>
       {person.bio && <p className="text-sm leading-relaxed text-muted-foreground">{person.bio}</p>}
