@@ -208,7 +208,12 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
           </div>
 
           <header className="flex flex-col gap-6 lg:col-span-9">
-            <h1 className="display-1 max-w-[16ch]">{title}</h1>
+            {/* No character cap: 16ch was narrower than this column at every
+                width, so it forced breaks the grid had room to avoid —
+                "Alliance Management Team" split after its first word on every
+                screen. The column constrains the line; `text-wrap: balance`
+                (set on every heading in globals.css) evens what is left. */}
+            <h1 className="display-1">{title}</h1>
             {summary && <p className="lede max-w-[44rem]">{summary}</p>}
           </header>
         </div>

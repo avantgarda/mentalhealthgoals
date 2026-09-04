@@ -88,6 +88,26 @@ test.describe('Frontend', () => {
     expect(order.workstream).toBeLessThan(order.institution)
   })
 
+  test('a workstream title uses the width its column actually has', async ({ page }) => {
+    // A `max-w-[16ch]` cap used to sit narrower than this column at every
+    // width, breaking "Alliance Management Team" after its first word on
+    // every screen. The column should be the only constraint.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/workstreams/alliance-management-team')
+
+    const measured = await page.evaluate(() => {
+      const h1 = document.querySelector('h1')!
+      const range = document.createRange()
+      range.selectNodeContents(h1)
+      const lines = [...range.getClientRects()].map((r) => r.width)
+      const available = h1.parentElement!.getBoundingClientRect().width
+      return { lines: lines.length, widest: Math.max(...lines), available }
+    })
+
+    expect(measured.lines).toBe(1)
+    expect(measured.widest).toBeLessThanOrEqual(measured.available + 1)
+  })
+
   test('the well-known icon paths follow the brand', async ({ request }) => {
     // Fetchers that never read the <link> tags — browsers guessing
     // /favicon.ico, dashboard icon scrapers — must still get the current
