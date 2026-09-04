@@ -11,10 +11,11 @@
 @custom-variant 2xl (@media (width >= theme(--breakpoint-2xl)));
 
 @layer base {
-  /* The sticky call-to-action bar publishes its height here while it is on
-     screen, so an anchor jump or a focus move never lands behind it —
-     WCAG 2.2 SC 2.4.11, Focus Not Obscured. */
+  /* Both sticky bars publish their height here — the header at the top, the
+     call-to-action bar at the bottom — so an anchor jump or a focus move
+     never lands behind either. WCAG 2.2 SC 2.4.11, Focus Not Obscured. */
   html {
+    scroll-padding-top: calc(var(--header-h, 0px) + 1rem);
     scroll-padding-bottom: calc(var(--sticky-cta-h, 0px) + 1rem);
   }
 
@@ -164,7 +165,7 @@
    the header only runs after hydration, and without this the pre-hydration
    (and JS-off) header renders light-theme text on the dark hero. */
 [data-theme='dark'],
-body:has([data-hero-theme='dark']) > header:not([data-theme]) {
+body:has([data-hero-theme='dark']) > header:not([data-theme]):not([data-stuck]) {
   --background: oklch(19.5% 0.024 215deg);
   --foreground: oklch(94.5% 0.008 195deg);
   --card: oklch(23.5% 0.028 215deg);

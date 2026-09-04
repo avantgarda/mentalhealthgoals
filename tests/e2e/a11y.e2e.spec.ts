@@ -150,6 +150,43 @@ test.describe('keyboard access', () => {
     expect(reached.size).toBe(count)
   })
 
+  test('the sticky header never covers the element being focused', async ({ page }) => {
+    // WCAG 2.2 SC 2.4.11, Focus Not Obscured — the same contract the sticky
+    // call-to-action bar honours from the bottom of the screen.
+    await page.goto('/workstreams/lived-experience-industry-partnership')
+    await page.locator('a[href="#key-questions"]').click()
+    await page.waitForTimeout(400)
+
+    const clear = await page.evaluate(() => {
+      const header = document.querySelector('header')!
+      const target = document.getElementById('key-questions')!
+      return target.getBoundingClientRect().top >= header.getBoundingClientRect().bottom
+    })
+    expect(clear).toBe(true)
+  })
+
+  test('the header keeps light ink while it sits over the dark hero', async ({ page }) => {
+    // It used to claim the page theme and the hero theme from two different
+    // components; whichever effect landed last won, so a client-side
+    // navigation could paint a white, opaque bar over the dark hero.
+    await page.goto('/')
+    await page.locator('header a[href="/about"]').first().click()
+    await page.waitForURL('**/about')
+    await page.locator('header a[href="/"]').click()
+    await page.waitForURL((url) => new URL(url).pathname === '/')
+
+    for (let frame = 0; frame < 12; frame++) {
+      const dark = await page.evaluate(() => {
+        const header = document.querySelector('header')!
+        const ink = getComputedStyle(header.firstElementChild!).color
+        const lightness = Number(ink.match(/[\d.]+/)?.[0] ?? 100)
+        return { overHero: Boolean(document.querySelector('[data-hero-theme="dark"]')), lightness }
+      })
+      if (dark.overHero) expect(dark.lightness).toBeGreaterThan(50)
+      await page.waitForTimeout(25)
+    }
+  })
+
   test('tabbing never gets trapped and reaches the footer', async ({ page }) => {
     await page.goto('/')
 

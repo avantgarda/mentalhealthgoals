@@ -25,7 +25,7 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
 
   useEffect(() => {
     setHeaderTheme('dark')
-  })
+  }, [setHeaderTheme])
 
   const { heading, headingText, rest } = splitRichText(richText)
   const words = headingText ? headingText.split(/\s+/) : []
