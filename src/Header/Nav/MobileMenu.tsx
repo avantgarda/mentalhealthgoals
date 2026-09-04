@@ -33,7 +33,7 @@ export const MobileMenu: React.FC<{ data: HeaderType }> = ({ data }) => {
   }, [open])
 
   return (
-    <div className="lg:hidden">
+    <div className="xl:hidden">
       <button
         aria-controls={panelId}
         aria-expanded={open}

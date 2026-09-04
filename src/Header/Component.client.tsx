@@ -148,7 +148,7 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
             variant={brand.variant}
           />
         </Link>
-        <HeaderNav className="hidden lg:flex" data={data} />
+        <HeaderNav className="hidden xl:flex" data={data} />
         <MobileMenu data={data} />
       </div>
     </header>

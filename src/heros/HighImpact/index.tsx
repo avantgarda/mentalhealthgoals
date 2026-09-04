@@ -50,7 +50,7 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden lg:block">
         <div className="container relative h-full">
           <div className="absolute inset-y-0 left-[58.333%] right-[calc((100%-100vw)/2-2vw)] text-white/85">
-            <Ridge align="right" className="h-full w-full" lines={22} />
+            <Ridge align="right" className="h-full w-full" fadeLeft lines={22} />
           </div>
         </div>
       </div>
