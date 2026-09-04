@@ -114,49 +114,60 @@ export const FormBlock: React.FC<
   )
 
   return (
-    <div className="container lg:max-w-[48rem]">
-      {enableIntro && introContent && !hasSubmitted && (
-        <RichText className="mb-8 lg:mb-12" data={introContent} enableGutter={false} />
-      )}
-      <div className="border border-border bg-card p-6 lg:p-8">
-        <FormProvider {...formMethods}>
-          {!isLoading && hasSubmitted && confirmationType === 'message' && (
-            <RichText data={confirmationMessage} />
-          )}
-          {isLoading && !hasSubmitted && <p>Loading, please wait...</p>}
-          {error && <div>{`${error.status || '500'}: ${error.message || ''}`}</div>}
-          {!hasSubmitted && (
-            <form id={formID} onSubmit={handleSubmit(onSubmit)}>
-              <div className="mb-4 last:mb-0">
-                {formFromProps &&
-                  formFromProps.fields &&
-                  formFromProps.fields?.map((field, index) => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const Field: React.FC<any> = fields?.[field.blockType as keyof typeof fields]
-                    if (Field) {
-                      return (
-                        <div className="mb-6 last:mb-0" key={index}>
+    // The measure is a nested box, not a cap on `.container` itself: the
+    // container's own `2xl` rule sets max-width later in the same cascade
+    // layer, so a `lg:max-w-[48rem]` sitting beside it never won and every
+    // field ran the full width of the page.
+    <div className="container">
+      <div className="max-w-[38rem]">
+        {enableIntro && introContent && !hasSubmitted && (
+          <RichText className="mb-8 lg:mb-10" data={introContent} enableGutter={false} />
+        )}
+        <div className="border-t-2 border-foreground pt-8">
+          <FormProvider {...formMethods}>
+            {!isLoading && hasSubmitted && confirmationType === 'message' && (
+              <RichText data={confirmationMessage} />
+            )}
+            {isLoading && !hasSubmitted && <p>Loading, please wait...</p>}
+            {error && (
+              <p className="mb-6 border-l-2 border-error pl-4 text-[0.95rem]" role="alert">
+                {`${error.status || '500'}: ${error.message || ''}`}
+              </p>
+            )}
+            {!hasSubmitted && (
+              <form id={formID} onSubmit={handleSubmit(onSubmit)}>
+                {/* Fields carry their own width, so short ones can share a
+                    row instead of every input running the full measure. */}
+                <div className="flex flex-wrap gap-x-5 gap-y-6">
+                  {formFromProps &&
+                    formFromProps.fields &&
+                    formFromProps.fields?.map((field, index) => {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const Field: React.FC<any> = fields?.[field.blockType as keyof typeof fields]
+                      if (Field) {
+                        return (
                           <Field
                             form={formFromProps}
+                            key={index}
                             {...field}
                             {...formMethods}
                             control={control}
                             errors={errors}
                             register={register}
                           />
-                        </div>
-                      )
-                    }
-                    return null
-                  })}
-              </div>
+                        )
+                      }
+                      return null
+                    })}
+                </div>
 
-              <Button form={formID} type="submit" variant="default">
-                {submitButtonLabel}
-              </Button>
-            </form>
-          )}
-        </FormProvider>
+                <Button className="mt-8" form={formID} type="submit" variant="default">
+                  {submitButtonLabel}
+                </Button>
+              </form>
+            )}
+          </FormProvider>
+        </div>
       </div>
     </div>
   )

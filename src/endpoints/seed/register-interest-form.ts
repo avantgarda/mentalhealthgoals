@@ -68,7 +68,7 @@ export const registerInterestForm: RequiredDataFromCollectionSlug<'forms'> = {
       blockType: 'text',
       label: 'Full name',
       required: true,
-      width: 100,
+      width: 50,
     },
     {
       name: 'organisation',
@@ -76,7 +76,7 @@ export const registerInterestForm: RequiredDataFromCollectionSlug<'forms'> = {
       blockType: 'text',
       label: 'Organisation',
       required: true,
-      width: 100,
+      width: 50,
     },
     {
       name: 'role',
@@ -84,7 +84,7 @@ export const registerInterestForm: RequiredDataFromCollectionSlug<'forms'> = {
       blockType: 'text',
       label: 'Role or job title',
       required: false,
-      width: 100,
+      width: 50,
     },
     {
       name: 'email',
@@ -92,7 +92,7 @@ export const registerInterestForm: RequiredDataFromCollectionSlug<'forms'> = {
       blockType: 'email',
       label: 'Email',
       required: true,
-      width: 100,
+      width: 50,
     },
     {
       name: 'attendance',

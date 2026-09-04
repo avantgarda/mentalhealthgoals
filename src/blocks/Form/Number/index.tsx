@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import React from 'react'
 
 import { Error } from '../Error'
+import { autoCompleteFor } from '../autocomplete'
 import { Width } from '../Width'
 export const Number: React.FC<
   TextField & {
@@ -25,6 +26,7 @@ export const Number: React.FC<
         )}
       </Label>
       <Input
+        autoComplete={autoCompleteFor(name)}
         defaultValue={defaultValue}
         id={name}
         type="number"
