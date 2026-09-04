@@ -60,7 +60,7 @@ const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index
 
   return (
     <li
-      className="flex scroll-mt-24 flex-col gap-3"
+      className="flex scroll-mt-28 flex-col gap-3"
       data-reveal
       id={personAnchor(person.name)}
       style={{ transitionDelay: `${(index % 4) * 60}ms` }}
@@ -90,11 +90,28 @@ const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index
       <div>
         <h3 className="font-display text-[1.2rem] leading-tight">{person.name}</h3>
         <p className="mt-1 text-[1rem] font-medium leading-snug">{person.role}</p>
-        <p className="eyebrow mt-1.5">{person.organisation}</p>
+        {/* Which part of the programme someone works on comes before which
+            institution employs them: this is a programme site, and the
+            workstream is the thing a reader is here to follow. */}
+        {titles.length > 0 && <p className="eyebrow mt-2">{titles.join(' · ')}</p>}
+        <p className="mt-1.5 text-[0.95rem] leading-snug text-muted-foreground">
+          {person.organisation}
+        </p>
       </div>
-      {person.bio && <p className="text-sm leading-relaxed text-muted-foreground">{person.bio}</p>}
-      {titles.length > 0 && (
-        <p className="mt-auto pt-1 text-xs text-muted-foreground">{titles.join(' · ')}</p>
+      {person.bio && (
+        // Twenty open biographies made the page enormous and the cards ragged.
+        // A native disclosure keeps them one click away, works with no
+        // JavaScript, and is keyboard accessible without any of our help.
+        <details className="group/bio mt-auto">
+          <summary className="eyebrow inline-flex cursor-pointer list-none items-center gap-1.5 pt-1 text-muted-foreground transition-colors duration-[var(--dur-ui)] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current [&::-webkit-details-marker]:hidden">
+            <span className="group-open/bio:hidden">Read more</span>
+            <span className="hidden group-open/bio:inline">Close</span>
+            <span aria-hidden="true" className="transition-transform group-open/bio:rotate-180">
+              ↓
+            </span>
+          </summary>
+          <p className="mt-2 text-[0.95rem] leading-relaxed text-muted-foreground">{person.bio}</p>
+        </details>
       )}
     </li>
   )
@@ -135,7 +152,9 @@ export const PeopleBlockComponent: React.FC<PeopleBlockType> = async ({ heading,
         return (
           <section key={group.value}>
             <SectionHead flush={isFirst} heading={group.heading} intro={group.intro} />
-            <ul className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-8">
+            {/* Smaller plates at the wide end: five and six across rather than
+                four, so a face is a face and not a poster. */}
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-8 xl:grid-cols-5 2xl:grid-cols-6">
               {members.map((person, index) => (
                 <PersonCard index={index} key={person.id} person={person} />
               ))}

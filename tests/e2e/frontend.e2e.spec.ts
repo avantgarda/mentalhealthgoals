@@ -65,6 +65,29 @@ test.describe('Frontend', () => {
     await expect(inTheListing).toHaveCount(1)
   })
 
+  test('team cards keep their biography behind a disclosure', async ({ page }) => {
+    await page.goto('/people')
+    const card = page.locator('#mitul-mehta')
+
+    // Closed by default: twenty open biographies made the page enormous.
+    const bio = card.getByText(/Professor of Neuroimaging/)
+    await expect(bio).toBeHidden()
+
+    await card.getByText('Read more').click()
+    await expect(bio).toBeVisible()
+
+    // The workstream comes before the institution — this is a programme site.
+    const order = await card.evaluate((el) => {
+      const text = (el as HTMLElement).innerText
+      return {
+        workstream: text.indexOf('Alliance Management Team'),
+        institution: text.indexOf('King’s College London'),
+      }
+    })
+    expect(order.workstream).toBeGreaterThan(-1)
+    expect(order.workstream).toBeLessThan(order.institution)
+  })
+
   test('the well-known icon paths follow the brand', async ({ request }) => {
     // Fetchers that never read the <link> tags — browsers guessing
     // /favicon.ico, dashboard icon scrapers — must still get the current
