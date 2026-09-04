@@ -49,6 +49,22 @@ test.describe('Frontend', () => {
     await expect(page.locator('main').getByRole('img')).toHaveCount(0)
   })
 
+  test('an upcoming event is pinned above the news, and only appears once', async ({ page }) => {
+    await page.goto('/posts')
+    const band = page.getByRole('region', { name: 'Coming up' })
+    await expect(band).toBeVisible()
+
+    // The event leads with the date it happens, not the date it was announced.
+    await expect(band.getByText('8 Oct 2026')).toBeVisible()
+    const forum = /Industry Engagement Forum/
+    await expect(band.getByRole('link', { name: forum })).toBeVisible()
+
+    // Pinned above means lifted out of the list below, not copied into it.
+    // Scoped to the listing: the footer carries its own link to the Forum page.
+    const inTheListing = page.locator('main').getByRole('link', { name: forum })
+    await expect(inTheListing).toHaveCount(1)
+  })
+
   test('the well-known icon paths follow the brand', async ({ request }) => {
     // Fetchers that never read the <link> tags — browsers guessing
     // /favicon.ico, dashboard icon scrapers — must still get the current

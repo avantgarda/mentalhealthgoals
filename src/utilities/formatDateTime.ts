@@ -26,3 +26,12 @@ export const formatDisplayDate = (timestamp: string): string =>
     month: 'long',
     year: 'numeric',
   })
+
+/** Compact date for an event row, e.g. "8 Oct 2026" — short enough to sit
+ *  large in the listing's left column without wrapping. */
+export const formatEventDate = (timestamp: string): string =>
+  new Date(timestamp).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })

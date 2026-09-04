@@ -282,6 +282,14 @@ export interface Post {
     description?: string | null;
   };
   publishedAt?: string | null;
+  /**
+   * For events only. While this date is today or later, the post is listed under “Coming up” at the top of News & events.
+   */
+  eventDate?: string | null;
+  /**
+   * Shown beside the date, e.g. “Bush House, London”.
+   */
+  eventLocation?: string | null;
   authors?: (number | User)[] | null;
   populatedAuthors?:
     | {
@@ -1478,6 +1486,8 @@ export interface PostsSelect<T extends boolean = true> {
         description?: T;
       };
   publishedAt?: T;
+  eventDate?: T;
+  eventLocation?: T;
   authors?: T;
   populatedAuthors?:
     | T

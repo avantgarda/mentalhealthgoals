@@ -2250,6 +2250,10 @@ export const seed = async ({
       heroImage: cardTealDoc.id,
       categories: [eventsCategory.id],
       publishedAt: '2026-08-05T09:00:00.000Z',
+      // The date the forum happens, not the date this was announced — it is
+      // what pins the post to "Coming up" until the day itself has passed.
+      eventDate: '2026-10-08T00:00:00.000Z',
+      eventLocation: 'SGDP Centre, Denmark Hill Campus, London',
       content: root(
         paragraph(
           text(

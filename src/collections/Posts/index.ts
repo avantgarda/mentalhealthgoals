@@ -182,6 +182,34 @@ export const Posts: CollectionConfig<'posts'> = {
         ],
       },
     },
+    // An event post is one with a date in `eventDate`. That is deliberately
+    // the switch rather than the Events category: the listing needs to know
+    // when the thing happens to say whether it is still coming up, and a
+    // category alone would keep a finished event pinned to the top forever.
+    {
+      name: 'eventDate',
+      type: 'date',
+      label: 'Event date',
+      admin: {
+        date: {
+          pickerAppearance: 'dayOnly',
+          displayFormat: 'd MMM yyyy',
+        },
+        description:
+          'For events only. While this date is today or later, the post is listed under “Coming up” at the top of News & events.',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'eventLocation',
+      type: 'text',
+      label: 'Event location',
+      admin: {
+        condition: (_, siblingData) => Boolean(siblingData?.eventDate),
+        description: 'Shown beside the date, e.g. “Bush House, London”.',
+        position: 'sidebar',
+      },
+    },
     {
       name: 'authors',
       type: 'relationship',

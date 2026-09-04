@@ -8,6 +8,8 @@ import { getPayload } from 'payload'
 import React from 'react'
 import PageClient from './page.client'
 import { POSTS_PER_PAGE } from '@/utilities/constants'
+import { UpcomingEvents } from '@/components/UpcomingEvents'
+import { excludingIds, findUpcomingEvents } from '@/utilities/events'
 
 export const dynamic = 'force-static'
 export const revalidate = 600
@@ -15,11 +17,19 @@ export const revalidate = 600
 export default async function Page() {
   const payload = await getPayload({ config: configPromise })
 
+  // Events still to come are lifted out of the chronological list and pinned
+  // above it, so they are excluded here rather than appearing twice. The
+  // exclusion applies on every page of the listing, which keeps pagination
+  // consistent as an event's date passes.
+  const events = await findUpcomingEvents(payload)
+
   const posts = await payload.find({
     collection: 'posts',
     depth: 1,
     limit: POSTS_PER_PAGE,
     overrideAccess: false,
+    sort: '-publishedAt',
+    where: excludingIds(events.map((event) => event.id)),
     select: {
       title: true,
       slug: true,
@@ -40,6 +50,8 @@ export default async function Page() {
           </p>
         </div>
       </div>
+
+      <UpcomingEvents events={events} />
 
       <div className="container mb-6 mt-8">
         <PageRange
