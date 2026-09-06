@@ -2,35 +2,10 @@ import React from 'react'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
-import type { PeopleBlockType, Person } from '@/payload-types'
-import { Media } from '@/components/Media'
-import { SIZE_PERSON_CARD } from '@/components/Media/sizes'
+import type { PeopleBlockType } from '@/payload-types'
 import { SectionHead } from '@/components/SectionHead'
-import { personAnchor } from '@/utilities/personAnchor'
-import { PersonDialog } from './PersonDialog'
-import { sortPeople, workstreamTitles } from '@/utilities/people'
-
-const HONORIFICS = new Set([
-  'prof',
-  'prof.',
-  'professor',
-  'dr',
-  'dr.',
-  'sir',
-  'dame',
-  'mr',
-  'ms',
-  'mrs',
-])
-
-/** Initials for the no-portrait state, skipping honorifics. */
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter((part) => part && !HONORIFICS.has(part.toLowerCase()))
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
+import { PersonCard } from './PersonCard'
+import { sortPeople } from '@/utilities/people'
 
 /** Sections of the team, in the order they appear on the page. */
 const GROUPS = [
@@ -51,62 +26,6 @@ const GROUPS = [
     intro: 'The people industry and partners work with day to day.',
   },
 ] as const
-
-const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index }) => {
-  const titles = workstreamTitles(person)
-
-  return (
-    <li
-      className="flex scroll-mt-28 flex-col gap-3"
-      data-reveal
-      id={personAnchor(person.name)}
-      style={{ transitionDelay: `${(index % 4) * 60}ms` }}
-    >
-      <div className="aspect-[4/5] w-full overflow-hidden bg-card">
-        {person.photo && typeof person.photo === 'object' ? (
-          <Media
-            // Every layer between the 4/5 frame and the img must carry full
-            // height — Media's wrapper div and the picture element — or
-            // object-cover has no box to cover, and any non-4/5 photo
-            // letterboxes on the card ground instead of cropping.
-            className="block h-full w-full"
-            imgClassName="h-full w-full object-cover"
-            pictureClassName="block h-full w-full"
-            resource={person.photo}
-            size={SIZE_PERSON_CARD}
-          />
-        ) : (
-          <div
-            aria-hidden="true"
-            className="flex h-full w-full items-end p-4 font-display text-[2.6rem] leading-none text-muted-foreground/55"
-          >
-            {initials(person.name)}
-          </div>
-        )}
-      </div>
-      <div>
-        <h3 className="font-display text-[1.2rem] leading-tight">{person.name}</h3>
-        <p className="mt-1 text-[1rem] font-medium leading-snug">{person.role}</p>
-        {/* Which part of the programme someone works on comes before which
-            institution employs them: this is a programme site, and the
-            workstream is the thing a reader is here to follow. */}
-        {titles.length > 0 && <p className="eyebrow mt-2">{titles.join(' · ')}</p>}
-        <p className="mt-1.5 text-[0.95rem] leading-snug text-muted-foreground">
-          {person.organisation}
-        </p>
-      </div>
-      {person.bio && (
-        <PersonDialog
-          bio={person.bio}
-          name={person.name}
-          organisation={person.organisation}
-          role={person.role}
-          workstreams={titles}
-        />
-      )}
-    </li>
-  )
-}
 
 /** The team, in sections: programme leadership, workstream leads, delivery team. */
 export const PeopleBlockComponent: React.FC<PeopleBlockType> = async ({ heading, intro }) => {

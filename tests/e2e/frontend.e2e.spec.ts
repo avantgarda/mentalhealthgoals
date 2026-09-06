@@ -65,16 +65,25 @@ test.describe('Frontend', () => {
     await expect(inTheListing).toHaveCount(1)
   })
 
-  test('team cards keep their biography behind a disclosure', async ({ page }) => {
+  test('a team card is its own trigger: the biography opens from the portrait and closes to the name', async ({
+    page,
+  }) => {
     await page.goto('/people')
     const card = page.locator('#mitul-mehta')
-
-    // Closed by default: twenty open biographies made the page enormous.
     const bio = card.getByText(/Professor of Neuroimaging/)
     await expect(bio).toBeHidden()
 
-    await card.getByText('Read more').click()
+    // Clicking the portrait, not the name, still opens it: the whole card is
+    // the control, forwarded to the one real button.
+    await card.locator('img').click()
     await expect(bio).toBeVisible()
+    await expect(card.locator('dialog')).toHaveAttribute('open', '')
+
+    // Escape closes it and focus comes back to the name — the platform's
+    // dialog doing its job because the click went through the button.
+    await page.keyboard.press('Escape')
+    await expect(bio).toBeHidden()
+    await expect(card.getByRole('button', { name: /Mitul Mehta/ })).toBeFocused()
 
     // The workstream comes before the institution — this is a programme site.
     const order = await card.evaluate((el) => {
@@ -113,7 +122,7 @@ test.describe('Frontend', () => {
     const leads = page.locator('section', {
       has: page.getByRole('heading', { name: 'Workstream leads' }),
     })
-    const names = await leads.locator('h3').allTextContents()
+    const names = await leads.locator('[data-person-name]').allTextContents()
     expect(names).toEqual([
       'Prof. Mitul Mehta', // 01 Alliance Management Team
       'Dr Matthias Pierce',
