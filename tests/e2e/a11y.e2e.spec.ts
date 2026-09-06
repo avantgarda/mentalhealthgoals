@@ -223,6 +223,37 @@ test.describe('keyboard access', () => {
     await expect(page.locator('header')).not.toHaveAttribute('data-theme', 'dark')
   })
 
+  test('the header has its own ground over the hero, and is never see-through', async ({
+    page,
+  }) => {
+    // It used to be transparent from `lg` up, so once the page moved the hero
+    // heading and the ridge ran straight through the wordmark and the nav.
+    // The ground is the hero's own colour: invisible at rest, opaque the
+    // instant anything scrolls under it.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/')
+
+    const ground = () =>
+      page.evaluate(() => {
+        const header = document.querySelector('header')!
+        const hero = document.querySelector('[data-hero-theme="dark"]')!
+        return {
+          header: getComputedStyle(header).backgroundColor,
+          hero: getComputedStyle(hero).backgroundColor,
+        }
+      })
+
+    const atRest = await ground()
+    expect(atRest.header).not.toMatch(/transparent|, 0\)$/)
+    expect(atRest.header).toBe(atRest.hero)
+
+    // And still so once the heading has begun to pass behind it.
+    await page.evaluate(() => window.scrollTo(0, 160))
+    await page.waitForTimeout(300)
+    const scrolled = await ground()
+    expect(scrolled.header).toBe(scrolled.hero)
+  })
+
   test('the header keeps light ink while it sits over the dark hero', async ({ page }) => {
     // It used to claim the page theme and the hero theme from two different
     // components; whichever effect landed last won, so a client-side

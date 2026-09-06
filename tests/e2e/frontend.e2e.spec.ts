@@ -97,6 +97,51 @@ test.describe('Frontend', () => {
     expect(order.workstream).toBeLessThan(order.institution)
   })
 
+  test('a passage with no heading is not indented past a gutter it does not have', async ({
+    page,
+  }) => {
+    // The reading column steps right to clear the gutter label beside it. With
+    // no heading there is no label, and the closing note on the Team page sat a
+    // third of the way across the page with nothing to its left.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/people')
+
+    const measured = await page.evaluate(() => {
+      const note = [...document.querySelectorAll('p')].find((p) =>
+        p.textContent?.startsWith('Governance connects'),
+      )!
+      const container = note.closest('.container')!
+      const box = container.getBoundingClientRect()
+      return {
+        note: note.getBoundingClientRect().left,
+        // The container's own left padding is the page's text edge.
+        textEdge: box.left + parseFloat(getComputedStyle(container).paddingLeft),
+      }
+    })
+
+    expect(measured.note).toBeCloseTo(measured.textEdge, 0)
+  })
+
+  test('the workstreams index is ruled, not boxed', async ({ page }) => {
+    // A vertical rule down the left of each run gave the index a left edge and
+    // a top edge with no right or bottom — a box someone had forgotten to
+    // close. The labelled band marks each run; the rules stay horizontal.
+    await page.goto('/workstreams')
+
+    const sides = await page.evaluate(() =>
+      [...document.querySelectorAll('.border-t.border-border > section')].map((s) => {
+        const style = getComputedStyle(s)
+        return [style.borderLeftWidth, style.borderRightWidth]
+      }),
+    )
+
+    expect(sides.length).toBeGreaterThan(0)
+    for (const [left, right] of sides) {
+      expect(left).toBe('0px')
+      expect(right).toBe('0px')
+    }
+  })
+
   test('a workstream title uses the width its column actually has', async ({ page }) => {
     // A `max-w-[16ch]` cap used to sit narrower than this column at every
     // width, breaking "Alliance Management Team" after its first word on

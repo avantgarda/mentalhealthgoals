@@ -206,6 +206,15 @@ body:has([data-hero-theme='dark']) > header:not([data-theme]):not([data-stuck]) 
   --error: oklch(45% 0.1 25deg);
 }
 
+/* And its ground. The bar is opaque over the hero — the hero's own colour, so
+   it is invisible at rest and occludes the heading once the page moves — but
+   that class only arrives with hydration. Without this, first paint puts the
+   page background and a hairline across the top of the hero for a frame. */
+body:has([data-hero-theme='dark']) > header:not([data-theme]):not([data-stuck]) {
+  background-color: var(--brand-deep);
+  border-bottom-color: transparent;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
