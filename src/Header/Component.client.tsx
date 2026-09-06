@@ -58,7 +58,12 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
 
   useEffect(() => {
     const evaluate = () => {
-      const y = Math.max(window.scrollY, 0)
+      // Clamped, because a rubber-band overscroll at either end springs back
+      // — and a spring-back at the bottom of the page is a decreasing
+      // scrollY, which reads as "scrolled up" and popped the bar open when
+      // nobody had scrolled anywhere.
+      const limit = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0)
+      const y = Math.min(Math.max(window.scrollY, 0), limit)
       const delta = y - lastY.current
       setScrolled(y > 8)
 

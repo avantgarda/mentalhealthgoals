@@ -91,20 +91,26 @@ export const Ridge: React.FC<Props> = ({
             <stop offset="0" stopColor="#fff" stopOpacity="0" />
             <stop offset="0.3" stopColor="#fff" stopOpacity="1" />
           </linearGradient>
+          {/* Vertically the mask has to cover the ink, not the viewBox. The
+              lowest contours are drawn past the bottom of the 800x600 surface
+              and run off the hero's edge, so a mask bounded to the viewBox
+              cut them off wherever the box was taller than 4:3 — which is
+              every wide viewport. Overscanning costs nothing: the ramp is
+              horizontal, so extra height changes no pixel that was visible. */}
           <mask
-            height={box.height}
+            height={box.height * 2}
             id={FADE_MASK_ID}
             maskUnits="userSpaceOnUse"
             width={box.width}
             x={box.x}
-            y={box.y}
+            y={box.y - box.height / 2}
           >
             <rect
               fill={`url(#${FADE_GRADIENT_ID})`}
-              height={box.height}
+              height={box.height * 2}
               width={box.width}
               x={box.x}
-              y={box.y}
+              y={box.y - box.height / 2}
             />
           </mask>
         </defs>

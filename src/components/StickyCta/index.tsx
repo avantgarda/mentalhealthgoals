@@ -113,7 +113,12 @@ export const StickyCta: React.FC<NonNullable<Page['stickyCta']>> = ({
     // own closing CTA band, and — when the bar points at an anchor on this
     // page — the block it points at. Asking someone to go somewhere they are
     // already standing is just clutter.
-    const targets = new Set(document.querySelectorAll('[data-cta-band]'))
+    //
+    // The footer counts too. It carries the motion and theme controls in its
+    // last row, and a bar pinned over the bottom of the viewport sat on top
+    // of them at the end of the page. Reserving space for the bar instead
+    // would grow the page the moment it appeared, which is its own jolt.
+    const targets = new Set(document.querySelectorAll('[data-cta-band], footer'))
     if (href?.startsWith('#')) {
       const destination = document.getElementById(href.slice(1))
       if (destination) targets.add(destination)

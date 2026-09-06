@@ -53,7 +53,7 @@ export const workstreamContent: Record<
   },
   'lived-experience-industry-partnership': {
     boundaryStatement:
-      'Integrating lived experience as a key voice in mental health R & D\n\nEnsures patients are being heard',
+      'Integrating lived experience as a key voice in mental health R&D\n\nEnsures patients are being heard',
     primaryFocus: [
       'Fosters partnerships between patients with lived experience, researchers, and industry — so treatments actually reflect what matters most to people',
     ],

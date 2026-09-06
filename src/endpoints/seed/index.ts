@@ -1227,7 +1227,7 @@ export const seed = async ({
       hero: {
         type: 'lowImpact',
         richText: root(
-          heading('h1', text('Data and Digital Industry Alliance Team')),
+          heading('h1', text('Data and Digital Industry Alliance Team (DIGIT)')),
           paragraph(
             text(
               'DIGIT is the funded project that delivers three of the programme’s six workstreams: the Alliance Management Team, the Innovative Clinical Trials Hub and the Lived Experience Industry Partnership.',
