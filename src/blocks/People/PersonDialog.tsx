@@ -58,7 +58,9 @@ export const PersonDialog: React.FC<{
       {opened && (
         <dialog
           aria-label={name}
-          className="m-auto w-[min(34rem,calc(100vw-2rem))] border border-border bg-background p-0 text-foreground backdrop:bg-foreground/40"
+          // Capped and scrollable: every biography fits a phone today, but a
+          // longer one should scroll inside the dialog rather than run off it.
+          className="m-auto max-h-[calc(100dvh-3rem)] w-[min(34rem,calc(100vw-2rem))] overflow-y-auto border border-border bg-background p-0 text-foreground backdrop:bg-foreground/40"
           onClick={onClick}
           ref={ref}
         >

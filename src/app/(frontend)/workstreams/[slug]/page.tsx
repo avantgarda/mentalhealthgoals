@@ -246,7 +246,11 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
           <div className="flex flex-col gap-14 lg:col-span-8 lg:col-start-5">
             {boundaryStatement && (
               <blockquote
-                className="m-0 whitespace-pre-line border-l-2 border-brand-accent pl-6 font-display text-[clamp(1.35rem,2vw,1.7rem)] italic leading-snug"
+                // Balanced like the headings are: left to itself this stranded
+                // the last word or two on a line of their own — "R&D" alone on
+                // the LEIP page, and the same on half the other workstreams.
+                // globals.css balances h1–h6; a pull quote is display type too.
+                className="m-0 whitespace-pre-line border-l-2 border-brand-accent pl-6 font-display text-[clamp(1.35rem,2vw,1.7rem)] italic leading-snug text-balance"
                 data-reveal
               >
                 {boundaryStatement}
