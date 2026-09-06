@@ -15,6 +15,8 @@ import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { LinkifyEntities } from '@/utilities/linkifyEntities'
 import { personAnchor } from '@/utilities/personAnchor'
 import { sortPeople } from '@/utilities/people'
+import { readingColumn } from '@/utilities/readingColumn'
+import { cn } from '@/utilities/ui'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -152,7 +154,10 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
   const team = await queryWorkstreamPeople({ id: workstream.id })
   const index = all.findIndex((w) => w.slug === workstream.slug)
   const next = index >= 0 ? all[(index + 1) % all.length] : null
+  // No sections means no "on this page" nav, which means no gutter for the
+  // body to step around — see `readingColumn`.
   const sections = SECTIONS.filter((s) => (workstream[s.key]?.length ?? 0) > 0)
+  const hasContents = sections.length > 0
 
   return (
     <article className="pb-24 pt-10 lg:pt-16">
@@ -220,8 +225,8 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
 
         {/* Body */}
         <div className="grid grid-cols-1 gap-x-10 gap-y-10 pt-10 lg:grid-cols-12 lg:pt-14">
-          <aside className="lg:col-span-3">
-            {sections.length > 0 && (
+          {hasContents && (
+            <aside className="lg:col-span-3">
               <nav
                 aria-label="On this page"
                 className="flex flex-col gap-3 border-t border-border pt-3 lg:sticky lg:top-8"
@@ -240,10 +245,10 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
                   ))}
                 </ul>
               </nav>
-            )}
-          </aside>
+            </aside>
+          )}
 
-          <div className="flex flex-col gap-14 lg:col-span-8 lg:col-start-5">
+          <div className={cn('flex flex-col gap-14', readingColumn(hasContents))}>
             {boundaryStatement && (
               <blockquote
                 // Balanced like the headings are: left to itself this stranded

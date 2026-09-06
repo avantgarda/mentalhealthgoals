@@ -10,6 +10,8 @@ import type { DefaultTypedEditorState } from '@payloadcms/richtext-lexical'
 
 import { fields } from './fields'
 import { getClientSideURL } from '@/utilities/getURL'
+import { readingColumn } from '@/utilities/readingColumn'
+import { cn } from '@/utilities/ui'
 
 export type FormBlockType = {
   blockName?: string
@@ -113,6 +115,11 @@ export const FormBlock: React.FC<
     [router, formID, redirect, confirmationType],
   )
 
+  // The ask on the left goes away once the form has been sent, so the offset
+  // has to go with it — otherwise every visitor who submits gets a thank-you
+  // stranded halfway across the page. Same for a form with no intro at all.
+  const showIntro = Boolean(enableIntro && introContent && !hasSubmitted)
+
   return (
     // The measure is a nested box, not a cap on `.container` itself: the
     // container's own `2xl` rule sets max-width later in the same cascade
@@ -124,16 +131,16 @@ export const FormBlock: React.FC<
           right half of the page empty, and centring it broke the grammar
           every other block on these pages follows. One column below `lg`. */}
       <div className="grid grid-cols-1 gap-x-10 gap-y-8 border-t-2 border-foreground pt-8 lg:grid-cols-12">
-        <div className="lg:col-span-4">
-          {enableIntro && introContent && !hasSubmitted && (
+        {showIntro && introContent && (
+          <div className="lg:col-span-4">
             <RichText
               className="lg:sticky lg:top-[calc(var(--header-h,0px)+2rem)]"
               data={introContent}
               enableGutter={false}
             />
-          )}
-        </div>
-        <div className="max-w-[38rem] lg:col-span-7 lg:col-start-6">
+          </div>
+        )}
+        <div className={cn('max-w-[38rem]', readingColumn(showIntro, 'wide'))}>
           <FormProvider {...formMethods}>
             {!isLoading && hasSubmitted && confirmationType === 'message' && (
               <RichText data={confirmationMessage} />

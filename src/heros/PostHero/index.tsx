@@ -18,7 +18,12 @@ export const PostHero: React.FC<{
   return (
     <div className="relative -mt-[4.25rem] lg:-mt-[4.75rem] flex items-end">
       <div className="container z-10 relative lg:grid lg:grid-cols-[1fr_48rem_1fr] text-white pb-8">
-        <div className="col-start-1 col-span-1 md:col-start-2 md:col-span-2">
+        {/* The middle track, and only the middle track. This used to span two
+            of the three, so the title kept the article's left edge but ran
+            296px past its right — the same measure the body sets at
+            `max-w-[48rem] mx-auto`, and the title did not share it. The `md:`
+            prefixes were dead too: the parent is not a grid until `lg`. */}
+        <div className="lg:col-start-2 lg:col-span-1">
           <div className="uppercase text-sm mb-6">
             {categories?.map((category, index) => {
               if (typeof category === 'object' && category !== null) {

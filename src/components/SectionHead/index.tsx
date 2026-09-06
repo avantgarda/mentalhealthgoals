@@ -29,7 +29,16 @@ export const SectionHead: React.FC<{
         </h2>
       )}
       {intro && (
-        <p className="lede lg:col-span-5 lg:col-start-8 lg:self-end" data-reveal>
+        <p
+          // The intro sits beside the heading and settles on its baseline. On
+          // its own there is no heading to sit beside, so it takes the reading
+          // column from the left rather than floating two thirds across.
+          className={cn(
+            'lede',
+            heading ? 'lg:col-span-5 lg:col-start-8 lg:self-end' : 'lg:col-span-8',
+          )}
+          data-reveal
+        >
           {intro}
         </p>
       )}
