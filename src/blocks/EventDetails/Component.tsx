@@ -1,6 +1,7 @@
 import React from 'react'
 
 import type { EventDetailsBlock as EventDetailsBlockProps } from '@/payload-types'
+import { readingColumn } from '@/utilities/readingColumn'
 
 /** Facts as a rule-row, the agenda as a timetable, outputs as ruled rows. */
 export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
@@ -31,14 +32,14 @@ export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
 
       {agenda && agenda.length > 0 && (
         <div className="grid grid-cols-1 gap-y-6 border-t-2 border-foreground pt-5 lg:grid-cols-12 lg:gap-x-10">
-          <div className="lg:col-span-3">
-            {agendaHeading && (
+          {agendaHeading && (
+            <div className="lg:col-span-3">
               <h2 className="display-2 lg:sticky lg:top-8" data-reveal>
                 {agendaHeading}
               </h2>
-            )}
-          </div>
-          <ol className="lg:col-span-8 lg:col-start-5" data-reveal>
+            </div>
+          )}
+          <ol className={readingColumn(Boolean(agendaHeading))} data-reveal>
             {agenda.map((row, i) => (
               <li
                 className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-4 border-b border-border py-3.5"
@@ -64,14 +65,14 @@ export const EventDetailsBlockComponent: React.FC<EventDetailsBlockProps> = ({
 
       {outcomes && outcomes.length > 0 && (
         <div className="grid grid-cols-1 gap-y-6 border-t-2 border-foreground pt-5 lg:grid-cols-12 lg:gap-x-10">
-          <div className="lg:col-span-3">
-            {outcomesHeading && (
+          {outcomesHeading && (
+            <div className="lg:col-span-3">
               <h2 className="display-2 lg:sticky lg:top-8" data-reveal>
                 {outcomesHeading}
               </h2>
-            )}
-          </div>
-          <ul className="lg:col-span-8 lg:col-start-5">
+            </div>
+          )}
+          <ul className={readingColumn(Boolean(outcomesHeading))}>
             {outcomes.map((outcome, i) => (
               <li
                 className="grid grid-cols-1 gap-2 border-b border-border py-6 md:grid-cols-12 md:gap-x-8"

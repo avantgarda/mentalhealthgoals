@@ -6,6 +6,7 @@ import type { ContentBlock as ContentBlockProps } from '@/payload-types'
 
 import { CMSLink } from '../../components/Link'
 import { firstHeadingText } from '@/heros/splitRichText'
+import { readingColumn } from '@/utilities/readingColumn'
 
 /**
  * Long-form content on the editorial grid.
@@ -80,11 +81,7 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
   if (single) {
     const col = columns[0]
     const label = firstHeadingText(col.richText)
-    // The offset is the label's doing: the reading column steps right to make
-    // room for the gutter label beside it. Without a heading there is no label,
-    // and the indent becomes a paragraph adrift a third of the way across the
-    // page with nothing to its left — which is what a heading-less `full`
-    // column looked like on the Team page. No label, no gutter, no offset.
+    // No heading, no label, no gutter to clear — see `readingColumn`.
     return (
       <div className="container">
         <div className="grid grid-cols-1 gap-y-6 lg:grid-cols-12 lg:gap-x-10">
@@ -98,7 +95,7 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
               </p>
             </div>
           )}
-          <div className={cn('lg:col-span-8', { 'lg:col-start-5': label })} data-reveal>
+          <div className={readingColumn(Boolean(label))} data-reveal>
             {col.richText && (
               <RichText className="mx-0 max-w-[66ch]" data={col.richText} enableGutter={false} />
             )}

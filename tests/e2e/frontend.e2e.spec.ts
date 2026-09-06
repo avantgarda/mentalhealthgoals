@@ -122,6 +122,85 @@ test.describe('Frontend', () => {
     expect(measured.note).toBeCloseTo(measured.textEdge, 0)
   })
 
+  test('no passage on the site is offset past a gutter that is empty', async ({ page }) => {
+    // The general form of the bug the Team page showed: a column steps right to
+    // clear a gutter — a label, a heading, an "on this page" nav — and the
+    // gutter turns out to be empty, so the passage sits adrift with blank
+    // ground to its left. Every one of those gutters is conditional on CMS
+    // content, so this has to be checked as a shape, not case by case.
+    //
+    // A centred measure legitimately has empty ground on its left; it has the
+    // same amount on its right. Only a lopsided one is a mistake.
+    const detect = () => {
+      const found: string[] = []
+      for (const el of document.querySelectorAll<HTMLElement>('*')) {
+        const start = Number(getComputedStyle(el).gridColumnStart)
+        if (!start || start <= 1 || Number.isNaN(start)) continue
+        const grid = el.parentElement
+        if (!grid || !getComputedStyle(grid).display.includes('grid')) continue
+
+        const mine = el.getBoundingClientRect()
+        const track = grid.getBoundingClientRect()
+        if (mine.width === 0) continue
+
+        const occupied = [...grid.children].some((sib) => {
+          if (sib === el) return false
+          const box = sib.getBoundingClientRect()
+          return (
+            box.right <= mine.left + 1 &&
+            box.width > 0 &&
+            box.height > 0 &&
+            !!sib.textContent?.trim()
+          )
+        })
+        if (occupied) continue
+
+        // Centred is fine. Lopsided is the bug.
+        const gapLeft = mine.left - track.left
+        const gapRight = track.right - mine.right
+        if (Math.abs(gapLeft - gapRight) > 24)
+          found.push(
+            `${el.tagName}.${el.className} — ${Math.round(gapLeft)}px of nothing to its left`,
+          )
+      }
+      return found
+    }
+
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const paths = [
+      '/',
+      '/about',
+      '/people',
+      '/contact',
+      '/digit',
+      '/workstreams',
+      '/posts',
+      '/industry-engagement-forum',
+    ]
+
+    for (const path of paths) {
+      await page.goto(path)
+      await page.locator('#main-content').waitFor()
+      expect(await page.evaluate(detect), `stranded passage on ${path}`).toEqual([])
+    }
+
+    // The state a crawl never reaches: the intro on the left goes away once a
+    // form has been sent, and the offset has to go with it.
+    await page.goto('/contact')
+    await page.locator('form').waitFor()
+    await page.route('**/api/form-submissions', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{"doc":{}}' }),
+    )
+    await page.locator('form input').first().fill('Test Person')
+    const email = page.locator('form input[type="email"], form input[name*="mail" i]').first()
+    if (await email.count()) await email.fill('test@example.com')
+    const message = page.locator('form textarea').first()
+    if (await message.count()) await message.fill('Hello')
+    await page.locator('form button[type="submit"]').first().click()
+    await expect(page.locator('form')).toHaveCount(0)
+    expect(await page.evaluate(detect), 'stranded confirmation on /contact').toEqual([])
+  })
+
   test('the workstreams index is ruled, not boxed', async ({ page }) => {
     // A vertical rule down the left of each run gave the index a left edge and
     // a top edge with no right or bottom — a box someone had forgotten to
