@@ -58,6 +58,10 @@ export const PersonCard: React.FC<{ person: Person; index: number }> = ({ person
   const dialog = useRef<HTMLDialogElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
 
+  // Set when the visitor dismisses with the mouse, so the focus the dialog
+  // hands back does not arrive wearing a ring. See the `close` listener below.
+  const dismissedByPointer = useRef(false)
+
   // Focus the name first, then open. `showModal` returns focus to whatever
   // was focused when it was called, and that has to be the name button — a
   // click on the portrait focuses nothing, and Safari does not focus buttons
@@ -66,7 +70,13 @@ export const PersonCard: React.FC<{ person: Person; index: number }> = ({ person
     trigger.current?.focus({ preventScroll: true })
     dialog.current?.showModal()
   }, [])
+
   const close = useCallback(() => dialog.current?.close(), [])
+
+  const closeByPointer = useCallback(() => {
+    dismissedByPointer.current = true
+    close()
+  }, [close])
 
   const onCardClick = useCallback(
     (event: React.MouseEvent<HTMLLIElement>) => {
@@ -84,14 +94,40 @@ export const PersonCard: React.FC<{ person: Person; index: number }> = ({ person
   // the dialog element itself is a click outside its content.
   const onDialogClick = useCallback(
     (event: React.MouseEvent<HTMLDialogElement>) => {
-      if (event.target === dialog.current) close()
+      if (event.target === dialog.current) closeByPointer()
     },
-    [close],
+    [closeByPointer],
   )
 
+  // A dialog returns focus to its opener, which is right — but WebKit counts
+  // that restored focus as keyboard focus even when the visitor closed the
+  // thing with the mouse, so a ring appeared around a name nobody had tabbed
+  // to. Chromium already distinguishes the two. Where the dismissal was a
+  // pointer, the button is marked for one focus only and the mark is dropped
+  // the moment a key is pressed or focus moves, so a visitor who reaches for
+  // the keyboard next still sees exactly where they are.
   useEffect(() => {
     const node = dialog.current
-    return () => node?.close()
+    if (!node) return
+
+    const onClose = () => {
+      const button = trigger.current
+      if (!button || !dismissedByPointer.current) {
+        dismissedByPointer.current = false
+        return
+      }
+      dismissedByPointer.current = false
+      button.dataset.quietFocus = ''
+      const clear = () => delete button.dataset.quietFocus
+      button.addEventListener('blur', clear, { once: true })
+      button.addEventListener('keydown', clear, { once: true })
+    }
+
+    node.addEventListener('close', onClose)
+    return () => {
+      node.removeEventListener('close', onClose)
+      node.close()
+    }
   }, [])
 
   return (
@@ -139,15 +175,6 @@ export const PersonCard: React.FC<{ person: Person; index: number }> = ({ person
               type="button"
             >
               <span data-person-name>{person.name}</span>
-              {/* Zero width, so the arrow can never push a name onto a second
-                  line; it appears on hover and on keyboard focus, and reads
-                  as a nudge rather than a destination. */}
-              <span
-                aria-hidden="true"
-                className="arrow inline-block w-0 overflow-visible whitespace-nowrap pl-2 text-muted-foreground opacity-0 transition-opacity duration-[var(--dur-ui)] group-hover:opacity-100 group-focus-within:opacity-100"
-              >
-                →
-              </span>
               <span className="sr-only">, read biography</span>
             </button>
           ) : (
@@ -189,7 +216,7 @@ export const PersonCard: React.FC<{ person: Person; index: number }> = ({ person
             <p className="text-[0.95rem] leading-relaxed text-muted-foreground">{person.bio}</p>
             <button
               className="mt-2 w-fit border border-border px-4 py-2 text-[0.95rem] font-medium transition-colors duration-[var(--dur-ui)] hover:bg-foreground/[0.04]"
-              onClick={close}
+              onClick={closeByPointer}
               type="button"
             >
               Close

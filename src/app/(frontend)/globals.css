@@ -271,6 +271,15 @@ body:has([data-hero-theme='dark']) > header:not([data-theme]):not([data-stuck]) 
     outline: 2px solid var(--foreground);
     outline-offset: 3px;
   }
+  /* One restored focus, kept quiet. A dialog hands focus back to whatever
+     opened it, and WebKit counts that as keyboard focus even when the visitor
+     dismissed the dialog with the mouse — so a ring appeared around something
+     nobody had tabbed to. The element carrying this asks for that one focus
+     not to be drawn; it drops the mark the moment a key is pressed or focus
+     moves, so the indicator is never missing for someone using a keyboard. */
+  [data-quiet-focus]:focus-visible {
+    outline: none;
+  }
 }
 
 html {
