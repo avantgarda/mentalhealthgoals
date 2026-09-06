@@ -1,0 +1,59 @@
+name: Deploy production
+
+# Production is deployed from here, once CI has gone green on `main` — not
+# straight off the push.
+#
+# Vercel's git integration and GitHub Actions both start from the same push
+# webhook and neither waits for the other, so a merge used to begin deploying
+# to production while its own CI was still running. The checks required before
+# merge cover the pull request's head, not the merge commit, so nothing had
+# ever run against the tree being deployed.
+#
+# `vercel.json` therefore turns automatic deployment off for `main`, and this
+# runs in its place. Every other branch still deploys on push: a preview is
+# meant to appear immediately, and nothing is served to the public from one.
+#
+# Requires the VERCEL_DEPLOY_HOOK_URL repository secret — Vercel → Project →
+# Settings → Git → Deploy Hooks, pointed at `main`.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    # Only a green run deploys. A failed or cancelled CI run leaves production
+    # exactly where it was, which is the entire point of the workflow.
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Trigger the Vercel production deployment
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+          COMMIT: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "::error::VERCEL_DEPLOY_HOOK_URL secret is not configured — production will not deploy. Create a deploy hook in Vercel (Project → Settings → Git → Deploy Hooks) pointed at 'main', and add its URL as a repository secret."
+            exit 1
+          fi
+
+          echo "CI passed for ${COMMIT}; asking Vercel to deploy main."
+          status=$(curl -sS -o /tmp/hook-response.json -w '%{http_code}' -X POST "$DEPLOY_HOOK_URL")
+
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "::error::Vercel deploy hook returned HTTP ${status}."
+            cat /tmp/hook-response.json || true
+            exit 1
+          fi
+
+          echo "Vercel accepted the deployment request (HTTP ${status})."
+          cat /tmp/hook-response.json || true
