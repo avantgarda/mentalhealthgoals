@@ -1,5 +1,6 @@
 'use client'
 import { useHeaderTheme } from '@/providers/HeaderTheme'
+import dynamic from 'next/dynamic'
 import React, { useEffect } from 'react'
 
 import type { Page } from '@/payload-types'
@@ -8,6 +9,11 @@ import { CMSLink } from '@/components/Link'
 import { Ridge } from '@/components/Ridge/Ridge'
 import RichText from '@/components/RichText'
 import { splitRichText } from '../splitRichText'
+import { useAltMotif } from '@/components/AltMotif/useAltMotif'
+
+/** Its own chunk, fetched the moment somebody enters the sequence and not a
+ *  moment before — see the note in `@/components/AltMotif`. */
+const AltMotif = dynamic(() => import('@/components/AltMotif'))
 
 /**
  * The Atlas hero: petrol ground, title and lede on the left, the ridge motif
@@ -19,9 +25,14 @@ import { splitRichText } from '../splitRichText'
  * fills it. Narrow, there is no such column — a single column of type runs the
  * width of the screen — so the motif goes *under* the copy as a horizon rather
  * than behind it as a texture. Only one is ever rendered.
+ *
+ * A key sequence swaps whichever of the two is showing for the pre-launch joke
+ * — see `@/components/AltMotif/useAltMotif`. It is per-tab and never touches
+ * the CMS, so there is no switch anybody has to remember to turn off.
  */
 export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
   const { setHeaderTheme } = useHeaderTheme()
+  const altMotif = useAltMotif()
 
   useEffect(() => {
     setHeaderTheme('dark')
@@ -57,9 +68,23 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
           than at any width above or below it. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden lg:block">
         <div className="container relative h-full">
-          <div className="absolute inset-y-0 left-[58.333%] right-[calc((100%-100vw)/2-2vw)] text-white/85 xl:left-[50%]">
-            <Ridge align="right" className="h-full w-full" fadeLeft lines={22} />
-          </div>
+          {altMotif ? (
+            // Its own box, not the ridge's. The ridge is anchored past the
+            // right edge of the screen on purpose; a drawing of a man has to
+            // stay inside it. The extra wrapper is what makes `right-0` mean
+            // the container's text edge: an absolute child is positioned
+            // against the padding box, so without it the artwork sat in the
+            // container's own margin and ran to the very edge of the screen.
+            <div className="relative h-full">
+              <div className="absolute inset-y-0 left-[58.333%] right-0 flex items-center py-12 xl:left-[54%]">
+                <AltMotif />
+              </div>
+            </div>
+          ) : (
+            <div className="absolute inset-y-0 left-[58.333%] right-[calc((100%-100vw)/2-2vw)] text-white/85 xl:left-[50%]">
+              <Ridge align="right" className="h-full w-full" fadeLeft lines={22} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -120,7 +145,13 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
           className="pointer-events-none -mx-5 text-white/85 md:-mx-8 lg:hidden"
           data-reveal
         >
-          <Ridge className="h-auto w-full" fit="content" lines={14} />
+          {/* The ridge is a horizon and sits on the seam with the section
+              below; a figure is not, so it keeps its own air. */}
+          {altMotif ? (
+            <AltMotif className="mx-auto max-w-[24rem] px-4 pb-8" />
+          ) : (
+            <Ridge className="h-auto w-full" fit="content" lines={14} />
+          )}
         </div>
       </div>
     </div>

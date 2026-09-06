@@ -201,6 +201,75 @@ test.describe('Frontend', () => {
     expect(await page.evaluate(detect), 'stranded confirmation on /contact').toEqual([])
   })
 
+  test('the hero keeps its ridge until somebody asks for the other one', async ({ page }) => {
+    // The alternative motif is armed by a key sequence and lives in the tab, so
+    // it can never be left switched on for visitors — and the artwork is inlined
+    // into its own dynamic chunk rather than served from `public/`, so there is
+    // no address anybody can fetch it from either.
+    //
+    // The assertions are on requests and on the served file, not on the chunk.
+    // This suite runs against `next dev`, which fetches dynamic chunks eagerly;
+    // the production build is where the chunk stays put, and asserting on it
+    // here would be a test that passes for the wrong reason.
+    const artwork: string[] = []
+    page.on('request', (request) => {
+      if (/motif-b|\.webp/.test(request.url())) artwork.push(request.url())
+    })
+
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/')
+    await expect(page.locator('.ridge').first()).toBeAttached()
+    await page.waitForTimeout(500)
+    expect(artwork, 'the artwork was fetched by a page that never asked for it').toEqual([])
+
+    // The address it used to have, and any other guess at it, is not served.
+    for (const guess of ['/motif-b.png', '/motif-b.webp', '/freud.png']) {
+      const probe = await page.request.get(guess)
+      expect(probe.status(), `${guess} is reachable without the sequence`).toBe(404)
+    }
+
+    const sequence = ['ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'f', 'r', 'e', 'u', 'd']
+    const enter = async () => {
+      for (const key of sequence) await page.keyboard.press(key)
+    }
+
+    // The sequence must not move the page. Up and down arrows scrolled the hero
+    // out from under the person entering it, which is why they are not in it.
+    const before = await page.evaluate(() => window.scrollY)
+    await enter()
+    expect(await page.evaluate(() => window.scrollY), 'the sequence scrolled the page').toBe(before)
+
+    const motif = page.locator('.alt-motif-plate').first()
+    await expect(motif).toBeVisible()
+    await expect(page.locator('.ridge')).toHaveCount(0)
+    // It arrived with the chunk rather than over the wire.
+    const src = await motif
+      .locator('img')
+      .evaluate((el) => (el as HTMLImageElement).src.slice(0, 32))
+    expect(src).toContain('data:image/webp;base64,')
+    expect(artwork, 'the artwork was fetched rather than carried').toEqual([])
+
+    // Whole, and inside the page: the ridge is anchored past the right of the
+    // screen on purpose, and a figure that inherits that is cut in half.
+    const fits = await page.evaluate(() => {
+      const plate = document.querySelector('.alt-motif-plate')!.getBoundingClientRect()
+      return {
+        withinViewport: plate.right <= window.innerWidth && plate.left >= 0,
+        withinHero: (() => {
+          const hero = document.querySelector('[data-hero-theme="dark"]')!.getBoundingClientRect()
+          return plate.top >= hero.top && plate.bottom <= hero.bottom
+        })(),
+        overflows: document.documentElement.scrollWidth > window.innerWidth,
+      }
+    })
+    expect(fits).toEqual({ withinViewport: true, withinHero: true, overflows: false })
+
+    // And the same sequence puts the ridge back.
+    await enter()
+    await expect(page.locator('.ridge').first()).toBeAttached()
+    await expect(page.locator('.alt-motif-plate')).toHaveCount(0)
+  })
+
   test('the workstreams index is ruled, not boxed', async ({ page }) => {
     // A vertical rule down the left of each run gave the index a left edge and
     // a top edge with no right or bottom — a box someone had forgotten to
