@@ -150,6 +150,43 @@ test.describe('keyboard access', () => {
     expect(reached.size).toBe(count)
   })
 
+  test('a name dismissed with the mouse does not wear a focus ring, even after leaving the page', async ({
+    page,
+  }) => {
+    // The ring belongs to keyboard use. WebKit counts the focus a dialog
+    // restores as keyboard focus whatever dismissed it, so a pointer
+    // dismissal asks for that one focus not to be drawn — and the ask has to
+    // survive a window change, which blurs the button without focus going
+    // anywhere and then hands it straight back.
+    await page.goto('/people')
+    const name = page.locator('#vaibhav-narayan h3 button')
+    const outline = () => name.evaluate((el) => getComputedStyle(el).outlineStyle)
+
+    await page.locator('#vaibhav-narayan img').click()
+    await page.locator('#vaibhav-narayan dialog button', { hasText: 'Close' }).click()
+    expect(await outline()).toBe('none')
+
+    // Leave the window and come back.
+    await name.evaluate((el) => {
+      el.dispatchEvent(new FocusEvent('blur'))
+      el.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+    })
+    expect(await outline()).toBe('none')
+
+    // But reaching for the keyboard must bring the indicator back.
+    await page.keyboard.press('Tab')
+    await expect(name).not.toHaveAttribute('data-quiet-focus', '')
+  })
+
+  test('dismissing with the keyboard still shows where focus went', async ({ page }) => {
+    await page.goto('/people')
+    await page.locator('#vaibhav-narayan img').click()
+    await page.keyboard.press('Escape')
+    const name = page.locator('#vaibhav-narayan h3 button')
+    await expect(name).toBeFocused()
+    expect(await name.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid')
+  })
+
   test('the sticky header never covers the element being focused', async ({ page }) => {
     // WCAG 2.2 SC 2.4.11, Focus Not Obscured — the same contract the sticky
     // call-to-action bar honours from the bottom of the screen.

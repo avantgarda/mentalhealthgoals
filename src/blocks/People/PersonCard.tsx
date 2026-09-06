@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { Person } from '@/payload-types'
 import { Media } from '@/components/Media'
@@ -61,6 +61,7 @@ export const PersonCard: React.FC<{ person: Person; index: number }> = ({ person
   // Set when the visitor dismisses with the mouse, so the focus the dialog
   // hands back does not arrive wearing a ring. See the `close` listener below.
   const dismissedByPointer = useRef(false)
+  const [quietFocus, setQuietFocus] = useState(false)
 
   // Focus the name first, then open. `showModal` returns focus to whatever
   // was focused when it was called, and that has to be the name button — a
@@ -102,25 +103,15 @@ export const PersonCard: React.FC<{ person: Person; index: number }> = ({ person
   // A dialog returns focus to its opener, which is right — but WebKit counts
   // that restored focus as keyboard focus even when the visitor closed the
   // thing with the mouse, so a ring appeared around a name nobody had tabbed
-  // to. Chromium already distinguishes the two. Where the dismissal was a
-  // pointer, the button is marked for one focus only and the mark is dropped
-  // the moment a key is pressed or focus moves, so a visitor who reaches for
-  // the keyboard next still sees exactly where they are.
+  // to. Chromium already distinguishes the two. A pointer dismissal therefore
+  // asks for that one restored focus not to be drawn.
   useEffect(() => {
     const node = dialog.current
     if (!node) return
 
     const onClose = () => {
-      const button = trigger.current
-      if (!button || !dismissedByPointer.current) {
-        dismissedByPointer.current = false
-        return
-      }
+      if (dismissedByPointer.current) setQuietFocus(true)
       dismissedByPointer.current = false
-      button.dataset.quietFocus = ''
-      const clear = () => delete button.dataset.quietFocus
-      button.addEventListener('blur', clear, { once: true })
-      button.addEventListener('keydown', clear, { once: true })
     }
 
     node.addEventListener('close', onClose)
@@ -129,6 +120,33 @@ export const PersonCard: React.FC<{ person: Person; index: number }> = ({ person
       node.close()
     }
   }, [])
+
+  // The mark lasts until the visitor does something that means they want to
+  // see where focus is: press a key, or move focus to another element.
+  //
+  // Deliberately not the button's own `blur`. Switching tab or application
+  // blurs it without focus going anywhere in the page — and focus returns to
+  // the very same name on the way back — so blur alone burnt the mark, and
+  // the ring reappeared on returning to the page. Neither of these events
+  // fires for a window change, and the `focusin` a window change does fire on
+  // the way back targets the button itself, which is not a move.
+  useEffect(() => {
+    if (!quietFocus) return
+    const button = trigger.current
+    if (!button) return
+
+    const clear = () => setQuietFocus(false)
+    const onFocusIn = (event: FocusEvent) => {
+      if (event.target !== button) clear()
+    }
+
+    document.addEventListener('keydown', clear)
+    document.addEventListener('focusin', onFocusIn)
+    return () => {
+      document.removeEventListener('keydown', clear)
+      document.removeEventListener('focusin', onFocusIn)
+    }
+  }, [quietFocus])
 
   return (
     <li
@@ -170,6 +188,7 @@ export const PersonCard: React.FC<{ person: Person; index: number }> = ({ person
             <button
               aria-haspopup="dialog"
               className="text-left group-hover:underline group-hover:decoration-1 group-hover:underline-offset-4"
+              data-quiet-focus={quietFocus ? '' : undefined}
               onClick={open}
               ref={trigger}
               type="button"
