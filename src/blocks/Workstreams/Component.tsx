@@ -18,9 +18,9 @@ const UMBRELLAS: Record<string, { name: string; expansion: string; note: string;
 }
 
 /**
- * The six workstreams as a numbered index. Workstreams sharing an umbrella
- * team (DIGIT) are bracketed together with a labelled band, so the structure
- * of the programme is visible without changing the numbering.
+ * The six workstreams as a numbered index — ruled rows, no enclosure.
+ * Workstreams sharing an umbrella team (DIGIT) run under a labelled band, so
+ * the structure of the programme is visible without changing the numbering.
  */
 export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async ({
   heading,
@@ -95,12 +95,16 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
         {runs.map((run, runIndex) => {
           const umbrella = run.umbrella ? UMBRELLAS[run.umbrella] : null
 
-          // Both runs get the same rule, the same ground and the same muted
-          // label. A reader should learn that 01–03 are delivered together
-          // without that reading as precedence over 04–06 — an accent colour
-          // and a tinted band said the opposite.
+          // Both runs get the same ground and the same muted label. A reader
+          // should learn that 01–03 are delivered together without that reading
+          // as precedence over 04–06 — an accent colour and a tinted band said
+          // the opposite. Since both runs are treated alike, the vertical rule
+          // that used to bracket them distinguished nothing; all it did was
+          // give the index a left edge and a top edge with no right or bottom,
+          // so the whole thing read as a box someone had forgotten to close.
+          // The labelled band above each run is what marks the grouping.
           return (
-            <section className="border-l-2 border-border" key={runIndex}>
+            <section key={runIndex}>
               <div className="flex items-start gap-4 px-4 py-4 lg:px-6" data-reveal>
                 {umbrella ? (
                   <>

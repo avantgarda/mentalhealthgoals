@@ -10,8 +10,9 @@ import { firstHeadingText } from '@/heros/splitRichText'
 /**
  * Long-form content on the editorial grid.
  *
- *  - A single `full` column becomes the reading column (offset right, 66ch)
- *    with its first heading repeated as a gutter label on the left.
+ *  - A single `full` column becomes the reading column (66ch), with its first
+ *    heading repeated as a gutter label on the left and the column stepped
+ *    right to clear it. With no heading there is no label, and no step.
  *  - Three `oneThird` columns that each carry a link become the "doors":
  *    wide ruled rows with an arrow — the three audience pathways.
  *  - Any other mix renders as ruled columns on the same grid.
@@ -79,20 +80,25 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
   if (single) {
     const col = columns[0]
     const label = firstHeadingText(col.richText)
+    // The offset is the label's doing: the reading column steps right to make
+    // room for the gutter label beside it. Without a heading there is no label,
+    // and the indent becomes a paragraph adrift a third of the way across the
+    // page with nothing to its left — which is what a heading-less `full`
+    // column looked like on the Team page. No label, no gutter, no offset.
     return (
       <div className="container">
         <div className="grid grid-cols-1 gap-y-6 lg:grid-cols-12 lg:gap-x-10">
-          <div className="lg:col-span-3">
-            {label && (
+          {label && (
+            <div className="lg:col-span-3">
               <p
                 className="eyebrow border-t-2 border-foreground pt-3 lg:sticky lg:top-8"
                 data-reveal
               >
                 {label}
               </p>
-            )}
-          </div>
-          <div className="lg:col-span-8 lg:col-start-5" data-reveal>
+            </div>
+          )}
+          <div className={cn('lg:col-span-8', { 'lg:col-start-5': label })} data-reveal>
             {col.richText && (
               <RichText className="mx-0 max-w-[66ch]" data={col.richText} enableGutter={false} />
             )}

@@ -145,9 +145,15 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
       className={[
         'sticky top-0 z-40 transition-transform duration-[var(--dur-ui)] ease-[var(--ease-out)]',
         hidden ? '-translate-y-full' : 'translate-y-0',
-        // Opaque, not frosted: a translucent bar let the copy underneath ghost
-        // through it, and blur is the wrong material for a flat, ruled page.
-        overHero ? 'bg-brand-deep lg:bg-transparent' : 'border-b border-border/70 bg-background',
+        // Opaque everywhere, not frosted and not see-through: a translucent
+        // bar let the copy underneath ghost through it, and blur is the wrong
+        // material for a flat, ruled page. Over the hero the ground is the
+        // hero's own colour, so at rest the bar is invisible and the hero still
+        // reads as one field — but the moment the page moves, the heading and
+        // the ridge pass *behind* the bar instead of through the wordmark.
+        // No rule over the hero: a hairline there would draw a line across the
+        // hero at rest, which is the very seam this is avoiding.
+        overHero ? 'bg-brand-deep' : 'border-b border-border/70 bg-background',
       ].join(' ')}
       data-stuck={pastHero ? '' : undefined}
       onFocus={reveal}
