@@ -549,6 +549,29 @@ html[data-motion='on'] .ridge .ridge-goal {
 html.js-reveal[data-motion='on'] [data-reveal]:not(.is-in) :is(.ridge path, .ridge .ridge-goal) {
   animation-play-state: paused;
 }
+/* The alternative hero motif. Booted in from the left, then it settles — the
+   same gate as everything else, so `data-motion="off"` leaves it still. */
+@keyframes motif-kick {
+  from {
+    opacity: 0;
+    transform: translateX(-14%) rotate(-16deg) scale(0.86);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(2%) rotate(5deg) scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+html[data-motion='on'] .alt-motif-plate {
+  animation: motif-kick 1100ms var(--ease-out) 200ms backwards;
+}
+html.js-reveal[data-motion='on'] [data-reveal]:not(.is-in) .alt-motif-plate {
+  animation-play-state: paused;
+}
+
 /* Headline words rise once on load */
 @keyframes rise-in {
   from {
