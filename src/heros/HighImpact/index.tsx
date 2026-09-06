@@ -46,10 +46,14 @@ export const HighImpactHero: React.FC<Page['hero']> = ({ links, richText }) => {
           lines always run off screen while the summit and its right shoulder
           stay fully in view. Width-anchored boxes did neither: a box wide
           enough to bleed at 1280 chopped the right shoulder off, and one sized
-          for 1440 detached from the edge entirely past 2200. */}
+          for 1440 detached from the edge entirely past 2200. From `2xl` the
+          left anchor moves in to 50%: there were 256px of empty ground between
+          the copy and the drawing at that size, and now that the contours
+          dissolve on their left edge it is the fade that fills the gap rather
+          than a hard line. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden lg:block">
         <div className="container relative h-full">
-          <div className="absolute inset-y-0 left-[58.333%] right-[calc((100%-100vw)/2-2vw)] text-white/85">
+          <div className="absolute inset-y-0 left-[58.333%] right-[calc((100%-100vw)/2-2vw)] text-white/85 2xl:left-[50%]">
             <Ridge align="right" className="h-full w-full" fadeLeft lines={22} />
           </div>
         </div>

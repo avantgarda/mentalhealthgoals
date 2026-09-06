@@ -119,11 +119,21 @@ export const FormBlock: React.FC<
     // layer, so a `lg:max-w-[48rem]` sitting beside it never won and every
     // field ran the full width of the page.
     <div className="container">
-      <div className="max-w-[38rem]">
-        {enableIntro && introContent && !hasSubmitted && (
-          <RichText className="mb-8 lg:mb-10" data={introContent} enableGutter={false} />
-        )}
-        <div className="border-t-2 border-foreground pt-8">
+      {/* Two columns on the page's own grid: the ask on the left, the form on
+          the right at its own measure. Left-aligned on its own it left the
+          right half of the page empty, and centring it broke the grammar
+          every other block on these pages follows. One column below `lg`. */}
+      <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-12">
+        <div className="lg:col-span-4">
+          {enableIntro && introContent && !hasSubmitted && (
+            <RichText
+              className="lg:sticky lg:top-[calc(var(--header-h,0px)+2rem)]"
+              data={introContent}
+              enableGutter={false}
+            />
+          )}
+        </div>
+        <div className="max-w-[38rem] border-t-2 border-foreground pt-8 lg:col-span-7 lg:col-start-6">
           <FormProvider {...formMethods}>
             {!isLoading && hasSubmitted && confirmationType === 'message' && (
               <RichText data={confirmationMessage} />

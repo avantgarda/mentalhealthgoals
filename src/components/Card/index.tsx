@@ -62,7 +62,10 @@ export const Card: React.FC<{
         // Horizontal padding keeps the row's content clear of its own hover
         // tint — flush against the tint's edge it read as a spacing bug (the
         // workstream rows had the same disease). Matches their 16/24px inset.
-        'group grid grid-cols-1 gap-y-2 border-b border-border px-4 py-6 transition-colors duration-[var(--dur-ui)] hover:cursor-pointer hover:bg-foreground/[0.03] lg:grid-cols-12 lg:gap-x-8 lg:px-6 lg:py-7',
+        'group grid grid-cols-1 gap-y-2 border-b px-4 py-6 transition-colors duration-[var(--dur-ui)] hover:cursor-pointer hover:bg-foreground/[0.03] lg:grid-cols-12 lg:gap-x-8 lg:px-6 lg:py-7',
+        // Inside the "Coming up" band the rules take the band's own hairline
+        // weight, so no line reads heavier than the ground it sits on.
+        isEvent ? 'border-foreground/25' : 'border-border',
         className,
       )}
       ref={card.ref}

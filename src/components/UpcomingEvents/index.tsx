@@ -17,14 +17,18 @@ export const UpcomingEvents: React.FC<{ events: UpcomingEvent[] }> = ({ events }
 
   return (
     <section aria-labelledby="coming-up" className="bg-card">
-      <div className="container py-10 lg:py-12">
+      <div className="container py-12 lg:py-14">
         <div className="mb-6 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
           <h2 className="display-2" id="coming-up">
             Coming up
           </h2>
           <p className="eyebrow">{events.length === 1 ? '1 event' : `${events.length} events`}</p>
         </div>
-        <div className="border-t-2 border-foreground">
+        {/* The ground is the boundary. A heavy rule inside it drew a second
+            one a few pixels later, and a container-width rule against a
+            full-bleed colour visibly stops short of it — so the rows take the
+            same hairline the "doors" band uses. */}
+        <div className="border-t border-foreground/25">
           {events.map((event) => (
             <Card doc={event} key={event.id} relationTo="posts" variant="event" />
           ))}

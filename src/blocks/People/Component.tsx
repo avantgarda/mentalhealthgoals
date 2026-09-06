@@ -7,6 +7,7 @@ import { Media } from '@/components/Media'
 import { SIZE_PERSON_CARD } from '@/components/Media/sizes'
 import { SectionHead } from '@/components/SectionHead'
 import { personAnchor } from '@/utilities/personAnchor'
+import { PersonDialog } from './PersonDialog'
 
 const HONORIFICS = new Set([
   'prof',
@@ -99,19 +100,12 @@ const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index
         </p>
       </div>
       {person.bio && (
-        // Twenty open biographies made the page enormous and the cards ragged.
-        // A native disclosure keeps them one click away, works with no
-        // JavaScript, and is keyboard accessible without any of our help.
-        <details className="group/bio mt-auto">
-          <summary className="eyebrow inline-flex cursor-pointer list-none items-center gap-1.5 pt-1 text-muted-foreground transition-colors duration-[var(--dur-ui)] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current [&::-webkit-details-marker]:hidden">
-            <span className="group-open/bio:hidden">Read more</span>
-            <span className="hidden group-open/bio:inline">Close</span>
-            <span aria-hidden="true" className="transition-transform group-open/bio:rotate-180">
-              ↓
-            </span>
-          </summary>
-          <p className="mt-2 text-[0.95rem] leading-relaxed text-muted-foreground">{person.bio}</p>
-        </details>
+        <PersonDialog
+          bio={person.bio}
+          name={person.name}
+          organisation={person.organisation}
+          role={person.role}
+        />
       )}
     </li>
   )
