@@ -14,6 +14,7 @@ import React, { cache } from 'react'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { LinkifyEntities } from '@/utilities/linkifyEntities'
 import { personAnchor } from '@/utilities/personAnchor'
+import { sortPeople } from '@/utilities/people'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -56,10 +57,9 @@ const queryWorkstreamPeople = cache(async ({ id }: { id: number }) => {
     depth: 0,
     limit: 20,
     pagination: false,
-    sort: 'order',
     where: { workstreams: { in: [id] } },
   })
-  return result.docs
+  return sortPeople(result.docs)
 })
 
 const queryAllWorkstreams = cache(async () => {

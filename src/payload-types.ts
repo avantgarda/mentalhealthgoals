@@ -1019,7 +1019,7 @@ export interface Person {
   workstreams?: (number | Workstream)[] | null;
   photo?: (number | null) | Media;
   /**
-   * Lower numbers appear first
+   * Orders this list in the admin only. On the site the team is always shown by workstream and then by surname, so no one is ranked by hand.
    */
   order?: number | null;
   updatedAt: string;

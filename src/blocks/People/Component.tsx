@@ -2,12 +2,13 @@ import React from 'react'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
-import type { PeopleBlockType, Person, Workstream } from '@/payload-types'
+import type { PeopleBlockType, Person } from '@/payload-types'
 import { Media } from '@/components/Media'
 import { SIZE_PERSON_CARD } from '@/components/Media/sizes'
 import { SectionHead } from '@/components/SectionHead'
 import { personAnchor } from '@/utilities/personAnchor'
 import { PersonDialog } from './PersonDialog'
+import { sortPeople, workstreamTitles } from '@/utilities/people'
 
 const HONORIFICS = new Set([
   'prof',
@@ -50,11 +51,6 @@ const GROUPS = [
     intro: 'The people industry and partners work with day to day.',
   },
 ] as const
-
-const workstreamTitles = (person: Person): string[] =>
-  (person.workstreams || [])
-    .map((entry) => (typeof entry === 'object' ? (entry as Workstream).title : null))
-    .filter((title): title is string => Boolean(title))
 
 const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index }) => {
   const titles = workstreamTitles(person)
@@ -105,6 +101,7 @@ const PersonCard: React.FC<{ person: Person; index: number }> = ({ person, index
           name={person.name}
           organisation={person.organisation}
           role={person.role}
+          workstreams={titles}
         />
       )}
     </li>
@@ -120,7 +117,6 @@ export const PeopleBlockComponent: React.FC<PeopleBlockType> = async ({ heading,
     depth: 1,
     limit: 60,
     pagination: false,
-    sort: 'order',
   })
 
   const docs = people.docs
@@ -136,7 +132,7 @@ export const PeopleBlockComponent: React.FC<PeopleBlockType> = async ({ heading,
       {(heading || intro) && <SectionHead heading={heading} intro={intro} />}
 
       {GROUPS.map((group) => {
-        const members = docs.filter((person) => person.group === group.value)
+        const members = sortPeople(docs.filter((person) => person.group === group.value))
         if (members.length === 0) return null
 
         // The first section sits right under the page-frame rule, so it does

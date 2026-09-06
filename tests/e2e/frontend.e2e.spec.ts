@@ -108,6 +108,35 @@ test.describe('Frontend', () => {
     expect(measured.widest).toBeLessThanOrEqual(measured.available + 1)
   })
 
+  test('the team is ordered by workstream and then surname, never by hand', async ({ page }) => {
+    await page.goto('/people')
+    const leads = page.locator('section', {
+      has: page.getByRole('heading', { name: 'Workstream leads' }),
+    })
+    const names = await leads.locator('h3').allTextContents()
+    expect(names).toEqual([
+      'Prof. Mitul Mehta', // 01 Alliance Management Team
+      'Dr Matthias Pierce',
+      'Prof. Richard Emsley', // 02 Innovative Clinical Trials Hub
+      'Prof. Paula Williamson',
+      'Prof. Edward Harcourt', // 03 Lived Experience Industry Partnership
+      'Dr Siân Rees',
+      'Dr Trina Histon', // 04 Digital Innovation
+      'Dr Pauline Whelan',
+      'Prof. Ann John', // 05 Data Observatory
+      'Prof. Rob Stewart',
+      'Prof. Gerome Breen', // 06 Multi-omics
+      'Prof. James Walters',
+    ])
+  })
+
+  test('a biography is real page content, not data behind a click', async ({ page }) => {
+    // The dialog is in the document from the first paint, so the text is in
+    // the HTML for a crawler or reader mode — just not shown until asked for.
+    const html = await (await page.request.get('/people')).text()
+    expect(html).toContain('Professor of Neuroimaging')
+  })
+
   test('the well-known icon paths follow the brand', async ({ request }) => {
     // Fetchers that never read the <link> tags — browsers guessing
     // /favicon.ico, dashboard icon scrapers — must still get the current
