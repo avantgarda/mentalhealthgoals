@@ -165,6 +165,27 @@ test.describe('keyboard access', () => {
     expect(clear).toBe(true)
   })
 
+  test('the header keeps the hero\u2019s ground until the hero has gone', async ({ page }) => {
+    // It used to take its own light ground 12px into a 718px hero, so the home
+    // page showed a white bar over dark ground for the next six hundred pixels.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/')
+
+    const heroBottom = await page.evaluate(
+      () => document.querySelector('[data-hero-theme="dark"]')!.getBoundingClientRect().bottom,
+    )
+
+    // Half way down the hero it must still be transparent and dark-themed.
+    await page.evaluate((y) => window.scrollTo(0, y), heroBottom / 2)
+    await page.waitForTimeout(300)
+    await expect(page.locator('header')).toHaveAttribute('data-theme', 'dark')
+
+    // Past the hero it takes its own ground.
+    await page.evaluate((y) => window.scrollTo(0, y + 200), heroBottom)
+    await page.waitForTimeout(300)
+    await expect(page.locator('header')).not.toHaveAttribute('data-theme', 'dark')
+  })
+
   test('the header keeps light ink while it sits over the dark hero', async ({ page }) => {
     // It used to claim the page theme and the hero theme from two different
     // components; whichever effect landed last won, so a client-side

@@ -30,8 +30,11 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
 
   const ref = useRef<HTMLElement>(null)
   const lastY = useRef(0)
-  // Away from the top, so the bar's own ground appears instead of the hero's.
-  const [scrolled, setScrolled] = useState(false)
+  // Whether the bar has left the dark hero behind. Not "has it moved at all":
+  // it used to take its own light ground 12px into a 718px hero, so the home
+  // page flipped to a white bar over dark ground and stayed that way for the
+  // next six hundred pixels of scrolling.
+  const [pastHero, setPastHero] = useState(false)
   const [hidden, setHidden] = useState(false)
 
   useEffect(() => {
@@ -52,7 +55,6 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
   // a scroll event — without this the bar could arrive already hidden.
   useEffect(() => {
     lastY.current = window.scrollY
-    setScrolled(window.scrollY > 8)
     setHidden(false)
   }, [pathname])
 
@@ -65,7 +67,15 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
       const limit = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0)
       const y = Math.min(Math.max(window.scrollY, 0), limit)
       const delta = y - lastY.current
-      setScrolled(y > 8)
+
+      // A dark hero holds the bar transparent until the hero's bottom edge
+      // reaches it; anywhere else the bar takes its ground as soon as the page
+      // moves. Measured live because the hero's height depends on the
+      // viewport, and re-read each time in case an image or font has resized
+      // it since load.
+      const hero = document.querySelector('[data-hero-theme="dark"]')
+      const height = ref.current?.offsetHeight ?? 0
+      setPastHero(hero ? hero.getBoundingClientRect().bottom <= height : y > 8)
 
       // Hiding is motion. With the site's motion toggle off — or the operating
       // system asking for reduced motion — the bar simply stays put, which is
@@ -128,7 +138,7 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
   // Transparent only while it is actually over the hero. Once the hero has
   // scrolled away the bar takes its own ground and drops the dark override, so
   // it follows the visitor's chosen site theme rather than forcing light.
-  const overHero = theme === 'dark' && !scrolled
+  const overHero = theme === 'dark' && !pastHero
 
   return (
     <header
@@ -139,7 +149,7 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
         // through it, and blur is the wrong material for a flat, ruled page.
         overHero ? 'bg-brand-deep lg:bg-transparent' : 'border-b border-border/70 bg-background',
       ].join(' ')}
-      data-stuck={scrolled ? '' : undefined}
+      data-stuck={pastHero ? '' : undefined}
       onFocus={reveal}
       ref={ref}
       {...(overHero ? { 'data-theme': 'dark' } : {})}
