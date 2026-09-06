@@ -37,6 +37,115 @@ test.describe('Frontend', () => {
     await expect(page.getByRole('heading', { name: /key questions/i })).toBeVisible()
   })
 
+  test('the workstreams index explains its umbrella team without logos', async ({ page }) => {
+    await page.goto('/workstreams')
+    await page.getByRole('link', { name: /About DIGIT/ }).click()
+    await page.waitForURL(/\/digit$/)
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(
+      /Data and Digital Industry Alliance Team/i,
+    )
+    // Typographic by design: a page about one team inside the programme does
+    // not get a logo the other workstreams' teams do not have.
+    await expect(page.locator('main').getByRole('img')).toHaveCount(0)
+  })
+
+  test('an upcoming event is pinned above the news, and only appears once', async ({ page }) => {
+    await page.goto('/posts')
+    const band = page.getByRole('region', { name: 'Coming up' })
+    await expect(band).toBeVisible()
+
+    // The event leads with the date it happens, not the date it was announced.
+    await expect(band.getByText('8 Oct 2026')).toBeVisible()
+    const forum = /Industry Engagement Forum/
+    await expect(band.getByRole('link', { name: forum })).toBeVisible()
+
+    // Pinned above means lifted out of the list below, not copied into it.
+    // Scoped to the listing: the footer carries its own link to the Forum page.
+    const inTheListing = page.locator('main').getByRole('link', { name: forum })
+    await expect(inTheListing).toHaveCount(1)
+  })
+
+  test('a team card is its own trigger: the biography opens from the portrait and closes to the name', async ({
+    page,
+  }) => {
+    await page.goto('/people')
+    const card = page.locator('#mitul-mehta')
+    const bio = card.getByText(/Professor of Neuroimaging/)
+    await expect(bio).toBeHidden()
+
+    // Clicking the portrait, not the name, still opens it: the whole card is
+    // the control, forwarded to the one real button.
+    await card.locator('img').click()
+    await expect(bio).toBeVisible()
+    await expect(card.locator('dialog')).toHaveAttribute('open', '')
+
+    // Escape closes it and focus comes back to the name — the platform's
+    // dialog doing its job because the click went through the button.
+    await page.keyboard.press('Escape')
+    await expect(bio).toBeHidden()
+    await expect(card.getByRole('button', { name: /Mitul Mehta/ })).toBeFocused()
+
+    // The workstream comes before the institution — this is a programme site.
+    const order = await card.evaluate((el) => {
+      const text = (el as HTMLElement).innerText
+      return {
+        workstream: text.indexOf('Alliance Management Team'),
+        institution: text.indexOf('King’s College London'),
+      }
+    })
+    expect(order.workstream).toBeGreaterThan(-1)
+    expect(order.workstream).toBeLessThan(order.institution)
+  })
+
+  test('a workstream title uses the width its column actually has', async ({ page }) => {
+    // A `max-w-[16ch]` cap used to sit narrower than this column at every
+    // width, breaking "Alliance Management Team" after its first word on
+    // every screen. The column should be the only constraint.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/workstreams/alliance-management-team')
+
+    const measured = await page.evaluate(() => {
+      const h1 = document.querySelector('h1')!
+      const range = document.createRange()
+      range.selectNodeContents(h1)
+      const lines = [...range.getClientRects()].map((r) => r.width)
+      const available = h1.parentElement!.getBoundingClientRect().width
+      return { lines: lines.length, widest: Math.max(...lines), available }
+    })
+
+    expect(measured.lines).toBe(1)
+    expect(measured.widest).toBeLessThanOrEqual(measured.available + 1)
+  })
+
+  test('the team is ordered by workstream and then surname, never by hand', async ({ page }) => {
+    await page.goto('/people')
+    const leads = page.locator('section', {
+      has: page.getByRole('heading', { name: 'Workstream leads' }),
+    })
+    const names = await leads.locator('[data-person-name]').allTextContents()
+    expect(names).toEqual([
+      'Prof. Mitul Mehta', // 01 Alliance Management Team
+      'Dr Matthias Pierce',
+      'Prof. Richard Emsley', // 02 Innovative Clinical Trials Hub
+      'Prof. Paula Williamson',
+      'Prof. Edward Harcourt', // 03 Lived Experience Industry Partnership
+      'Dr Siân Rees',
+      'Dr Trina Histon', // 04 Digital Innovation
+      'Dr Pauline Whelan',
+      'Prof. Ann John', // 05 Data Observatory
+      'Prof. Rob Stewart',
+      'Prof. Gerome Breen', // 06 Multi-omics
+      'Prof. James Walters',
+    ])
+  })
+
+  test('a biography is real page content, not data behind a click', async ({ page }) => {
+    // The dialog is in the document from the first paint, so the text is in
+    // the HTML for a crawler or reader mode — just not shown until asked for.
+    const html = await (await page.request.get('/people')).text()
+    expect(html).toContain('Professor of Neuroimaging')
+  })
+
   test('the well-known icon paths follow the brand', async ({ request }) => {
     // Fetchers that never read the <link> tags — browsers guessing
     // /favicon.ico, dashboard icon scrapers — must still get the current

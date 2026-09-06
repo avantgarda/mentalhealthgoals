@@ -20,7 +20,7 @@ export const HeaderNav: React.FC<{ className?: string; data: HeaderType }> = ({
   return (
     <nav
       aria-label="Main navigation"
-      className={cn('items-center gap-x-6 text-[0.9rem] font-medium', className)}
+      className={cn('items-center gap-x-5 text-[0.95rem] font-medium xl:gap-x-6', className)}
     >
       {navItems.map(({ link }, i) => {
         const href = resolveHref(link)
@@ -29,7 +29,7 @@ export const HeaderNav: React.FC<{ className?: string; data: HeaderType }> = ({
         return (
           <Link
             aria-current={active ? 'page' : undefined}
-            className="link-line py-1 text-current"
+            className="link-line whitespace-nowrap py-1 text-current"
             href={href}
             key={i}
             {...(link.newTab ? { rel: 'noopener noreferrer', target: '_blank' } : {})}

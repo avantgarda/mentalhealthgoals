@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url'
 import { contactForm as contactFormData } from './contact-form'
 import { registerInterestForm as registerInterestFormData } from './register-interest-form'
 import { block, bold, bullets, heading, link, paragraph, root, text } from './lexical'
+import { personAnchor } from '../../utilities/personAnchor'
 import { workstreamContent } from './workstream-content'
 
 const filename = fileURLToPath(import.meta.url)
@@ -205,9 +206,7 @@ export const seed = async ({
           role: 'funder',
           url: 'https://www.gov.uk/government/organisations/office-for-life-sciences',
           logo: olsLogo.id,
-          // Crest over two lines of wordmark: it needs the height
-          // before "Office for Life Sciences" is readable at all.
-          logoScale: 1.5,
+          logoScale: 1.07,
           showInFooter: true,
           order: 1,
           usageNote:
@@ -222,36 +221,43 @@ export const seed = async ({
           role: 'delivery',
           url: 'https://www.ukri.org/councils/mrc/',
           logo: mrcLogo.id,
-          // UKRI publish this mark stacked, so it needs more height than a
-          // wordmark before "Medical Research Council" is readable.
-          logoScale: 1.5,
+          logoScale: 0.88,
           showInFooter: true,
           order: 2,
           usageNote:
             'Official UKRI Medical Research Council logo from ukri.org. Acknowledging a funder or delivery body is the use this mark exists for; follow UKRI brand rules (no recolouring, keep clear space) and ask brand@ukri.org for vector artwork if a larger rendering is needed.',
         },
         {
+          // Not in the footer band. King's hosts the DIGIT award and operates
+          // this website, but the band is the site's one standing claim about
+          // who funds and who delivers the programme, and naming one of nine
+          // delivery institutions there put it above the other eight on every
+          // page. The record stays so an editor can place the mark where it
+          // is the accurate credit.
           name: 'King’s College London',
           role: 'delivery',
           url: 'https://www.kcl.ac.uk',
           logo: kclLogo.id,
-          // Parity with the DIGIT mark beside it: at 1.3 the solid red block
-          // out-massed everything in the band, including the funder.
-          logoScale: 1,
-          showInFooter: true,
+          logoScale: 1.17,
+          showInFooter: false,
           order: 3,
           usageNote:
-            'Official logo from kcl.ac.uk. Delivery lead; already used in the programme brochure. KCL brand rules: no recolouring, keep clear space.',
+            'Official logo from kcl.ac.uk. Host institution of the DIGIT award and operator of this website; already used in the programme brochure. KCL brand rules: no recolouring, keep clear space.',
         },
         {
+          // Likewise out of the band: DIGIT is a team within the programme
+          // rather than a funder or a delivery body, and its link points at
+          // our own site.
           name: 'DIGIT',
           strapline: 'Data and Digital Industry Alliance Team',
           role: 'delivery',
-          url: '/about',
+          url: '/digit',
           logo: digitLogo.id,
           showNameWithLogo: true,
+          // Below what the mark's square ratio alone suggests: what a reader
+          // sees is the mark plus the name beside it, a much wider lockup.
           logoScale: 1,
-          showInFooter: true,
+          showInFooter: false,
           order: 4,
           usageNote: 'The programme’s own mark, redrawn as a vector from the team’s PNG.',
         },
@@ -261,7 +267,7 @@ export const seed = async ({
           role: 'partner',
           url: 'https://gladstudy.org.uk',
           logo: gladLogo.id,
-          logoScale: 1.15,
+          logoScale: 1.03,
           order: 10,
           usageNote:
             'Header logo from gladstudy.org.uk (raster; no vector published). Confirm use with the GLAD team and ask for vector artwork.',
@@ -272,6 +278,7 @@ export const seed = async ({
           role: 'partner',
           url: 'https://datamind.org.uk',
           logo: datamindLogo.id,
+          logoScale: 0.85,
           order: 11,
           usageNote:
             'Official vector from datamind.org.uk (DATAMIND_black_cmyk.svg). Confirm use with DATAMIND comms.',
@@ -282,7 +289,7 @@ export const seed = async ({
           role: 'partner',
           url: 'https://www.mhdi.uk',
           logo: mhdiLogo.id,
-          logoScale: 0.9,
+          logoScale: 0.81,
           order: 12,
           usageNote:
             'Site lockup from mhdi.uk (raster; no vector published). Confirm use with MHDI and ask for vector artwork.',
@@ -292,9 +299,10 @@ export const seed = async ({
       payload.create({ collection: 'partners', context: { disableRevalidate: true }, data }),
     ),
   )
-  // These three appear only in the footer band, via showInFooter.
+  // The band is these two; the other records are placed by editors.
   void olsPartner
   void mrcPartner
+  void kclPartner
   void digitPartner
 
   payload.logger.info(`— Seeding categories...`)
@@ -446,12 +454,12 @@ export const seed = async ({
 
   // Team, ordered as it appears on the Team page.
   //
-  // Structure follows the DIGIT grant application (APP97536, "Mental Health
-  // Goals Programme — Data and Digital Industry Alliance Team") and the
-  // programme contacts workbook: DIGIT is the funded project that delivers the
-  // Alliance Management Team, Innovative Clinical Trials Hub and Lived
-  // Experience Industry Partnership, so its lead and co-leads are their own
-  // section, and the cohort, data and digital workstream leads their own.
+  // Three sections: programme leadership, then the leads of all six
+  // workstreams in workstream order, then the delivery team. The workstream
+  // leads are one section deliberately — a separate DIGIT section put the
+  // three workstreams it delivers above the other three, which is not a
+  // distinction the programme makes. Where someone holds a DIGIT role it sits
+  // second in their title, after the workstream they lead.
   //
   // Deliberately NOT published from the internal contacts workbook: email
   // addresses, executive assistants, university operations staff, and external
@@ -486,12 +494,13 @@ export const seed = async ({
       bio: 'Over 20 years of leadership in data science, digital health and pharmaceutical R&D, including 13 years at Johnson & Johnson as Vice President of Data Sciences and Digital Health. Earlier senior roles include Head of Discovery Informatics at Eli Lilly and Director of Computational Sciences at Celera Genomics, where his team helped sequence the human genome.',
     },
 
-    // ——— DIGIT leadership ———
+    // ——— Workstream leads, in workstream order ———
+    // 01 Alliance Management Team
     {
       order: 10,
-      group: 'digit' as const,
+      group: 'workstream-leads' as const,
       name: 'Prof. Mitul Mehta',
-      role: 'DIGIT Lead · Alliance Management Team Co-Lead',
+      role: 'Alliance Management Team Co-Lead · DIGIT Lead',
       organisation: 'King’s College London',
       photo: mehtaPhotoDoc.id,
       profileUrl: 'https://www.kcl.ac.uk/people/mitul-mehta',
@@ -500,142 +509,57 @@ export const seed = async ({
     },
     {
       order: 11,
-      group: 'digit' as const,
+      group: 'workstream-leads' as const,
+      name: 'Dr Matthias Pierce',
+      role: 'Alliance Management Team Co-Investigator · DIGIT Co-Lead',
+      organisation: 'University of Manchester',
+      profileUrl: 'https://research.manchester.ac.uk/en/persons/matthias.pierce',
+      workstreams: [wsId['alliance-management-team'], wsId['data-observatory']],
+      bio: 'Biostatistician and Senior Research Fellow at the Centre for Women’s Mental Health, University of Manchester, and a lead on the programme’s data observatory work.',
+    },
+    // 02 Innovative Clinical Trials Hub
+    {
+      order: 12,
+      group: 'workstream-leads' as const,
       name: 'Prof. Richard Emsley',
-      role: 'DIGIT Co-Lead · Innovative Clinical Trials Hub Lead',
+      role: 'Innovative Clinical Trials Hub Lead · DIGIT Co-Lead',
       organisation: 'King’s College London',
       profileUrl: 'https://www.kcl.ac.uk/people/richard-emsley',
       workstreams: [wsId['innovative-trials-hub']],
       bio: 'NIHR Research Professor and Professor of Medical Statistics and Trials Methodology at the IoPPN. Academic Director of King’s Clinical Trials Unit and Theme Lead for Trials, Genomics and Prediction in the NIHR Maudsley BRC.',
     },
     {
-      order: 12,
-      group: 'digit' as const,
+      order: 13,
+      group: 'workstream-leads' as const,
+      name: 'Prof. Paula Williamson',
+      role: 'Innovative Clinical Trials Hub Co-Investigator · DIGIT Co-Lead',
+      organisation: 'University of Liverpool',
+      workstreams: [wsId['innovative-trials-hub']],
+      bio: 'Professor of Medical Statistics at the University of Liverpool, bringing trials methodology and core outcome set expertise to the programme’s trial design work.',
+    },
+    // 03 Lived Experience Industry Partnership
+    {
+      order: 14,
+      group: 'workstream-leads' as const,
       name: 'Dr Siân Rees',
-      role: 'DIGIT Co-Lead · Lived Experience Industry Partnership Co-Lead (Practice)',
+      role: 'Lived Experience Industry Partnership Co-Lead (Practice) · DIGIT Co-Lead',
       organisation: 'Health Innovation Oxford & Thames Valley',
       workstreams: [wsId['lived-experience-industry-partnership']],
       bio: 'Director of Community Involvement and Workforce Innovation, with a background in public health medicine and a decade in mental health policy at the Department of Health.',
     },
     {
-      order: 13,
-      group: 'digit' as const,
+      order: 15,
+      group: 'workstream-leads' as const,
       name: 'Prof. Edward Harcourt',
-      role: 'DIGIT Co-Lead · Lived Experience Industry Partnership Co-Lead (Concepts)',
+      role: 'Lived Experience Industry Partnership Co-Lead (Concepts) · DIGIT Co-Lead',
       organisation: 'University of Oxford',
       profileUrl: 'https://www.philosophy.ox.ac.uk/people/edward-harcourt',
       workstreams: [wsId['lived-experience-industry-partnership']],
       bio: 'Professor of Philosophy at the University of Oxford. Academic Lead for Patient and Public Involvement in the Oxford Health BRC and the Mental Health Translational Research Collaboration.',
     },
+    // 04 Digital Innovation
     {
-      order: 14,
-      group: 'digit' as const,
-      name: 'Prof. Paula Williamson',
-      role: 'DIGIT Co-Lead · Innovative Clinical Trials Hub Co-Investigator',
-      organisation: 'University of Liverpool',
-      workstreams: [wsId['innovative-trials-hub']],
-      bio: 'Professor of Medical Statistics at the University of Liverpool, bringing trials methodology and core outcome set expertise to the programme’s trial design work.',
-    },
-    {
-      order: 15,
-      group: 'digit' as const,
-      name: 'Dr Matthias Pierce',
-      role: 'DIGIT Co-Lead · Alliance Management Team Co-Investigator',
-      organisation: 'University of Manchester',
-      profileUrl: 'https://research.manchester.ac.uk/en/persons/matthias.pierce',
-      workstreams: [wsId['alliance-management-team'], wsId['data-observatory']],
-      bio: 'Biostatistician and Senior Research Fellow at the Centre for Women’s Mental Health, University of Manchester, and a lead on the programme’s data observatory work.',
-    },
-
-    // ——— Delivery team ———
-    {
-      order: 20,
-      group: 'delivery' as const,
-      name: 'Eric Lynch',
-      role: 'Alliance Manager',
-      organisation: 'King’s College London',
-      photo: lynchPhotoDoc.id,
-      workstreams: [wsId['alliance-management-team']],
-      bio: 'First point of contact for companies and partners looking to work with the Mental Health Goals Programme.',
-    },
-    {
-      order: 21,
-      group: 'delivery' as const,
-      name: 'Non Hill',
-      role: 'Lived Experience Lead',
-      organisation: 'Health Innovation Oxford & Thames Valley',
-      workstreams: [wsId['lived-experience-industry-partnership']],
-      bio: 'Brings over a decade of lived experience as a carer, professional lived experience roles across Healthwatch Surrey and Surrey and Borders Partnership NHS Foundation Trust, and a previous decade as a research neuroscientist in the pharmaceutical industry.',
-    },
-    {
-      order: 22,
-      group: 'delivery' as const,
-      name: 'Dr Kerrie McGiveron',
-      role: 'Research and Innovation Associate, Innovative Clinical Trials Hub',
-      organisation: 'University of Liverpool',
-      workstreams: [wsId['innovative-trials-hub']],
-      bio: 'Methodology project coordinator for the trials hub, working across the programme’s trial design and delivery partners.',
-    },
-    {
-      order: 23,
-      group: 'delivery' as const,
-      name: 'Eoin Gogarty',
-      role: 'Research Fellow (Database Lead)',
-      organisation: 'King’s College London',
-      workstreams: [wsId['alliance-management-team']],
-      bio: 'Builds the capabilities database behind the programme’s offer to industry.',
-    },
-    {
-      order: 24,
-      group: 'delivery' as const,
-      name: 'Sidharth Sanjeev',
-      role: 'Research Assistant',
-      organisation: 'King’s College London',
-      workstreams: [wsId['alliance-management-team']],
-    },
-
-    // ——— Workstream leads ———
-    {
-      order: 30,
-      group: 'workstream-leads' as const,
-      name: 'Prof. Gerome Breen',
-      role: 'GLAD Study Lead and Principal Investigator',
-      organisation: 'King’s College London',
-      profileUrl: 'https://www.kcl.ac.uk/people/gerome-breen',
-      workstreams: [wsId['multi-omics']],
-      bio: 'Professor of Psychiatric Genetics at King’s College London, leading the severe depression cohort built on the GLAD Study with Queen’s University Belfast and the University of Edinburgh.',
-    },
-    {
-      order: 31,
-      group: 'workstream-leads' as const,
-      name: 'Prof. James Walters',
-      role: 'Director, Centre for Neuropsychiatric Genetics and Genomics',
-      organisation: 'Cardiff University',
-      workstreams: [wsId['multi-omics']],
-      bio: 'Leads the psychosis cohort with the Universities of Cambridge and Edinburgh, and multi-omic data generation across the programme’s cohorts.',
-    },
-    {
-      order: 32,
-      group: 'workstream-leads' as const,
-      name: 'Prof. Ann John',
-      role: 'DATAMIND Co-Director',
-      organisation: 'Swansea University',
-      profileUrl: 'https://www.swansea.ac.uk/staff/a.john/',
-      workstreams: [wsId['data-observatory']],
-      bio: 'Professor of Public Health and Psychiatry, Health Data Science at Swansea University, leading the programme’s work on secure, centralised and scalable mental health data.',
-    },
-    {
-      order: 33,
-      group: 'workstream-leads' as const,
-      name: 'Prof. Rob Stewart',
-      role: 'DATAMIND Co-Director',
-      organisation: 'King’s College London',
-      profileUrl: 'https://www.kcl.ac.uk/people/professor-robert-stewart',
-      workstreams: [wsId['data-observatory']],
-      bio: 'Professor of Psychiatric Epidemiology and Clinical Informatics at the IoPPN, and Clinical and Population Informatics Lead at the NIHR Maudsley Biomedical Research Centre.',
-    },
-    {
-      order: 34,
+      order: 16,
       group: 'workstream-leads' as const,
       name: 'Dr Pauline Whelan',
       role: 'DATAMIND Digitally Enhanced Trials Lead',
@@ -645,13 +569,101 @@ export const seed = async ({
       bio: 'Honorary Senior Research Fellow in Digital Health at the University of Manchester and Chief Operating Officer at CareLoop Health, working on digital adoption pathways for the NHS.',
     },
     {
-      order: 35,
+      order: 17,
       group: 'workstream-leads' as const,
       name: 'Dr Trina Histon',
       role: 'Health Psychologist and Digital Health Strategist',
       organisation: 'Percolating Health',
       workstreams: [wsId['digital-innovation']],
       bio: 'Director of Percolating Health, working with the programme on how digital mental health tools reach the people who need them.',
+    },
+    // 05 Data Observatory
+    {
+      order: 18,
+      group: 'workstream-leads' as const,
+      name: 'Prof. Ann John',
+      role: 'DATAMIND Co-Director',
+      organisation: 'Swansea University',
+      profileUrl: 'https://www.swansea.ac.uk/staff/a.john/',
+      workstreams: [wsId['data-observatory']],
+      bio: 'Professor of Public Health and Psychiatry, Health Data Science at Swansea University, leading the programme’s work on secure, centralised and scalable mental health data.',
+    },
+    {
+      order: 19,
+      group: 'workstream-leads' as const,
+      name: 'Prof. Rob Stewart',
+      role: 'DATAMIND Co-Director',
+      organisation: 'King’s College London',
+      profileUrl: 'https://www.kcl.ac.uk/people/professor-robert-stewart',
+      workstreams: [wsId['data-observatory']],
+      bio: 'Professor of Psychiatric Epidemiology and Clinical Informatics at the IoPPN, and Clinical and Population Informatics Lead at the NIHR Maudsley Biomedical Research Centre.',
+    },
+    // 06 Multi-omics
+    {
+      order: 20,
+      group: 'workstream-leads' as const,
+      name: 'Prof. Gerome Breen',
+      role: 'GLAD Study Lead and Principal Investigator',
+      organisation: 'King’s College London',
+      profileUrl: 'https://www.kcl.ac.uk/people/gerome-breen',
+      workstreams: [wsId['multi-omics']],
+      bio: 'Professor of Psychiatric Genetics at King’s College London, leading the severe depression cohort built on the GLAD Study with Queen’s University Belfast and the University of Edinburgh.',
+    },
+    {
+      order: 21,
+      group: 'workstream-leads' as const,
+      name: 'Prof. James Walters',
+      role: 'Director, Centre for Neuropsychiatric Genetics and Genomics',
+      organisation: 'Cardiff University',
+      workstreams: [wsId['multi-omics']],
+      bio: 'Leads the psychosis cohort with the Universities of Cambridge and Edinburgh, and multi-omic data generation across the programme’s cohorts.',
+    },
+
+    // ——— Delivery team ———
+    {
+      order: 30,
+      group: 'delivery' as const,
+      name: 'Eric Lynch',
+      role: 'Alliance Manager',
+      organisation: 'King’s College London',
+      photo: lynchPhotoDoc.id,
+      workstreams: [wsId['alliance-management-team']],
+      bio: 'First point of contact for companies and partners looking to work with the Mental Health Goals Programme.',
+    },
+    {
+      order: 31,
+      group: 'delivery' as const,
+      name: 'Non Hill',
+      role: 'Lived Experience Lead',
+      organisation: 'Health Innovation Oxford & Thames Valley',
+      workstreams: [wsId['lived-experience-industry-partnership']],
+      bio: 'Brings over a decade of lived experience as a carer, professional lived experience roles across Healthwatch Surrey and Surrey and Borders Partnership NHS Foundation Trust, and a previous decade as a research neuroscientist in the pharmaceutical industry.',
+    },
+    {
+      order: 32,
+      group: 'delivery' as const,
+      name: 'Dr Kerrie McGiveron',
+      role: 'Research and Innovation Associate, Innovative Clinical Trials Hub',
+      organisation: 'University of Liverpool',
+      workstreams: [wsId['innovative-trials-hub']],
+      bio: 'Methodology project coordinator for the trials hub, working across the programme’s trial design and delivery partners.',
+    },
+    {
+      order: 33,
+      group: 'delivery' as const,
+      name: 'Eoin Gogarty',
+      role: 'Research Fellow (Database Lead)',
+      organisation: 'King’s College London',
+      workstreams: [wsId['alliance-management-team']],
+      bio: 'Builds the capabilities database behind the programme’s offer to industry.',
+    },
+    {
+      order: 34,
+      group: 'delivery' as const,
+      name: 'Sidharth Sanjeev',
+      role: 'Research Assistant',
+      organisation: 'King’s College London',
+      workstreams: [wsId['alliance-management-team']],
     },
   ]
 
@@ -857,7 +869,7 @@ export const seed = async ({
             heading('h3', text('Industry Engagement Forum — launching October 2026')),
             paragraph(
               text(
-                'Join MHG and global CROs, pharmaceutical, digital and biotech partners for a day of strategic dialogue at the SGDP Centre, Denmark Hill Campus, King’s College London.',
+                'Join MHG and global CROs, pharmaceutical, digital and biotech partners for a day of strategic dialogue in London.',
               ),
             ),
           ),
@@ -1079,8 +1091,15 @@ export const seed = async ({
                 heading('h2', text('Partners across the UK')),
                 paragraph(
                   text(
-                    'The programme is led from King’s College London — where DIGIT, the Data and Digital Industry Alliance Team, delivers the Alliance Management Team, Innovative Clinical Trials Hub and Lived Experience Industry Partnership — and is delivered with partners spanning all four UK nations: the University of Oxford, University of Manchester, Swansea University, Cardiff University, Queen’s University Belfast, University of Edinburgh, University of Cambridge and Health Innovation Oxford & Thames Valley.',
+                    'The programme is delivered by partners spanning all four UK nations: Cardiff University, Health Innovation Oxford & Thames Valley, King’s College London, Queen’s University Belfast, Swansea University, the University of Cambridge, the University of Edinburgh, the University of Manchester and the University of Oxford.',
                   ),
+                ),
+                paragraph(
+                  text(
+                    'Three of the six workstreams — the Alliance Management Team, Innovative Clinical Trials Hub and Lived Experience Industry Partnership — are delivered together as ',
+                  ),
+                  link('DIGIT, the Data and Digital Industry Alliance Team', '/digit'),
+                  text('.'),
                 ),
                 paragraph(
                   text(
@@ -1152,7 +1171,7 @@ export const seed = async ({
           heading('h1', text('Six workstreams, one mission')),
           paragraph(
             text(
-              'Each workstream has a distinct role in the programme — together they span discovery to delivery. The first three are delivered by DIGIT, the Data and Digital Industry Alliance Team at King’s College London.',
+              'Each workstream has a distinct role in the programme — together they span discovery to delivery across partner institutions in all four UK nations.',
             ),
           ),
         ),
@@ -1188,6 +1207,211 @@ export const seed = async ({
         title: 'Workstreams',
         description:
           'The six UK-wide workstreams of the Mental Health Goals Programme, from the Alliance Management Team to Multi-omics.',
+        image: cardTealDoc.id,
+      },
+    },
+
+    // ——— DIGIT ———
+    // What the umbrella over workstreams 01–03 actually is. Written because
+    // "DIGIT" appears across the site with nothing to click; it is deliberately
+    // a plain explanatory page, not a showcase — the workstreams are the
+    // programme's public face, and this sits behind them.
+    //
+    // Sourced from the funded application (APP97536, "Mental Health Goals
+    // Programme — Data and Digital Industry Alliance Team"). Brochure level
+    // only: no award value, KPIs, FTEs or staffing tables.
+    {
+      slug: 'digit',
+      _status: 'published',
+      title: 'DIGIT',
+      hero: {
+        type: 'lowImpact',
+        richText: root(
+          heading('h1', text('Data and Digital Industry Alliance Team (DIGIT)')),
+          paragraph(
+            text(
+              'DIGIT is the funded project that delivers three of the programme’s six workstreams: the Alliance Management Team, the Innovative Clinical Trials Hub and the Lived Experience Industry Partnership.',
+            ),
+          ),
+        ),
+      },
+      layout: [
+        {
+          blockType: 'content',
+          columns: [
+            {
+              size: 'full',
+              richText: root(
+                heading('h2', text('Why it exists')),
+                paragraph(
+                  text(
+                    'Large pharmaceutical companies and smaller innovators alike have shown renewed interest in UK mental health research, following recent trial results in schizophrenia, post-partum depression and treatment-resistant depression, and the potential of digital approaches. Acting on that interest is harder than it should be: companies rely on individual contacts rather than a clear route in, national data and digital tools are not used well enough to plan trials or choose sites, smaller companies struggle to find support, and patients and families often feel unheard about how their data are used.',
+                  ),
+                ),
+                paragraph(
+                  text(
+                    'DIGIT brings together the expertise to answer that — not only new infrastructure, but deep, curated data access and a new alliance between industry and patients. Its remit is the set of challenges not addressed elsewhere in the programme, the MRC Mental Health Platform or the Mental Health Mission, and it works so that UK sites reach the alliance team whether a company comes to them directly or indirectly.',
+                  ),
+                ),
+              ),
+            },
+          ],
+        },
+        {
+          blockType: 'content',
+          columns: [
+            {
+              size: 'oneThird',
+              richText: root(
+                heading('h3', text('Alliance Management Team')),
+                paragraph(
+                  text(
+                    'A single, simple front door bringing industry into UK mental health research and trials.',
+                  ),
+                ),
+              ),
+              enableLink: true,
+              link: {
+                type: 'custom',
+                appearance: 'default',
+                label: 'Workstream 01',
+                url: '/workstreams/alliance-management-team',
+              },
+            },
+            {
+              size: 'oneThird',
+              richText: root(
+                heading('h3', text('Innovative Clinical Trials Hub')),
+                paragraph(text('Designs and delivers precision psychiatry trials with industry.')),
+              ),
+              enableLink: true,
+              link: {
+                type: 'custom',
+                appearance: 'default',
+                label: 'Workstream 02',
+                url: '/workstreams/innovative-trials-hub',
+              },
+            },
+            {
+              size: 'oneThird',
+              richText: root(
+                heading('h3', text('Lived Experience Industry Partnership')),
+                paragraph(
+                  text('Establishes patient experience as central to industry priorities.'),
+                ),
+              ),
+              enableLink: true,
+              link: {
+                type: 'custom',
+                appearance: 'default',
+                label: 'Workstream 03',
+                url: '/workstreams/lived-experience-industry-partnership',
+              },
+            },
+          ],
+        },
+        {
+          blockType: 'content',
+          columns: [
+            {
+              size: 'full',
+              richText: root(
+                heading('h2', text('Beyond the three workstreams')),
+                paragraph(
+                  text(
+                    'DIGIT also supports the policy and regulatory work the programme does with NICE and the MHRA on what industry needs to run mental health trials in the UK. The tools it builds for industry — the capabilities database, the recruitment simulator and the Founding Members Programme — are described on ',
+                  ),
+                  link('For industry', '/industry'),
+                  text('.'),
+                ),
+              ),
+            },
+          ],
+        },
+        {
+          blockType: 'content',
+          columns: [
+            {
+              size: 'full',
+              richText: root(
+                heading('h2', text('Who is involved')),
+                paragraph(
+                  text('DIGIT is led by '),
+                  link('Prof. Mitul Mehta', `/people#${personAnchor('Prof. Mitul Mehta')}`),
+                  text(' at King’s College London, which holds the award, with co-leads '),
+                  link('Prof. Richard Emsley', `/people#${personAnchor('Prof. Richard Emsley')}`),
+                  text(' (King’s College London), '),
+                  link('Prof. Edward Harcourt', `/people#${personAnchor('Prof. Edward Harcourt')}`),
+                  text(' (University of Oxford), '),
+                  link('Dr Matthias Pierce', `/people#${personAnchor('Dr Matthias Pierce')}`),
+                  text(' (University of Manchester), '),
+                  link('Dr Siân Rees', `/people#${personAnchor('Dr Siân Rees')}`),
+                  text(' (Health Innovation Oxford & Thames Valley) and '),
+                  link(
+                    'Prof. Paula Williamson',
+                    `/people#${personAnchor('Prof. Paula Williamson')}`,
+                  ),
+                  text(' (University of Liverpool). '),
+                  link('Dr Vaibhav Narayan', `/people#${personAnchor('Dr Vaibhav Narayan')}`),
+                  text(' co-leads the Alliance Management Team with Professor Mehta.'),
+                ),
+                paragraph(
+                  text(
+                    'The team is based across those institutions and reports into the programme’s own governance, working with the MHG Programme Steering Committee and the other workstreams on representation and diversity in data, ethical frameworks and community consultation. The full team is on the ',
+                  ),
+                  link('Team page', '/people'),
+                  text('.'),
+                ),
+                heading('h2', text('Funding')),
+                paragraph(
+                  text(
+                    'DIGIT is funded by the Office for Life Sciences through the Medical Research Council as part of the £50 million Mental Health Goals Programme. It started in January 2026 and runs to 2030. The programme overview is published on ',
+                  ),
+                  link(
+                    'GOV.UK',
+                    'https://www.gov.uk/government/publications/life-sciences-healthcare-goals/mental-health-goals',
+                    true,
+                  ),
+                  text('.'),
+                ),
+              ),
+            },
+          ],
+        },
+        {
+          blockType: 'cta',
+          richText: root(
+            heading('h3', text('Work with the programme')),
+            paragraph(
+              text(
+                'The Alliance Management Team will route you to the right people, data and infrastructure.',
+              ),
+            ),
+          ),
+          links: [
+            {
+              link: {
+                type: 'custom',
+                appearance: 'default',
+                label: 'Get in touch',
+                url: '/contact',
+              },
+            },
+            {
+              link: {
+                type: 'custom',
+                appearance: 'outline',
+                label: 'All six workstreams',
+                url: '/workstreams',
+              },
+            },
+          ],
+        },
+      ],
+      meta: {
+        title: 'DIGIT',
+        description:
+          'The Data and Digital Industry Alliance Team: the funded project delivering three of the Mental Health Goals Programme’s six workstreams.',
         image: cardTealDoc.id,
       },
     },
@@ -1284,7 +1508,7 @@ export const seed = async ({
             heading('h3', text('Join us at the Industry Engagement Forum')),
             paragraph(
               text(
-                'A strategic dialogue between MHG and global CROs, pharmaceutical and digital industry partners, biotech organisations, ABPI and ABHI — 8 October 2026, Denmark Hill Campus, King’s College London.',
+                'A strategic dialogue between MHG and global CROs, pharmaceutical and digital industry partners, biotech organisations, ABPI and ABHI — 8 October 2026, in London.',
               ),
             ),
           ),
@@ -1438,9 +1662,9 @@ export const seed = async ({
                   ),
                 ),
                 paragraph(
-                  text(
-                    'The forum is convened by DIGIT — the Data and Digital Industry Alliance Team at King’s College London, which delivers the programme’s Alliance Management Team, Innovative Clinical Trials Hub and Lived Experience Industry Partnership.',
-                  ),
+                  text('The forum is convened by '),
+                  link('DIGIT, the Data and Digital Industry Alliance Team', '/digit'),
+                  text(', which delivers three of the programme’s six workstreams.'),
                 ),
                 heading('h2', text('Getting there')),
                 paragraph(
@@ -1453,22 +1677,6 @@ export const seed = async ({
                     true,
                   ),
                   text('.'),
-                ),
-              ),
-            },
-          ],
-        },
-        {
-          blockType: 'content',
-          columns: [
-            {
-              size: 'oneThird',
-              richText: root(
-                heading('h3', text('Convened by DIGIT')),
-                paragraph(
-                  text(
-                    'The Data and Digital Industry Alliance Team at King’s College London, which delivers the programme’s Alliance Management Team, Innovative Clinical Trials Hub and Lived Experience Industry Partnership.',
-                  ),
                 ),
               ),
             },
@@ -1550,12 +1758,6 @@ export const seed = async ({
           ],
         },
         {
-          blockType: 'partnerLogos',
-          blockName: 'Hosted by',
-          heading: 'Hosted by',
-          partners: [kclPartner.id],
-        },
-        {
           blockType: 'content',
           columns: [
             {
@@ -1634,7 +1836,7 @@ export const seed = async ({
           heading('h1', text('The team')),
           paragraph(
             text(
-              'Programme leadership, workstream leads and the Alliance Management Team — spanning clinical trials, genetics, neuroscience, philosophy, health data science, digital health and lived experience.',
+              'Programme leadership, workstream leads and the delivery team — spanning clinical trials, genetics, neuroscience, philosophy, health data science, digital health and lived experience.',
             ),
           ),
         ),
@@ -1668,7 +1870,7 @@ export const seed = async ({
       meta: {
         title: 'Team',
         description:
-          'The people delivering the Mental Health Goals Programme: leadership, workstream leads and the Alliance Management Team.',
+          'The people delivering the Mental Health Goals Programme: programme leadership, the leads of all six workstreams, and the delivery team.',
         image: cardTealDoc.id,
       },
     },
@@ -1860,7 +2062,7 @@ export const seed = async ({
                 heading('h2', text('Who we are')),
                 paragraph(
                   text(
-                    'The Mental Health Goals Programme is a UK research programme led from King’s College London with partner institutions across the UK. For the purposes of UK data protection law, the data controller for this website is King’s College London.',
+                    'The Mental Health Goals Programme is a UK-wide research programme delivered by partner institutions across the UK. For the purposes of UK data protection law, the data controller for this website is King’s College London.',
                   ),
                 ),
                 heading('h2', text('The information we collect')),
@@ -2008,8 +2210,10 @@ export const seed = async ({
         heading('h2', text('Six workstreams, one system')),
         paragraph(
           text(
-            'Six UK-wide workstreams — the Alliance Management Team, Innovative Clinical Trials Hub, Lived Experience Industry Partnership, Digital Innovation, Data Observatory and Multi-omics — connect discovery to delivery across King’s College London, Oxford, Manchester, Swansea, Cardiff, Belfast, Edinburgh and Cambridge. The first three are delivered by DIGIT, the Data and Digital Industry Alliance Team at King’s College London.',
+            'Six UK-wide workstreams — the Alliance Management Team, Innovative Clinical Trials Hub, Lived Experience Industry Partnership, Digital Innovation, Data Observatory and Multi-omics — connect discovery to delivery across King’s College London, Oxford, Manchester, Swansea, Cardiff, Belfast, Edinburgh and Cambridge. The first three are delivered together as ',
           ),
+          link('DIGIT, the Data and Digital Industry Alliance Team', '/digit'),
+          text('.'),
         ),
         paragraph(link('Read more about the programme', '/about'), text('.')),
         paragraph(
@@ -2046,6 +2250,10 @@ export const seed = async ({
       heroImage: cardTealDoc.id,
       categories: [eventsCategory.id],
       publishedAt: '2026-08-05T09:00:00.000Z',
+      // The date the forum happens, not the date this was announced — it is
+      // what pins the post to "Coming up" until the day itself has passed.
+      eventDate: '2026-10-08T00:00:00.000Z',
+      eventLocation: 'SGDP Centre, Denmark Hill Campus, London',
       content: root(
         paragraph(
           text(
@@ -2351,6 +2559,13 @@ export const seed = async ({
               type: 'custom' as const,
               label: 'Industry Engagement Forum',
               url: '/industry-engagement-forum',
+            },
+          },
+          {
+            link: {
+              type: 'custom' as const,
+              label: 'DIGIT',
+              url: '/digit',
             },
           },
           {

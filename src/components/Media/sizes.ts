@@ -27,6 +27,8 @@ export const SIZE_FULL_BLEED = '100vw'
 /** One container column: media blocks, the medium-impact hero figure. */
 export const SIZE_CONTAINER = '(max-width: 767px) 100vw, (max-width: 1375px) 94vw, 1360px'
 
-/** The team grid: 2 columns, then 3 from `md`, then 4 from `lg`. */
+/** The team grid: 2 columns, 3 from `md`, 4 from `lg`, 5 from `xl`, 6 from
+ *  `2xl`. The plate never exceeds ~216px once the grid is 4 across, so the
+ *  old flat 320px above `lg` was fetching half again as much as it showed. */
 export const SIZE_PERSON_CARD =
-  '(max-width: 639px) 46vw, (max-width: 767px) 288px, (max-width: 1023px) 220px, 320px'
+  '(max-width: 639px) 46vw, (max-width: 767px) 288px, (max-width: 1023px) 220px, 224px'

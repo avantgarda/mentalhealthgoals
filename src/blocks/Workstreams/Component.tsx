@@ -8,11 +8,12 @@ import { SectionHead } from '@/components/SectionHead'
 import { DigitMark } from '@/components/DigitMark'
 
 /** Umbrella teams that bracket a run of workstreams in the index. */
-const UMBRELLAS: Record<string, { name: string; expansion: string; note: string }> = {
+const UMBRELLAS: Record<string, { name: string; expansion: string; note: string; href: string }> = {
   digit: {
     name: 'DIGIT',
     expansion: 'Data and Digital Industry Alliance Team',
-    note: 'Delivered together from King’s College London as the programme’s industry-facing team.',
+    note: 'One funded project delivering workstreams 01–03.',
+    href: '/digit',
   },
 }
 
@@ -72,12 +73,12 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
             {ws.title}
           </RowHeading>
         </div>
-        <p className="col-start-2 text-[0.95rem] leading-relaxed text-muted-foreground lg:col-span-4 lg:col-start-6">
+        <p className="col-start-2 text-[1rem] leading-relaxed text-muted-foreground lg:col-span-4 lg:col-start-6">
           {detailed ? ws.description || ws.summary : ws.summary}
         </p>
         <div className="col-start-2 flex flex-col gap-1 lg:col-span-3 lg:col-start-10 lg:items-end lg:text-right">
           <span className="eyebrow">Delivered by</span>
-          <span className="text-sm leading-snug">{ws.deliveredBy}</span>
+          <span className="text-[0.95rem] leading-snug">{ws.deliveredBy}</span>
           <span aria-hidden="true" className="arrow mt-1 text-muted-foreground">
             →
           </span>
@@ -94,27 +95,27 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
         {runs.map((run, runIndex) => {
           const umbrella = run.umbrella ? UMBRELLAS[run.umbrella] : null
 
-          // Every run gets the same geometry so an umbrella team does not read
-          // as more important than the workstreams outside it — only the label
-          // and the quiet tint distinguish them.
+          // Both runs get the same rule, the same ground and the same muted
+          // label. A reader should learn that 01–03 are delivered together
+          // without that reading as precedence over 04–06 — an accent colour
+          // and a tinted band said the opposite.
           return (
-            <section
-              className={
-                umbrella
-                  ? 'border-l-2 border-primary/50 bg-primary/[0.04]'
-                  : 'border-l-2 border-border'
-              }
-              key={runIndex}
-            >
+            <section className="border-l-2 border-border" key={runIndex}>
               <div className="flex items-start gap-4 px-4 py-4 lg:px-6" data-reveal>
                 {umbrella ? (
                   <>
-                    <DigitMark className="mt-0.5 h-9 w-9 text-primary" />
+                    <DigitMark className="mt-0.5 h-6 w-6 text-muted-foreground" />
                     <div className="flex flex-col gap-1">
-                      <p className="eyebrow !text-brand-accent-text">
+                      <p className="eyebrow">
                         {umbrella.name} — {umbrella.expansion}
                       </p>
-                      <p className="text-sm text-muted-foreground">{umbrella.note}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {umbrella.note}{' '}
+                        <Link className="link-line whitespace-nowrap" href={umbrella.href}>
+                          About {umbrella.name}
+                          <span aria-hidden="true"> →</span>
+                        </Link>
+                      </p>
                     </div>
                   </>
                 ) : (

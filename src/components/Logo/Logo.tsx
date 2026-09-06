@@ -26,11 +26,11 @@ export const Logo = (props: Props) => {
     <span className={clsx('flex items-center gap-2.5', className)}>
       <BrandMark className="h-8 w-8" variant={variant} />
       <span className="flex flex-col leading-none">
-        <span className="font-brand text-[1.05rem] font-semibold tracking-tight whitespace-nowrap">
+        <span className="font-brand text-[1.15rem] font-semibold tracking-tight whitespace-nowrap">
           {BRAND_NAME}
         </span>
         {showTagline && (
-          <span className="mt-1 text-[0.58rem] font-semibold uppercase tracking-[0.24em] opacity-75">
+          <span className="mt-1 text-[0.68rem] font-semibold uppercase tracking-[0.2em] opacity-75">
             {BRAND_TAGLINE}
           </span>
         )}

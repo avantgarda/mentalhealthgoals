@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import React from 'react'
 
 import { Error } from '../Error'
+import { autoCompleteFor } from '../autocomplete'
 import { Width } from '../Width'
 
 export const Text: React.FC<
@@ -25,7 +26,13 @@ export const Text: React.FC<
           </span>
         )}
       </Label>
-      <Input defaultValue={defaultValue} id={name} type="text" {...register(name, { required })} />
+      <Input
+        autoComplete={autoCompleteFor(name)}
+        defaultValue={defaultValue}
+        id={name}
+        type="text"
+        {...register(name, { required })}
+      />
       {errors[name] && <Error name={name} />}
     </Width>
   )

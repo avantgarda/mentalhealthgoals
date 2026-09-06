@@ -63,7 +63,6 @@ export const People: CollectionConfig = {
       },
       options: [
         { label: 'Programme leadership', value: 'leadership' },
-        { label: 'DIGIT leadership', value: 'digit' },
         { label: 'Workstream leads', value: 'workstream-leads' },
         { label: 'Delivery team', value: 'delivery' },
       ],
@@ -89,7 +88,8 @@ export const People: CollectionConfig = {
       defaultValue: 99,
       admin: {
         position: 'sidebar',
-        description: 'Lower numbers appear first',
+        description:
+          'Orders this list in the admin only. On the site the team is always shown by workstream and then by surname, so no one is ranked by hand.',
       },
     },
   ],

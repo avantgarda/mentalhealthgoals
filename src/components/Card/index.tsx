@@ -6,9 +6,12 @@ import React, { Fragment } from 'react'
 
 import type { Post } from '@/payload-types'
 
-import { formatDisplayDate } from '@/utilities/formatDateTime'
+import { formatDisplayDate, formatEventDate } from '@/utilities/formatDateTime'
 
-export type CardPostData = Pick<Post, 'slug' | 'categories' | 'meta' | 'publishedAt' | 'title'>
+export type CardPostData = Pick<
+  Post,
+  'slug' | 'categories' | 'meta' | 'publishedAt' | 'title' | 'eventDate' | 'eventLocation'
+>
 
 /**
  * A news entry as a ruled row: category · title · standfirst · arrow. The
@@ -27,6 +30,10 @@ export const Card: React.FC<{
   relationTo?: 'posts'
   showCategories?: boolean
   title?: string
+  /** An event row leads with the date the event happens rather than the date
+   *  the post was published — the only fact a reader is actually scanning
+   *  for. Used by the "Coming up" band on the news listing. */
+  variant?: 'event'
 }> = (props) => {
   const { card, link } = useClickableCard({})
   const {
@@ -37,9 +44,11 @@ export const Card: React.FC<{
     relationTo,
     showCategories,
     title: titleFromProps,
+    variant,
   } = props
 
-  const { slug, categories, meta, publishedAt, title } = doc || {}
+  const { slug, categories, meta, publishedAt, title, eventDate, eventLocation } = doc || {}
+  const isEvent = variant === 'event' && Boolean(eventDate)
   const { description } = meta || {}
 
   const hasCategories = categories && Array.isArray(categories) && categories.length > 0
@@ -53,22 +62,36 @@ export const Card: React.FC<{
         // Horizontal padding keeps the row's content clear of its own hover
         // tint — flush against the tint's edge it read as a spacing bug (the
         // workstream rows had the same disease). Matches their 16/24px inset.
-        'group grid grid-cols-1 gap-y-2 border-b border-border px-4 py-6 transition-colors duration-[var(--dur-ui)] hover:cursor-pointer hover:bg-foreground/[0.03] lg:grid-cols-12 lg:gap-x-8 lg:px-6 lg:py-7',
+        'group grid grid-cols-1 gap-y-2 border-b px-4 py-6 transition-colors duration-[var(--dur-ui)] hover:cursor-pointer hover:bg-foreground/[0.03] lg:grid-cols-12 lg:gap-x-8 lg:px-6 lg:py-7',
+        // Inside the "Coming up" band the rules take the band's own hairline
+        // weight, so no line reads heavier than the ground it sits on.
+        isEvent ? 'border-foreground/25' : 'border-border',
         className,
       )}
       ref={card.ref}
     >
       <div className="flex flex-col gap-1.5 lg:col-span-2">
-        {publishedAt && (
-          <time
-            className="font-mono text-xs tabular-nums text-muted-foreground"
-            dateTime={publishedAt}
-          >
-            {formatDisplayDate(publishedAt)}
-          </time>
+        {isEvent && eventDate ? (
+          <>
+            <time className="numeral text-[1.35rem] text-brand-accent-text" dateTime={eventDate}>
+              {formatEventDate(eventDate)}
+            </time>
+            {eventLocation && (
+              <p className="text-xs leading-snug text-muted-foreground">{eventLocation}</p>
+            )}
+          </>
+        ) : (
+          publishedAt && (
+            <time
+              className="font-mono text-xs tabular-nums text-muted-foreground"
+              dateTime={publishedAt}
+            >
+              {formatDisplayDate(publishedAt)}
+            </time>
+          )
         )}
         {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-        {!eyebrow && showCategories && hasCategories && (
+        {!eyebrow && !isEvent && showCategories && hasCategories && (
           <p className="eyebrow">
             {categories?.map((category, index) => {
               if (typeof category === 'object') {
@@ -106,7 +129,7 @@ export const Card: React.FC<{
       </div>
       <div className="flex items-start justify-between gap-6 lg:col-span-5">
         {description && (
-          <p className="text-[0.95rem] leading-relaxed text-muted-foreground">
+          <p className="text-[1rem] leading-relaxed text-muted-foreground">
             {sanitizedDescription}
           </p>
         )}

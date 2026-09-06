@@ -5,14 +5,17 @@ import React from 'react'
 import { cn } from '@/utilities/ui'
 import { getMediaUrl } from '@/utilities/getMediaUrl'
 
-type Size = 'regular' | 'compact'
-
 /**
- * Standard logo height in px per size; individual partners scale from here.
- * Sized so a wordmark's smallest type is still readable rather than merely
- * recognisable — a partner shown too small to read is worse than a name.
+ * Standard logo height in px. Individual partners scale from here so a row
+ * balances by visual mass rather than by height: a wide wordmark and a square
+ * mark set to the same height do not look the same size. See the note on
+ * `logoScale` in the Partners collection.
+ *
+ * One size for every surface, deliberately. Logo rows all sit in a content
+ * column — the band, a page row, a workstream body, an article — so a partner
+ * is the same size wherever a reader meets it.
  */
-const HEIGHT: Record<Size, number> = { regular: 60, compact: 42 }
+const HEIGHT = 72
 
 const isMedia = (logo: Partner['logo']): logo is Media =>
   typeof logo === 'object' && logo !== null && 'url' in logo
@@ -29,10 +32,9 @@ const isMedia = (logo: Partner['logo']): logo is Media =>
 export const PartnerLogo: React.FC<{
   className?: string
   partner: Partner
-  size?: Size
-}> = ({ className, partner, size = 'regular' }) => {
+}> = ({ className, partner }) => {
   const { logo, logoScale, name, showNameWithLogo, strapline, url } = partner
-  const height = Math.round(HEIGHT[size] * (logoScale || 1))
+  const height = Math.round(HEIGHT * (logoScale || 1))
   const media = isMedia(logo) ? logo : null
   const width =
     media?.width && media?.height ? Math.round((height * media.width) / media.height) : undefined
@@ -58,11 +60,15 @@ export const PartnerLogo: React.FC<{
         width={width}
       />
       {showNameWithLogo && (
+        // Sized from the mark it sits beside, not fixed: a mark-only partner is
+        // a lockup of two parts, and they have to grow together or the name
+        // shrinks away as the mark gets bigger.
         <span
-          className={cn(
-            'font-display leading-none text-foreground',
-            size === 'compact' ? 'text-[1.05rem]' : 'text-[1.35rem]',
-          )}
+          // A bold sans, not our display serif: this text stands in for the
+          // partner's own wordmark, so it should read as their identity — and
+          // DIGIT sets its name exactly this way on the capabilities database.
+          className="font-sans font-bold leading-none tracking-tight text-foreground"
+          style={{ fontSize: Math.round(height * 0.34) }}
         >
           {name}
         </span>
@@ -70,14 +76,7 @@ export const PartnerLogo: React.FC<{
     </span>
   ) : (
     <span className="flex flex-col gap-0.5">
-      <span
-        className={cn(
-          'font-display leading-tight text-foreground',
-          size === 'compact' ? 'text-[1.05rem]' : 'text-[1.35rem]',
-        )}
-      >
-        {name}
-      </span>
+      <span className="font-display text-[1.35rem] leading-tight text-foreground">{name}</span>
       {strapline && <span className="eyebrow !normal-case !tracking-[0.06em]">{strapline}</span>}
     </span>
   )
@@ -116,8 +115,7 @@ export const PartnerGroup: React.FC<{
   className?: string
   label?: string | null
   partners: Partner[]
-  size?: Size
-}> = ({ className, label, partners, size = 'regular' }) => {
+}> = ({ className, label, partners }) => {
   if (partners.length === 0) return null
   // "Funded by" versus "Delivered by" is the whole point of the band, so the
   // label has to name the list programmatically, not just sit above it.
@@ -125,20 +123,20 @@ export const PartnerGroup: React.FC<{
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       {label && (
-        <p className="eyebrow" id={labelId}>
+        // A touch larger than a standard eyebrow: this label is doing real
+        // work — "Funded by" versus "Delivered by" is the whole claim — and at
+        // the default size it sat too quietly under a row of full-size logos.
+        <p className="eyebrow !text-[0.78rem]" id={labelId}>
           {label}
         </p>
       )}
       <ul
         aria-labelledby={labelId}
-        className={cn(
-          'm-0 flex list-none flex-wrap items-center p-0',
-          size === 'compact' ? 'gap-x-8 gap-y-4' : 'gap-x-12 gap-y-6',
-        )}
+        className="m-0 flex list-none flex-wrap items-center gap-x-12 gap-y-6 p-0"
       >
         {partners.map((partner) => (
           <li className="m-0 p-0" key={partner.id}>
-            <PartnerLogo partner={partner} size={size} />
+            <PartnerLogo partner={partner} />
           </li>
         ))}
       </ul>

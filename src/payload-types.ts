@@ -282,6 +282,14 @@ export interface Post {
     description?: string | null;
   };
   publishedAt?: string | null;
+  /**
+   * For events only. While this date is today or later, the post is listed under “Coming up” at the top of News & events.
+   */
+  eventDate?: string | null;
+  /**
+   * Shown beside the date, e.g. “Bush House, London”.
+   */
+  eventLocation?: string | null;
   authors?: (number | User)[] | null;
   populatedAuthors?:
     | {
@@ -883,7 +891,7 @@ export interface Partner {
    */
   showNameWithLogo?: boolean | null;
   /**
-   * Optical balance against the other logos in a row: 1 is the standard height, 1.3 makes a compact mark read as large as a wide wordmark.
+   * Optical balance against the other logos in a row. 1 is the standard height. Logos of different shapes do not look the same size at the same height, so these are set from each mark’s aspect ratio — wide wordmarks come down, square marks go up — part-way between matching heights and matching area.
    */
   logoScale?: number | null;
   /**
@@ -921,7 +929,7 @@ export interface Workstream {
    */
   description?: string | null;
   /**
-   * Lead institution(s), e.g. "King’s College London"
+   * Lead institution(s), e.g. "University of Manchester · Swansea University"
    */
   deliveredBy: string;
   /**
@@ -1004,14 +1012,14 @@ export interface Person {
   /**
    * Which section of the Team page this person appears under.
    */
-  group: 'leadership' | 'digit' | 'workstream-leads' | 'delivery';
+  group: 'leadership' | 'workstream-leads' | 'delivery';
   /**
    * Workstreams this person leads or works on — also lists them on those workstream pages.
    */
   workstreams?: (number | Workstream)[] | null;
   photo?: (number | null) | Media;
   /**
-   * Lower numbers appear first
+   * Orders this list in the admin only. On the site the team is always shown by workstream and then by surname, so no one is ranked by hand.
    */
   order?: number | null;
   updatedAt: string;
@@ -1478,6 +1486,8 @@ export interface PostsSelect<T extends boolean = true> {
         description?: T;
       };
   publishedAt?: T;
+  eventDate?: T;
+  eventLocation?: T;
   authors?: T;
   populatedAuthors?:
     | T
@@ -1979,7 +1989,7 @@ export interface Brand {
   createdAt?: string | null;
 }
 /**
- * Contact details for the programme as a whole — shown in the site footer. People and their individual contact details live in the People collection.
+ * The programme’s own description and contact details — shown in the site footer. People and their individual contact details live in the People collection.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "programmeDetails".
@@ -1990,7 +2000,10 @@ export interface ProgrammeDetail {
    * Used in the footer copyright line.
    */
   name: string;
-  organisation?: string | null;
+  /**
+   * The sentence under the logo in the footer.
+   */
+  description?: string | null;
   email?: string | null;
   phone?: string | null;
   /**
@@ -2063,7 +2076,7 @@ export interface BrandSelect<T extends boolean = true> {
  */
 export interface ProgrammeDetailsSelect<T extends boolean = true> {
   name?: T;
-  organisation?: T;
+  description?: T;
   email?: T;
   phone?: T;
   address?: T;

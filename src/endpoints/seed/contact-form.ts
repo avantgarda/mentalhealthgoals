@@ -135,7 +135,7 @@ export const contactForm: RequiredDataFromCollectionSlug<'forms'> = {
       blockType: 'text',
       label: 'Full Name',
       required: true,
-      width: 100,
+      width: 50,
     },
     {
       name: 'email',
@@ -143,7 +143,7 @@ export const contactForm: RequiredDataFromCollectionSlug<'forms'> = {
       blockType: 'email',
       label: 'Email',
       required: true,
-      width: 100,
+      width: 50,
     },
     {
       // A text field, not `number`: phone numbers need "+", leading zeros and
@@ -153,7 +153,7 @@ export const contactForm: RequiredDataFromCollectionSlug<'forms'> = {
       blockType: 'text',
       label: 'Phone',
       required: false,
-      width: 100,
+      width: 50,
     },
     {
       name: 'message',

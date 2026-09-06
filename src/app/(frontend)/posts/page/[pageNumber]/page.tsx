@@ -9,6 +9,7 @@ import React from 'react'
 import PageClient from './page.client'
 import { notFound } from 'next/navigation'
 import { POSTS_PER_PAGE } from '@/utilities/constants'
+import { excludingIds, findUpcomingEvents } from '@/utilities/events'
 
 export const revalidate = 600
 
@@ -26,12 +27,18 @@ export default async function Page({ params: paramsPromise }: Args) {
 
   if (!Number.isInteger(sanitizedPageNumber)) notFound()
 
+  // Same exclusion as page one: upcoming events live in their own band there,
+  // so they must not reappear further down the archive.
+  const events = await findUpcomingEvents(payload)
+
   const posts = await payload.find({
     collection: 'posts',
     depth: 1,
     limit: POSTS_PER_PAGE,
     page: sanitizedPageNumber,
     overrideAccess: false,
+    sort: '-publishedAt',
+    where: excludingIds(events.map((event) => event.id)),
   })
 
   // Out-of-range page numbers 404 instead of rendering an empty listing
@@ -77,9 +84,11 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
+  const events = await findUpcomingEvents(payload)
   const { totalDocs } = await payload.count({
     collection: 'posts',
     overrideAccess: false,
+    where: excludingIds(events.map((event) => event.id)),
   })
 
   const totalPages = Math.ceil(totalDocs / POSTS_PER_PAGE)

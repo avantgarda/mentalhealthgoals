@@ -14,6 +14,7 @@ import React, { cache } from 'react'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { LinkifyEntities } from '@/utilities/linkifyEntities'
 import { personAnchor } from '@/utilities/personAnchor'
+import { sortPeople } from '@/utilities/people'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -56,10 +57,9 @@ const queryWorkstreamPeople = cache(async ({ id }: { id: number }) => {
     depth: 0,
     limit: 20,
     pagination: false,
-    sort: 'order',
     where: { workstreams: { in: [id] } },
   })
-  return result.docs
+  return sortPeople(result.docs)
 })
 
 const queryAllWorkstreams = cache(async () => {
@@ -174,7 +174,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
                   logo above four plain university names would invent a
                   hierarchy the programme does not claim. Logos belong where
                   the set is complete: the footer band and curated rows. */}
-              <ul className="flex flex-col gap-1 text-sm leading-snug">
+              <ul className="flex flex-col gap-1 text-[0.95rem] leading-snug">
                 {deliveredBy
                   .split('·')
                   .map((institution) => institution.trim())
@@ -187,7 +187,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
             {resources && resources.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <span className="eyebrow">Links</span>
-                <ul className="flex flex-col text-sm leading-snug">
+                <ul className="flex flex-col text-[0.95rem] leading-snug">
                   {resources.map((resource) => (
                     <li key={resource.id || resource.url}>
                       <a
@@ -208,7 +208,12 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
           </div>
 
           <header className="flex flex-col gap-6 lg:col-span-9">
-            <h1 className="display-1 max-w-[16ch]">{title}</h1>
+            {/* No character cap: 16ch was narrower than this column at every
+                width, so it forced breaks the grid had room to avoid —
+                "Alliance Management Team" split after its first word on every
+                screen. The column constrains the line; `text-wrap: balance`
+                (set on every heading in globals.css) evens what is left. */}
+            <h1 className="display-1">{title}</h1>
             {summary && <p className="lede max-w-[44rem]">{summary}</p>}
           </header>
         </div>
@@ -222,7 +227,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
                 className="flex flex-col gap-3 border-t border-border pt-3 lg:sticky lg:top-8"
               >
                 <p className="eyebrow">On this page</p>
-                <ul className="flex flex-col gap-2 text-sm">
+                <ul className="flex flex-col gap-2 text-[0.95rem]">
                   {sections.map((s) => (
                     <li key={s.id}>
                       <a
@@ -241,7 +246,11 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
           <div className="flex flex-col gap-14 lg:col-span-8 lg:col-start-5">
             {boundaryStatement && (
               <blockquote
-                className="m-0 whitespace-pre-line border-l-2 border-brand-accent pl-6 font-display text-[clamp(1.35rem,2vw,1.7rem)] italic leading-snug"
+                // Balanced like the headings are: left to itself this stranded
+                // the last word or two on a line of their own — "R&D" alone on
+                // the LEIP page, and the same on half the other workstreams.
+                // globals.css balances h1–h6; a pull quote is display type too.
+                className="m-0 whitespace-pre-line border-l-2 border-brand-accent pl-6 font-display text-[clamp(1.35rem,2vw,1.7rem)] italic leading-snug text-balance"
                 data-reveal
               >
                 {boundaryStatement}
@@ -256,7 +265,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
 
             {workstreamPartners.length > 0 && (
               <div className="partner-plate border-y border-border px-5 py-6" data-reveal>
-                <PartnerGroup label="Delivered with" partners={workstreamPartners} size="compact" />
+                <PartnerGroup label="Delivered with" partners={workstreamPartners} />
               </div>
             )}
 

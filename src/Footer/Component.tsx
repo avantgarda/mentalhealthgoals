@@ -9,6 +9,7 @@ import { CMSLink } from '@/components/Link'
 import { Logo } from '@/components/Logo/Logo'
 import { PartnerGroup } from '@/components/PartnerLogo'
 import { getCachedPartners } from '@/utilities/getPartners'
+import { FOOTER_DESCRIPTION } from '@/ProgrammeDetails/config'
 
 export async function Footer() {
   const footerData = await getCachedGlobal('footer', 1)()
@@ -43,16 +44,14 @@ export async function Footer() {
               <Link className="flex w-fit items-center" href="/">
                 <Logo showTagline={brand.showTagline} variant={brand.variant} />
               </Link>
-              <p className="text-[0.95rem] leading-relaxed text-white/75">
-                A UK Government-backed, UK-wide programme transforming mental health research —
-                delivered by King&apos;s College London with university, NHS, industry and lived
-                experience partners across all four nations.
+              <p className="text-[1rem] leading-relaxed text-white/75">
+                {details?.description || FOOTER_DESCRIPTION}
               </p>
             </div>
 
             <nav aria-label="Footer navigation" className="lg:col-span-3">
               <p className="eyebrow mb-4 !text-white/55">Site</p>
-              <ul className="flex flex-col gap-2.5 text-[0.95rem]">
+              <ul className="flex flex-col gap-2.5 text-[1rem]">
                 {navItems.map(({ link }, i) => {
                   return (
                     <li key={i}>
@@ -71,7 +70,7 @@ export async function Footer() {
               {hasContact && (
                 <>
                   <p className="eyebrow mb-4 !text-white/55">Contact</p>
-                  <div className="flex flex-col gap-2 text-[0.95rem] text-white/85">
+                  <div className="flex flex-col gap-2 text-[1rem] text-white/85">
                     {details?.email && (
                       <a
                         className="link-line w-fit hover:text-white"
@@ -97,7 +96,7 @@ export async function Footer() {
             </div>
           </div>
 
-          <div className="mt-12 flex flex-col gap-4 border-t border-white/15 pt-5 text-[0.7rem] font-medium uppercase tracking-[0.14em] text-white/60 md:flex-row md:items-center md:justify-between">
+          <div className="mt-12 flex flex-col gap-4 border-t border-white/15 pt-5 text-[0.78rem] font-medium uppercase tracking-[0.14em] text-white/60 md:flex-row md:items-center md:justify-between">
             <p>
               © {new Date().getFullYear()} {details?.name || 'Mental Health Goals Programme'} ·
               mentalhealthgoals.co.uk
