@@ -162,6 +162,9 @@ test.describe('keyboard access', () => {
     const name = page.locator('#vaibhav-narayan h3 button')
     const outline = () => name.evaluate((el) => getComputedStyle(el).outlineStyle)
 
+    // The card is interactive only once it has hydrated; on a cold dev server
+    // this page compiles lazily, and clicking into the gap is a flake.
+    await name.waitFor()
     await page.locator('#vaibhav-narayan img').click()
     await page.locator('#vaibhav-narayan dialog button', { hasText: 'Close' }).click()
     expect(await outline()).toBe('none')
@@ -180,6 +183,7 @@ test.describe('keyboard access', () => {
 
   test('dismissing with the keyboard still shows where focus went', async ({ page }) => {
     await page.goto('/people')
+    await page.locator('#vaibhav-narayan h3 button').waitFor()
     await page.locator('#vaibhav-narayan img').click()
     await page.keyboard.press('Escape')
     const name = page.locator('#vaibhav-narayan h3 button')
