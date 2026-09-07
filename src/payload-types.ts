@@ -1966,6 +1966,10 @@ export interface Footer {
           url?: string | null;
           label: string;
         };
+        /**
+         * Moves this link out of the Site list and down beside the copyright — where visitors expect the accessibility and privacy statements.
+         */
+        smallPrint?: boolean | null;
         id?: string | null;
       }[]
     | null;
@@ -2053,6 +2057,7 @@ export interface FooterSelect<T extends boolean = true> {
               url?: T;
               label?: T;
             };
+        smallPrint?: T;
         id?: T;
       };
   updatedAt?: T;

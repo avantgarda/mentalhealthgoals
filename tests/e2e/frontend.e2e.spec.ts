@@ -310,6 +310,43 @@ test.describe('Frontend', () => {
     await expect(page.locator('.alt-motif-plate')).toHaveCount(0)
   })
 
+  test('the statements sit in the small print, not among the sections', async ({ page }) => {
+    // Accessibility and privacy belong beside the copyright, which is where
+    // people look for them — and the Site list should read as the site's own
+    // sections. Which links move is an editor's choice in the CMS, not a rule
+    // the code infers from a URL, so this checks the placement rather than
+    // naming the two that happen to carry the flag today.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/')
+
+    const siteNav = page.getByRole('navigation', { name: 'Footer navigation' })
+    await expect(siteNav.getByRole('link', { name: /accessibility/i })).toHaveCount(0)
+    await expect(siteNav.getByRole('link', { name: /privacy/i })).toHaveCount(0)
+    await expect(siteNav.getByRole('link', { name: 'About' })).toBeVisible()
+
+    const footer = page.locator('footer')
+    for (const name of [/accessibility/i, /privacy/i]) {
+      const link = footer.getByRole('link', { name })
+      await expect(link).toHaveCount(1)
+      await expect(link).toBeVisible()
+      // Below the site list, on the rule with the copyright.
+      const below = await link.evaluate((el, navSel) => {
+        const nav = document.querySelector(navSel)!
+        return el.getBoundingClientRect().top > nav.getBoundingClientRect().bottom
+      }, 'footer nav[aria-label="Footer navigation"]')
+      expect(below).toBe(true)
+    }
+
+    // Two columns rather than one tower, so the list can grow.
+    const columns = await siteNav.evaluate((nav) => {
+      const lefts = [...nav.querySelectorAll('li')].map((li) =>
+        Math.round(li.getBoundingClientRect().left),
+      )
+      return new Set(lefts).size
+    })
+    expect(columns).toBe(2)
+  })
+
   test('the workstreams index is ruled, not boxed', async ({ page }) => {
     // A vertical rule down the left of each run gave the index a left edge and
     // a top edge with no right or bottom — a box someone had forgotten to

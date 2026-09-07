@@ -17,6 +17,11 @@ export async function Footer() {
   const details = await getCachedGlobal('programmeDetails', 0)()
 
   const navItems = footerData?.navItems || []
+  // Accessibility and privacy statements belong beside the copyright, which is
+  // where visitors look for them — and it keeps them out of a Site list that
+  // otherwise reads as the site's own sections.
+  const siteLinks = navItems.filter((item) => !item.smallPrint)
+  const smallPrintLinks = navItems.filter((item) => item.smallPrint)
   const partners = (await getCachedPartners()).filter((p) => p.showInFooter)
   const byRole = (role: string) => partners.filter((p) => p.role === role)
   const hasContact = Boolean(details?.email || details?.phone || details?.address)
@@ -59,7 +64,7 @@ export async function Footer() {
             <nav aria-label="Footer navigation" className="lg:col-span-5">
               <p className="eyebrow mb-4 !text-white/55">Site</p>
               <ul className="columns-1 gap-x-8 text-[1rem] sm:columns-2">
-                {navItems.map(({ link }, i) => {
+                {siteLinks.map(({ link }, i) => {
                   return (
                     <li className="mb-2.5 break-inside-avoid" key={i}>
                       <CMSLink
@@ -104,10 +109,25 @@ export async function Footer() {
           </div>
 
           <div className="mt-12 flex flex-col gap-4 border-t border-white/15 pt-5 text-[0.78rem] font-medium uppercase tracking-[0.14em] text-white/60 md:flex-row md:items-center md:justify-between">
-            <p>
-              © {new Date().getFullYear()} {details?.name || 'Mental Health Goals Programme'} ·
-              mentalhealthgoals.co.uk
-            </p>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <p>
+                © {new Date().getFullYear()} {details?.name || 'Mental Health Goals Programme'} ·
+                mentalhealthgoals.co.uk
+              </p>
+              {smallPrintLinks.length > 0 && (
+                <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                  {smallPrintLinks.map(({ link }, i) => (
+                    <li key={i}>
+                      <CMSLink
+                        appearance="inline"
+                        className="link-line hover:text-white"
+                        {...link}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <div className="flex items-center gap-6">
               <MotionToggle />
               <ThemeSelector />

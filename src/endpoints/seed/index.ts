@@ -2599,6 +2599,7 @@ export const seed = async ({
               label: 'Accessibility',
               url: '/accessibility',
             },
+            smallPrint: true,
           },
           {
             link: {
@@ -2606,6 +2607,7 @@ export const seed = async ({
               label: 'Privacy',
               url: '/privacy',
             },
+            smallPrint: true,
           },
         ],
       },
