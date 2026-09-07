@@ -5,12 +5,30 @@ import { useFormFields } from '@payloadcms/ui'
 
 import { BrandMark } from '@/components/Logo/BrandMark'
 import { BRAND_COLORS } from '@/brand/tokens'
-import { LOGO_VARIANTS, MARKS, resolveLogoVariant } from '@/brand/marks'
+import { LOGO_VARIANTS, MARKS, markWidth, resolveLogoVariant } from '@/brand/marks'
+
+const Sample: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+    <div style={{ height: 40, display: 'flex', alignItems: 'center' }}>{children}</div>
+    <span
+      style={{
+        fontSize: '0.62rem',
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        opacity: 0.55,
+      }}
+    >
+      {label}
+    </span>
+  </div>
+)
 
 /**
  * Admin-only preview: shows every mark side by side with the selected one
- * highlighted, on light and dark grounds and at favicon scale, so an editor can
- * see what they are choosing without leaving the field.
+ * highlighted, at each size tier it is used at — header, app icon, favicon and
+ * 16 px — so an editor can see what they are choosing without leaving the
+ * field. Marks that are wide or detailed draw a simplified glyph at favicon
+ * sizes; the labels make that tiering visible rather than surprising.
  */
 export const LogoPreview: React.FC = () => {
   const value = useFormFields(([fields]) => fields?.logoVariant?.value)
@@ -42,28 +60,54 @@ export const LogoPreview: React.FC = () => {
                 borderRadius: 6,
                 padding: '0.9rem 1rem',
                 background: BRAND_COLORS.paper,
-                minWidth: 220,
+                minWidth: 250,
                 opacity: isSelected ? 1 : 0.55,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
-                <div style={{ color: BRAND_COLORS.petrol, lineHeight: 0 }}>
-                  <BrandMark size={40} variant={variant} title={MARKS[variant].label} />
-                </div>
-                <div
-                  style={{
-                    background: BRAND_COLORS.deep,
-                    color: BRAND_COLORS.reversed,
-                    borderRadius: 8,
-                    padding: '0.35rem',
-                    lineHeight: 0,
-                  }}
-                >
-                  <BrandMark compact size={32} variant={variant} />
-                </div>
-                <div style={{ color: BRAND_COLORS.petrol, lineHeight: 0 }}>
-                  <BrandMark compact size={16} variant={variant} />
-                </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.1rem' }}>
+                <Sample label="Header">
+                  <div style={{ color: BRAND_COLORS.petrol, lineHeight: 0 }}>
+                    <BrandMark size={40} variant={variant} title={MARKS[variant].label} />
+                  </div>
+                </Sample>
+                <Sample label="App icon">
+                  <div
+                    style={{
+                      background: BRAND_COLORS.deep,
+                      color: BRAND_COLORS.reversed,
+                      borderRadius: 8,
+                      width: 40,
+                      height: 40,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      lineHeight: 0,
+                    }}
+                  >
+                    <BrandMark
+                      size={Math.round(40 / Math.max(1, markWidth(variant) / 96))}
+                      variant={variant}
+                    />
+                  </div>
+                </Sample>
+                <Sample label="Favicon">
+                  <div
+                    style={{
+                      background: BRAND_COLORS.deep,
+                      color: BRAND_COLORS.reversed,
+                      borderRadius: 6,
+                      padding: '0.25rem',
+                      lineHeight: 0,
+                    }}
+                  >
+                    <BrandMark compact size={24} variant={variant} />
+                  </div>
+                </Sample>
+                <Sample label="16 px">
+                  <div style={{ color: BRAND_COLORS.petrol, lineHeight: 0, paddingTop: 8 }}>
+                    <BrandMark compact size={16} variant={variant} />
+                  </div>
+                </Sample>
               </div>
 
               <div

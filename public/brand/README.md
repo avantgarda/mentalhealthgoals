@@ -27,9 +27,10 @@ icon and social card all follow that setting.
 | `mark-512.png`, `mark-on-dark-512.png` | Transparent PNGs for slides and documents |
 
 Wide or detailed marks (the acronym and reflection variants) tier down to a
-simpler **compact glyph** for the favicon, app icons and avatar — three
-letterforms or a faint reflection are illegible at 16 px. The compact glyph is
-declared alongside the full mark in `src/brand/marks.ts`.
+simpler **compact glyph** for the browser-tab favicons (16–48 px), where three
+letterforms or a faint reflection are illegible. App icons, the avatar and the
+social card carry the full mark. The compact glyph is declared alongside the
+full mark in `src/brand/marks.ts`.
 
 ## Usage rules
 

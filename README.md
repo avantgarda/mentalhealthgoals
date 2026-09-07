@@ -130,7 +130,7 @@ setting, and the field shows a live preview of each option.
 | `summit` _(default)_ | **Summit M** — rising peaks forming an M, amber goal above the summit              |
 | `sunInCol`           | **Sun in the Col** — the same mountain with round shoulders, holding the amber sun |
 | `rings`              | **Concentric Rings** — the original launch mark                                    |
-| `writtenInWater`     | **Written in Water** — Summit M with the H and G standing alongside it             |
+| `writtenInWater`     | **Written in Water** — Summit M with a translucent H and G standing alongside it   |
 | `goalInWater`        | **Goal in the Water** — mountain and H on the shore, the amber G reflected below   |
 
 Geometry lives in `src/brand/marks.ts` and colours in `src/brand/tokens.ts`.

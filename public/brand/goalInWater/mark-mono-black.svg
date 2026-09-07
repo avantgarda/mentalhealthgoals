@@ -2,5 +2,5 @@
     <path d="M 8 57 L 22 28 L 33 47 L 46 23 L 62 57" fill="none" stroke="#111111" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
     <circle cx="46" cy="10.5" r="6.5" fill="#111111"/>
     <path d="M 70 57 L 70 28 M 70 42.5 L 86 42.5 M 86 28 L 86 57" fill="none" stroke="#111111" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M 83.9 69.5 A 9.5 9.5 0 1 0 87.5 77 L 81.8 77" fill="none" stroke="#111111" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.8"/>
+    <path d="M 71.9 69.5 A 9.5 9.5 0 1 0 75.5 77 L 69.8 77" fill="none" stroke="#111111" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.8"/>
 </svg>

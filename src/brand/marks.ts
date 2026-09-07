@@ -13,8 +13,9 @@
  * stroke scale, so swapping variants keeps the same weight in the header.
  *
  * Wide or detailed marks also declare a `compact` glyph: what the mark tiers
- * down to at favicon and app-icon sizes, where three letterforms or a faint
- * reflection would be illegible.
+ * down to at favicon sizes (48 px and below), where three letterforms or a
+ * faint reflection would be illegible. App icons, avatars and social cards
+ * carry the full mark.
  */
 
 export const LOGO_VARIANTS = [
@@ -63,8 +64,8 @@ export interface MarkDefinition {
   /** Drawing width in grid units. Height is always 96. Defaults to 96 (square). */
   width?: number
   /**
-   * Simplified glyph used at tiny sizes — favicons, app icons, avatars. Always
-   * drawn in a 96 x 96 box. Defaults to `elements`.
+   * Simplified glyph used at favicon sizes (48 px and below). Always drawn in a
+   * 96 x 96 box. Defaults to `elements`.
    */
   compact?: MarkElement[]
 }
@@ -134,7 +135,7 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
     label: 'Written in Water — H and G beside the mountain',
     description:
       'Summit M with the H and G standing alongside it on the shoreline, spelling the acronym.',
-    note: 'The acronym mark. The letters share the mountain’s stroke and sit level with its lower peak; the G is a true single-stroke G with an inward spur. At favicon size it tiers down to Summit M alone.',
+    note: 'The acronym mark. The letters share the mountain’s stroke and sit level with its lower peak, drawn at 40% so they keep the translucent, written-on-water quality of the original; the G is a true single-stroke G with an inward spur. Below 48 px it tiers down to Summit M alone.',
     width: 184,
     elements: [
       ...SUMMIT_ELEMENTS,
@@ -145,6 +146,7 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
         strokeWidth: 8,
         linecap: 'round',
         linejoin: 'round',
+        opacity: 0.4,
       },
       {
         kind: 'path',
@@ -153,6 +155,7 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
         strokeWidth: 8,
         linecap: 'round',
         linejoin: 'round',
+        opacity: 0.4,
       },
     ],
     compact: SUMMIT_ELEMENTS,
@@ -161,7 +164,7 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
     label: 'Goal in the Water — the G reflected below',
     description:
       'The mountain and an H stand on the shore; what reflects in the water beneath is the amber G.',
-    note: 'The narrative mark: look into the water and the goal is what you find. The G sits directly beneath the H at 80% amber, so it reads as submerged without going pale. At favicon size it tiers down to the peaks over a single amber point.',
+    note: 'The narrative mark: look into the water and the goal is what you find. As in the original, the G is reflected beneath the point where the mountain meets the H, at 80% amber so it reads as submerged without going pale. Below 48 px it tiers down to the peaks over the reflected G.',
     elements: [
       {
         kind: 'path',
@@ -182,7 +185,7 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
       },
       {
         kind: 'path',
-        d: 'M 83.9 69.5 A 9.5 9.5 0 1 0 87.5 77 L 81.8 77',
+        d: 'M 71.9 69.5 A 9.5 9.5 0 1 0 75.5 77 L 69.8 77',
         role: 'accent',
         strokeWidth: 6.5,
         linecap: 'round',
@@ -199,7 +202,15 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
         linecap: 'round',
         linejoin: 'round',
       },
-      { kind: 'circle', cx: 48, cy: 76, r: 8.5, role: 'accent' },
+      {
+        kind: 'path',
+        d: 'M 53.5 70.9 A 9 9 0 1 0 57 78 L 51.6 78',
+        role: 'accent',
+        strokeWidth: 7,
+        linecap: 'round',
+        linejoin: 'round',
+        opacity: 0.8,
+      },
     ],
   },
 }
