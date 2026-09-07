@@ -11,9 +11,15 @@ name: Dependabot auto-merge
 #   - minor and patch updates to production dependencies
 #
 # Left for a human (this workflow does nothing, the PR just waits):
-#   - MAJOR updates to production dependencies — next, react, payload,
-#     @payloadcms/*, lucide-react and friends. A major means the author
-#     deliberately broke something.
+#   - MAJOR updates to production dependencies — next, react, lucide-react and
+#     friends. A major means the author deliberately broke something.
+#   - ANY update to the `payload` group, including minors and patches. The
+#     suite covers the public site thoroughly and the admin panel barely: three
+#     smoke tests that a page loads. Nothing would catch a Payload release
+#     changing how the collection groups are ordered, how the login lockup is
+#     laid out, or how a custom dashboard component mounts — all of which this
+#     site now depends on. Those bumps need a human to open the preview's
+#     /admin and look.
 #
 # Auto-merge only *queues* the merge: GitHub still waits for every required
 # check, and a red check leaves the PR sitting open. It does not bypass the
@@ -39,23 +45,45 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      # The parentheses are load-bearing: `&&` binds tighter than `||` in
+      # GitHub expressions, so without them the Payload exclusion would apply
+      # only to the last of the three safe categories.
       - name: Enable auto-merge for the safe categories
         if: |
-          steps.meta.outputs.dependency-type == 'direct:development' ||
-          steps.meta.outputs.update-type == 'version-update:semver-minor' ||
-          steps.meta.outputs.update-type == 'version-update:semver-patch'
+          steps.meta.outputs.dependency-group != 'payload' && (
+            steps.meta.outputs.dependency-type == 'direct:development' ||
+            steps.meta.outputs.update-type == 'version-update:semver-minor' ||
+            steps.meta.outputs.update-type == 'version-update:semver-patch'
+          )
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Metadata reaches the shell through the environment rather than being
+      # interpolated into the script. It is Dependabot's own output and this job
+      # already refuses to run for anyone else, but a `pull_request_target` job
+      # holding write permissions is the wrong place to expand untrusted-ish
+      # text into a command line.
+      - name: Explain why a Payload bump is waiting
+        if: steps.meta.outputs.dependency-group == 'payload'
+        run: |
+          gh pr comment "$PR_URL" --body \
+            "Left for human review: Payload updates are never auto-merged, whatever the semver step (\`${DEPENDENCY_NAMES}\`). CI checks the public site; the admin panel has three smoke tests and no coverage of the parts this site customises. If all checks are green, open \`/admin\` on the Vercel preview — check the collection groups, the login screen and the dashboard — then merge."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPENDENCY_NAMES: ${{ steps.meta.outputs.dependency-names }}
+
       - name: Explain why a major bump is waiting
         if: |
+          steps.meta.outputs.dependency-group != 'payload' &&
           steps.meta.outputs.dependency-type != 'direct:development' &&
           steps.meta.outputs.update-type == 'version-update:semver-major'
         run: |
           gh pr comment "$PR_URL" --body \
-            "Left for human review: this is a **major** update to a production dependency (\`${{ steps.meta.outputs.dependency-names }}\`), so it is not auto-merged. CI still runs — if all checks are green, check the Vercel preview and merge."
+            "Left for human review: this is a **major** update to a production dependency (\`${DEPENDENCY_NAMES}\`), so it is not auto-merged. CI still runs — if all checks are green, check the Vercel preview and merge."
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPENDENCY_NAMES: ${{ steps.meta.outputs.dependency-names }}

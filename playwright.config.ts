@@ -1,10 +1,15 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Read environment variables from file.
+ * Read environment variables from `.env.local` — what `vercel env pull` writes
+ * and what Next reads first. dotenv's default entry point only reads `.env`,
+ * so the path is given explicitly. Ambient variables win: CI sets them on the
+ * job and never writes a file.
  * https://github.com/motdotla/dotenv
  */
-import 'dotenv/config'
+import { config } from 'dotenv'
+
+config({ path: '.env.local', quiet: true })
 
 // A dedicated port so the suite never attaches to some other project's dev
 // server that happens to be running on 3000.

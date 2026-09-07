@@ -29,7 +29,7 @@ echo "— Running committed migrations against ${DB_MIGRATE}..."
 DATABASE_URL="${BASE_URL}/${DB_MIGRATE}" NODE_ENV=production pnpm payload migrate >/dev/null
 
 echo "— Push-syncing the live Payload config against ${DB_PUSH}..."
-DATABASE_URL="${BASE_URL}/${DB_PUSH}" NODE_ENV=development \
+DATABASE_URL="${BASE_URL}/${DB_PUSH}" NODE_ENV=development PAYLOAD_DB_PUSH=1 \
   pnpm exec tsx scripts/push-schema.ts >/dev/null
 
 dump() {

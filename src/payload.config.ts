@@ -1,5 +1,4 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import { resendAdapter } from '@payloadcms/email-resend'
 import sharp from 'sharp'
 import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
@@ -19,6 +18,7 @@ import { Header } from './Header/config'
 import { ProgrammeDetails } from './ProgrammeDetails/config'
 import { plugins } from './plugins'
 import { defaultLexical } from '@/fields/defaultLexical'
+import { emailConfig } from './utilities/emailConfig'
 import { getServerSideURL } from './utilities/getURL'
 
 const filename = fileURLToPath(import.meta.url)
@@ -77,7 +77,18 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
-    push: process.env.NODE_ENV === 'development', // Auto-sync schema in dev, use migrations in production
+    // Off everywhere by default, including dev.
+    //
+    // Push silently reshapes the local database to match the config, so a
+    // schema change works locally whether or not a migration was written for
+    // it — and the omission only surfaces when the deploy runs `payload
+    // migrate` against production. Turning it off makes local development use
+    // the same mechanism production does: change a collection, run
+    // `pnpm payload migrate:create`, run `pnpm payload migrate`.
+    //
+    // scripts/check-migrations.sh still needs a push-built schema to compare
+    // the committed migrations against, so it sets this flag for that one step.
+    push: process.env.PAYLOAD_DB_PUSH === '1',
   }),
   // Order matters for the admin: the dashboard and nav list groups in the order
   // their first collection appears here, so Users last keeps Admin at the
@@ -87,15 +98,15 @@ export default buildConfig({
   // but production (password resets, contact-form notifications) needs Resend.
   // The mentalhealthgoals.co.uk domain must be verified in Resend before
   // emails will send from it.
-  ...(process.env.RESEND_API_KEY
-    ? {
-        email: resendAdapter({
-          defaultFromAddress: 'noreply@mentalhealthgoals.co.uk',
-          defaultFromName: 'Mental Health Goals Programme',
-          apiKey: process.env.RESEND_API_KEY,
-        }),
-      }
-    : {}),
+  //
+  // Recipients are not an environment setting. The contact form's notification
+  // address is stored on the form document, so it travels with the database —
+  // a preview runs on a branch of production's, and a developer who has run
+  // `pnpm sync:db` has production's rows on their laptop. Pointing a
+  // non-production environment at a different address therefore has to happen
+  // at the point of sending, which is what `overrideRecipientAddress` does:
+  // every message goes there instead, whatever the CMS says.
+  ...emailConfig(),
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer, Brand, ProgrammeDetails],
   plugins,

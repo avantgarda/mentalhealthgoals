@@ -28,7 +28,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
@@ -43,7 +43,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
@@ -57,7 +57,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:types-drift
@@ -68,7 +68,7 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -84,7 +84,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm payload migrate
@@ -96,7 +96,7 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -112,12 +112,43 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # The runner image ships PostgreSQL client tools — assert rather than
-      # apt-install (apt on runners can hang indefinitely and eat the timeout)
-      - run: pg_dump --version && psql --version
+      # The service container is Postgres 17 and pg_dump refuses to dump a
+      # server newer than itself, so the image's 16 client is not enough.
+      #
+      # The runner's client is a pgdg build, but the pgdg apt source is not in
+      # its sources list at runtime — only Ubuntu, Microsoft and Google are —
+      # so the repository has to be added before the package can be found.
+      # The timeouts are there because apt on runners can hang indefinitely and
+      # eat the job's own timeout.
+      - name: Install the PostgreSQL 17 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error --max-time 60 \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo timeout 180 apt-get update
+          sudo timeout 180 apt-get install -y --no-install-recommends postgresql-client-17
+          # Installing is not enough: the runner already carries a 16 binary
+          # that wins on PATH, so psql resolved to 17 while pg_dump stayed on
+          # 16. Put the 17 directory in front for every later step.
+          echo /usr/lib/postgresql/17/bin >> "$GITHUB_PATH"
+      # Both tools, because they resolved to different majors when only the
+      # package was installed. Cheap, and it has caught two separate mistakes.
+      - name: Check the client is 17
+        run: |
+          pg_dump --version
+          psql --version
+          for tool in pg_dump psql; do
+            "$tool" --version | grep -qE ' 17\.' || {
+              echo "$tool is not 17 — it cannot work with the Postgres 17 service" >&2
+              exit 1
+            }
+          done
       - run: pnpm check:migrations
         env:
           MIGRATION_CHECK_BASE_URL: postgresql://postgres:postgres@localhost:5432
@@ -128,7 +159,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -144,7 +175,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Same sequence Vercel runs via `pnpm build:deploy`
@@ -157,7 +188,7 @@ jobs:
     timeout-minutes: 25
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -173,13 +204,12 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm payload migrate
-      # pnpm seed runs tsx --env-file=.env; config comes from job env, but the
-      # file must exist
-      - run: touch .env
+      # Config comes from the job env; there is no env file on a runner, which
+      # is why the seed reads .env.local only if it happens to exist.
       - run: pnpm seed
         env:
           SEED_ADMIN_EMAIL: ci-admin@example.com

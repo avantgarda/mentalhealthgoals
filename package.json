@@ -5,6 +5,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "bootstrap": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/bootstrap.ts",
+    "blobs:mirror": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/blob-mirror.ts",
     "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
     "build:deploy": "cross-env NODE_OPTIONS=--no-deprecation payload migrate && pnpm build",
     "postbuild": "next-sitemap --config next-sitemap.config.cjs",
@@ -22,8 +24,10 @@
     "check:migrations": "./scripts/check-migrations.sh",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",
-    "seed": "cross-env NODE_ENV=development NODE_OPTIONS=--no-deprecation tsx --env-file=.env src/endpoints/seed/run.ts",
+    "seed": "cross-env NODE_ENV=development NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env.local src/endpoints/seed/run.ts",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
+    "sync:db": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/sync-db.ts",
+    "sync:media": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/sync-media.ts",
     "test": "pnpm run test:int && pnpm run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
@@ -84,8 +88,10 @@
     "@testing-library/react": "16.3.3",
     "@types/escape-html": "^1.0.2",
     "@types/node": "26.4.1",
+    "@types/pg": "^8.23.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
+    "@vercel/blob": "2.3.1",
     "@vitejs/plugin-react": "4.5.2",
     "autoprefixer": "^10.4.19",
     "eslint": "^9.16.0",
@@ -93,6 +99,7 @@
     "husky": "^9.1.7",
     "jsdom": "30.0.1",
     "lint-staged": "^17.4.1",
+    "pg": "8.20.0",
     "postcss": "^8.5.28",
     "prettier": "^3.4.2",
     "tailwindcss": "^4.1.18",
@@ -103,7 +110,7 @@
     "vitest": "5.0.0"
   },
   "engines": {
-    "node": "^18.20.2 || >=20.9.0",
+    "node": "24.x",
     "pnpm": "^9 || ^10 || ^11"
   },
   "pnpm": {
