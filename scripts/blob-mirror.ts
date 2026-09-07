@@ -30,10 +30,14 @@
  * disprove.
  *
  * Be aware what the file costs. A production blob read-write token can delete
- * every file the live site serves. This script will not do that — it refuses
- * production as a destination — but the token sitting on disk is not limited to
- * this script. Keep the file to yourself (chmod 600), and delete it when the
- * mirroring is done.
+ * every file the live site serves, and Blob has no trash or versioning. This
+ * script cannot do that — it refuses production as a destination and only ever
+ * reads from it — but the token sitting on disk is not limited to this script.
+ *
+ * Whether to keep the file is a judgement, not a rule. Mirroring recurs after
+ * every real upload to production, so re-fetching the tokens each time is
+ * friction with nothing behind it; holding no destructive credential at rest is
+ * also a defensible answer. Either way, keep it to yourself: chmod 600.
  *
  * If you are here because a token "isn't being picked up": that is this,
  * working as intended. Tokens are never accepted as command-line arguments,

@@ -121,9 +121,19 @@ token nobody chose decide which store gets written to. `.env.blob-mirror` exists
 somebody made it for this. Supplying a token stays deliberate; it just stops being nightly.
 Anything already exported wins over the file.
 
-Know what the file costs. A production read-write token can delete every file the live site
-serves. This script will not — it refuses production as a destination — but the token on disk is
-not limited to this script. Delete the file when the mirroring is done.
+Know what the file costs, and decide deliberately. A production read-write token can delete every
+file the live site serves, and Blob has no trash or versioning. This script cannot do that — it
+refuses production as a destination and only ever reads from it — but the token on disk is not
+limited to this script.
+
+Keeping the file is reasonable: mirroring recurs after every real upload to production, and
+re-fetching two tokens each time is friction with nothing behind it. Deleting it is also
+reasonable, if you would rather hold no destructive credential at rest. The preview token is not
+the concern either way; that store is disposable.
+
+The question goes away entirely if OIDC federation is enabled for the Development environment.
+`@vercel/blob` can then authenticate as the person running it, with a store id instead of a token,
+and there is nothing to keep on disk at all.
 
 The store origins are not tokens and are recorded in `lib/production-identifiers.ts`, so there is
 nothing to look up. They are checked rather than trusted: the run is refused unless the
