@@ -34,6 +34,8 @@ The site runs at [http://localhost:3000](http://localhost:3000) and the admin pa
 [http://localhost:3000/admin](http://localhost:3000/admin). Configuration lives in `.env.local`,
 and `.env.example` documents every variable.
 
+## How it works
+
 ### Where content comes from
 
 **The production CMS is the source of truth.** Everything editors change lives there, and it
@@ -70,7 +72,7 @@ The script refuses to run against a non-local database.
 a source of truth and becomes a way to overwrite one — `sync:db` replaces it for development, and
 the tests will bring their own fixture.
 
-### Schema changes
+### Changing the schema
 
 The schema comes from the committed migrations in `src/migrations`, in every environment
 including local development. Payload's automatic push is off, so a collection change does nothing
