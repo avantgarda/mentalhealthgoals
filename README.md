@@ -14,14 +14,15 @@ designed for deployment on Vercel.
 
 ## Local development
 
-Requirements: **Node 24** (see `.nvmrc` — `nvm use` picks it up), pnpm, a local **PostgreSQL 17**
-server, and the **Vercel CLI** (`npm i -g vercel`), which is how shared configuration is
-distributed.
+Requirements: **Node 24** (see `.nvmrc`), pnpm, a local **PostgreSQL 17** server, and the Vercel
+CLI.
+
+**First time on this project?** [ONBOARDING.md](ONBOARDING.md) covers access, credentials and the
+one-time setup. Once that is done:
 
 ```bash
 nvm use
 pnpm install
-vercel login && vercel link
 pnpm bootstrap
 pnpm dev
 ```
@@ -30,13 +31,8 @@ pnpm dev
 content. It asks where the content should come from; either answer gets you a working site.
 
 The site runs at [http://localhost:3000](http://localhost:3000) and the admin panel at
-[http://localhost:3000/admin](http://localhost:3000/admin).
-
-Configuration lives in **`.env.local`** — what `vercel env pull` writes, what Next reads first,
-and what the test suites and the scripts in `scripts/` read. `.env.example` documents every
-variable. Nobody hands you credentials: you fetch them yourself with your own Vercel account, and
-`vercel env pull` merges into any file you already have rather than overwriting it. See
-[ONBOARDING.md](ONBOARDING.md).
+[http://localhost:3000/admin](http://localhost:3000/admin). Configuration lives in `.env.local`,
+and `.env.example` documents every variable.
 
 ### Where content comes from
 
@@ -105,10 +101,9 @@ before go-live** — it is stored on the contact form itself, in the CMS, not in
 variable.
 
 Because it lives on the form, it travels with the database: a preview runs on a branch of
-production's, and `pnpm sync:db` brings production's rows to your laptop. Set
-`EMAIL_OVERRIDE_RECIPIENT` in Preview and Development and every message goes there instead,
-whatever the CMS says. A preview deployment with a Resend key and no override sends nothing at
-all, on purpose.
+production's, and `pnpm sync:db` brings production's rows to your laptop.
+`EMAIL_OVERRIDE_RECIPIENT` redirects every message regardless of what the CMS says, and a preview
+deployment that has a Resend key but no override sends nothing at all, on purpose.
 
 Scheduled publishing is disabled: on Vercel nothing runs Payload's jobs queue, so scheduled
 publishes would silently never fire. To enable it, add a `vercel.json` cron hitting
