@@ -21,21 +21,47 @@ You do **not** need a Neon login, a blob token, or anybody's password to run thi
 ```bash
 nvm use          # Node 24, per .nvmrc
 pnpm install
+vercel login     # your own Vercel account
+vercel link      # once, to associate this checkout with the project
 pnpm bootstrap
 ```
 
 `pnpm bootstrap` checks your tools, writes a `.env.local`, creates the local database and fills
-it. It will offer two sources of content: a copy of production, or the content committed to the
-branch. Either gets you a working site.
+it. It will offer two sources of content: a copy of production, or the test fixture. Either gets
+you a working site.
+
+`vercel link` is what makes bootstrap able to fetch real configuration rather than falling back to
+`.env.example` with invented secrets. Do it first if you can; bootstrap works either way.
 
 ## Credentials
 
 The principle: **anything local development needs, you fetch yourself.** Nobody pastes a
 credential into a chat.
 
-- `vercel env pull .env.local` writes the Development environment into a gitignored file. That is
-  the supported way to get local configuration, and `pnpm bootstrap` does it for you when the
-  project is linked.
+Shared values are distributed through Vercel. You need the CLI and your own account:
+
+```bash
+npm i -g vercel   # once, if you do not have it
+vercel login
+vercel link       # asks which project; choose mentalhealthgoals
+vercel env pull   # Development scope, straight into .env.local
+```
+
+Your own Vercel account is the authentication. A Developer role on the team is enough, and
+nothing in this flow can reach Production.
+
+`vercel env pull` **merges rather than overwrites**. It updates the values it downloads and prints
+a line naming any it kept because they are defined locally but absent from the Development scope.
+That is why it writes `.env.local` directly, with no staging file to copy across, and why running
+it again later is safe.
+
+Two things it will not give you, neither of which matters:
+
+- `NEXT_PUBLIC_SERVER_URL` is not in the Development scope. The code falls back to
+  `http://localhost:3000`, which is what you want locally.
+- `CRON_SECRET` is not set anywhere. Nothing schedules a job, and its absence closes the jobs
+  endpoint rather than opening it.
+
 - Collaborators need exactly **one** real credential: `SYNC_DATABASE_URL`, the read-only sync
   role's connection string. It is in the Development environment, so pulling it is enough.
 - `pnpm sync:media` needs no credential at all. The blob store is public-read; it just fetches

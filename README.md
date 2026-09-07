@@ -14,12 +14,14 @@ designed for deployment on Vercel.
 
 ## Local development
 
-Requirements: **Node 24** (see `.nvmrc` — `nvm use` picks it up), pnpm, and a local **PostgreSQL
-17** server.
+Requirements: **Node 24** (see `.nvmrc` — `nvm use` picks it up), pnpm, a local **PostgreSQL 17**
+server, and the **Vercel CLI** (`npm i -g vercel`), which is how shared configuration is
+distributed.
 
 ```bash
 nvm use
 pnpm install
+vercel login && vercel link
 pnpm bootstrap
 pnpm dev
 ```
@@ -32,8 +34,9 @@ The site runs at [http://localhost:3000](http://localhost:3000) and the admin pa
 
 Configuration lives in **`.env.local`** — what `vercel env pull` writes, what Next reads first,
 and what the test suites and the scripts in `scripts/` read. `.env.example` documents every
-variable. See [ONBOARDING.md](ONBOARDING.md) for how to get the one credential that is not
-self-serve.
+variable. Nobody hands you credentials: you fetch them yourself with your own Vercel account, and
+`vercel env pull` merges into any file you already have rather than overwriting it. See
+[ONBOARDING.md](ONBOARDING.md).
 
 ### Where content comes from
 
