@@ -29,6 +29,7 @@ export const Workstreams: CollectionConfig = {
     update: authenticated,
   },
   admin: {
+    group: 'Programme',
     defaultColumns: ['number', 'title', 'deliveredBy'],
     useAsTitle: 'title',
   },

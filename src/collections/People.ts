@@ -17,6 +17,7 @@ export const People: CollectionConfig = {
     update: authenticated,
   },
   admin: {
+    group: 'Programme',
     defaultColumns: ['name', 'role', 'organisation'],
     useAsTitle: 'name',
   },

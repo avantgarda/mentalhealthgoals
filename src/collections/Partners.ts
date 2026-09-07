@@ -28,7 +28,7 @@ export const Partners: CollectionConfig = {
     defaultColumns: ['name', 'role', 'showInFooter', 'order'],
     description:
       'Funders, delivery partners and programme partners. Leave the logo empty to show the name as text until the organisation has confirmed its logo may be used.',
-    group: 'Site',
+    group: 'Programme',
     useAsTitle: 'name',
   },
   hooks: {

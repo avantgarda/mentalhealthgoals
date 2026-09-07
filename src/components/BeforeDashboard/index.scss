@@ -9,12 +9,22 @@
     }
   }
 
-  &__instructions {
-    list-style: decimal;
-    margin-bottom: base(0.5);
+  &__intro {
+    margin: base(0.75) 0 0;
+  }
 
-    & li {
-      width: 100%;
+  /* The seed is the one control here that destroys data, so it is set apart
+     rather than listed among the reading matter. */
+  &__seed {
+    margin-top: base(1);
+    padding: base(0.75) base(1);
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-s);
+    background: var(--theme-elevation-50);
+
+    & p {
+      margin: 0 0 base(0.5);
+      max-width: 60rem;
     }
   }
 

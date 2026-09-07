@@ -26,7 +26,17 @@ const dirname = path.dirname(filename)
 
 export default buildConfig({
   admin: {
+    // Cosmetic only: the mark on the login screen and beside the nav, plus the
+    // browser tab title and icon. Nothing here changes what the panel can do.
+    meta: {
+      titleSuffix: ' · Mental Health Goals',
+      icons: [{ rel: 'icon', type: 'image/svg+xml', url: '/brand/summit/favicon.svg' }],
+    },
     components: {
+      graphics: {
+        Icon: '@/admin/Icon#Icon',
+        Logo: '@/admin/Logo#Logo',
+      },
       // The `BeforeLogin` component renders a message that you see while logging into your admin panel.
       // Feel free to delete this at any time. Simply remove the line below.
       beforeLogin: ['@/components/BeforeLogin'],
@@ -69,7 +79,10 @@ export default buildConfig({
     },
     push: process.env.NODE_ENV === 'development', // Auto-sync schema in dev, use migrations in production
   }),
-  collections: [Pages, Posts, Media, Categories, Users, Workstreams, People, Partners],
+  // Order matters for the admin: the dashboard and nav list groups in the order
+  // their first collection appears here, so Users last keeps Admin at the
+  // bottom rather than sitting between Content and Programme.
+  collections: [Pages, Posts, Media, Categories, Workstreams, People, Partners, Users],
   // Without an adapter Payload writes emails to the console — fine in dev,
   // but production (password resets, contact-form notifications) needs Resend.
   // The mentalhealthgoals.co.uk domain must be verified in Resend before

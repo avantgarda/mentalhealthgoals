@@ -26,6 +26,7 @@ export const ProgrammeDetails: GlobalConfig = {
     read: () => true,
   },
   admin: {
+    group: 'Settings',
     description:
       'The programme’s own description and contact details — shown in the site footer. People and their individual contact details live in the People collection.',
   },
