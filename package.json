@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "bootstrap": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/bootstrap.ts",
     "blobs:mirror": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/blob-mirror.ts",
     "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
     "build:deploy": "cross-env NODE_OPTIONS=--no-deprecation payload migrate && pnpm build",

@@ -14,44 +14,77 @@ designed for deployment on Vercel.
 
 ## Local development
 
-Requirements: Node 20+, pnpm, and a local PostgreSQL server.
+Requirements: **Node 24** (see `.nvmrc` — `nvm use` picks it up), pnpm, and a local **PostgreSQL
+17** server.
 
 ```bash
-# 1. Install dependencies
+nvm use
 pnpm install
-
-# 2. Create the database (first time only)
-createdb mentalhealthgoals
-
-# 3. Configure environment — copy .env.example and fill in values
-#    DATABASE_URL=postgresql://<user>@localhost:5432/mentalhealthgoals
-#    PAYLOAD_SECRET=<any long random string>
-#    NEXT_PUBLIC_SERVER_URL=http://localhost:3000
-#    SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD=<your admin login — required by the seed>
-
-# 4. Seed the database with the starter MHGP content
-pnpm seed
-
-# 5. Run the dev server
+pnpm bootstrap
 pnpm dev
 ```
+
+`pnpm bootstrap` checks your tools, writes a `.env.local`, creates the database and fills it with
+content. It asks where the content should come from; either answer gets you a working site.
 
 The site runs at [http://localhost:3000](http://localhost:3000) and the admin panel at
 [http://localhost:3000/admin](http://localhost:3000/admin).
 
+Configuration lives in **`.env.local`** — what `vercel env pull` writes, what Next reads first,
+and what the test suites and the scripts in `scripts/` read. `.env.example` documents every
+variable. See [ONBOARDING.md](ONBOARDING.md) for how to get the one credential that is not
+self-serve.
+
+### Where content comes from
+
+**The production CMS is the source of truth.** Everything editors change lives there, and it
+flows down to laptops — never up from the repository.
+
+```bash
+pnpm sync:db      # copy production's content into the local database
+pnpm payload migrate   # if this branch has migrations production does not
+pnpm sync:media   # download the files that content refers to
+```
+
+`sync:db` drops and recreates the local database and refuses any target that is not localhost. It
+leaves personal data behind by default — no users, no sessions, no form submissions — so `/admin`
+will offer to create your first local user. `sync:media` needs no credentials; the blob store is
+public-read.
+
+Restart `pnpm dev` after a sync. Globals are cached per server process, so a running dev server
+keeps serving the ones it read at startup.
+
+Full detail, including what each script is allowed to touch, is in
+[`scripts/README.md`](scripts/README.md).
+
 ### Seeding
 
-`pnpm seed` **replaces all content** with the starter MHGP content: 11 pages, 6 workstreams,
-the leadership team, two news posts, the contact form, and header/footer navigation. It also
-creates the admin user (email/password from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env` —
-required, there are no defaults) if it doesn't already exist. The same seed can be run from the
-admin dashboard's "Seed" button (admins only).
+`pnpm seed` **replaces all content** with the starter MHGP content committed to this branch: 11
+pages, 6 workstreams, the leadership team, news posts, both forms, and header/footer navigation.
+It also creates the admin user (`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env.local` —
+required, there are no defaults). The same seed can be run from the admin dashboard's "Seed"
+button (admins only).
 
-The script refuses to run against a non-local database — seed a deployed site from the
-dashboard's Seed button instead (see Deploying below).
+The script refuses to run against a non-local database.
 
-In development the database schema is kept in sync automatically (Drizzle push mode). Production
-uses the committed migrations in `src/migrations`.
+**This is on its way out.** Once production holds the content everyone edits, the seed stops being
+a source of truth and becomes a way to overwrite one — `sync:db` replaces it for development, and
+the tests will bring their own fixture.
+
+### Schema changes
+
+The schema comes from the committed migrations in `src/migrations`, in every environment
+including local development. Payload's automatic push is off, so a collection change does nothing
+to your database until you write the migration for it:
+
+```bash
+pnpm payload migrate:create <name>   # needs a real terminal
+pnpm payload migrate
+pnpm generate:types
+```
+
+Commit all three. `pnpm check:migrations` runs on every push and in CI, and fails if the config
+and the migrations disagree.
 
 ### Users & roles
 
@@ -128,7 +161,9 @@ before sending artwork to print.
    automatically switches media uploads to Vercel Blob. **Give preview deployments their own
    store** (create a second Blob store and scope each store's token to one environment): unlike
    the database, Blob has no preview branching, so with a shared store a preview's media
-   uploads, deletes and reseeds act on the same files production serves.
+   uploads, deletes and reseeds act on the same files production serves. Done: the stores are
+   `blob-mentalhealthgoals-prod` and `blob-mentalhealthgoals-preview`. The cost is that previews
+   start with none of production's files — run `pnpm blobs:mirror` after uploading anything real.
 4. **Set the remaining environment variables** (Project → Settings → Environment Variables):
    - `PAYLOAD_SECRET` — a long random string (generate with `openssl rand -hex 24`)
    - `NEXT_PUBLIC_SERVER_URL` — `https://mentalhealthgoals.co.uk`
@@ -141,9 +176,11 @@ before sending artwork to print.
    that branch, never the production database. Keep preview branching enabled; without it,
    preview builds would run unmerged branch migrations against production.
 6. **Deploy**, then create the first admin account at `https://mentalhealthgoals.co.uk/admin`
-   (the first user is automatically an admin) and press the dashboard's **Seed** button to load
-   the starter content. Don't point a local `.env` at the production database — the local seed
-   script runs in dev mode and would sync schema outside migrations (it refuses by default).
+   (the first user is automatically an admin). On a brand-new deployment, press the dashboard's
+   **Seed** button once to load the starter content. After that, content is edited in the CMS and
+   the Seed button only destroys it — see "Where content comes from". Never point a local
+   `.env.local` at the production database; every script here refuses a non-local target, and
+   that is the reason why.
 7. **Point the domain**: Project → Settings → Domains → add `mentalhealthgoals.co.uk` and follow
    the DNS instructions from your registrar (A record to `76.76.21.21` or CNAME to
    `cname.vercel-dns.com` for `www`).
@@ -155,6 +192,10 @@ before sending artwork to print.
 | `pnpm dev`                           | Dev server with HMR                                              |
 | `pnpm build` / `pnpm start`          | Production build / serve                                         |
 | `pnpm build:deploy`                  | Migrate then build (Vercel build command)                        |
+| `pnpm bootstrap`                     | Fresh clone to running site: tools, `.env.local`, database       |
+| `pnpm sync:db`                       | Copy production's content into the local database                |
+| `pnpm sync:media`                    | Download the files that content refers to into `public/media`    |
+| `pnpm blobs:mirror`                  | Copy the production blob store into the preview one (owner-only) |
 | `pnpm seed`                          | Reset content to the MHGP starter seed                           |
 | `pnpm generate:types`                | Regenerate `src/payload-types.ts` after schema changes           |
 | `pnpm generate:brand`                | Regenerate all logo asset files in `public/brand`                |
