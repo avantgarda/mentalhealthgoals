@@ -28,7 +28,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
@@ -43,7 +43,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
@@ -57,7 +57,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:types-drift
@@ -68,7 +68,7 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -84,7 +84,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm payload migrate
@@ -96,7 +96,7 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -112,12 +112,28 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # The runner image ships PostgreSQL client tools — assert rather than
-      # apt-install (apt on runners can hang indefinitely and eat the timeout)
-      - run: pg_dump --version && psql --version
+      # The service container is Postgres 17 and pg_dump refuses to dump a
+      # server newer than itself, so the image's 16 client is not enough. The
+      # pgdg repository is already configured on the runner, so this is one
+      # package; the timeouts are there because apt on runners can hang
+      # indefinitely and eat the job's own timeout.
+      - name: Install the PostgreSQL 17 client
+        run: |
+          sudo timeout 180 apt-get update
+          sudo timeout 180 apt-get install -y --no-install-recommends postgresql-client-17
+      # pg_wrapper resolves pg_dump to the highest installed major, so this both
+      # reports the versions and fails loudly if 17 did not actually land.
+      - name: Check the client is 17
+        run: |
+          pg_dump --version
+          psql --version
+          pg_dump --version | grep -qE ' 17\.' || {
+            echo "pg_dump is not 17 — it cannot dump the Postgres 17 service" >&2
+            exit 1
+          }
       - run: pnpm check:migrations
         env:
           MIGRATION_CHECK_BASE_URL: postgresql://postgres:postgres@localhost:5432
@@ -128,7 +144,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -144,7 +160,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Same sequence Vercel runs via `pnpm build:deploy`
@@ -157,7 +173,7 @@ jobs:
     timeout-minutes: 25
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -173,7 +189,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm payload migrate
