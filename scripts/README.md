@@ -96,9 +96,49 @@ copied across. **Run this after uploading anything real in production.**
 ```bash
 PRODUCTION_BLOB_READ_WRITE_TOKEN=... \
 PREVIEW_BLOB_READ_WRITE_TOKEN=... \
-PREVIEW_BLOB_BASE_URL=https://....public.blob.vercel-storage.com/ \
   pnpm blobs:mirror --dry-run
 ```
+
+Both tokens come from Vercel → Storage → the store's own page. They cannot be pulled: the
+production environment's variables are marked Sensitive, so `vercel env pull` returns
+`[SENSITIVE]` rather than the value.
+
+To avoid fetching them every time, keep them in **`.env.blob-mirror`** (gitignored):
+
+```
+PRODUCTION_BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
+PREVIEW_BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
+```
+
+```bash
+chmod 600 .env.blob-mirror   # the script warns if you forget
+pnpm blobs:mirror --dry-run
+```
+
+That file, and not `.env.local`, and the difference is the point. `.env.local` is a file every
+collaborator has and `vercel env pull` writes a blob token into it, so reading it would let a
+token nobody chose decide which store gets written to. `.env.blob-mirror` exists only because
+somebody made it for this. Supplying a token stays deliberate; it just stops being nightly.
+Anything already exported wins over the file.
+
+Know what the file costs, and decide deliberately. A production read-write token can delete every
+file the live site serves, and Blob has no trash or versioning. This script cannot do that — it
+refuses production as a destination and only ever reads from it — but the token on disk is not
+limited to this script.
+
+Keeping the file is reasonable: mirroring recurs after every real upload to production, and
+re-fetching two tokens each time is friction with nothing behind it. Deleting it is also
+reasonable, if you would rather hold no destructive credential at rest. The preview token is not
+the concern either way; that store is disposable.
+
+The question goes away entirely if OIDC federation is enabled for the Development environment.
+`@vercel/blob` can then authenticate as the person running it, with a store id instead of a token,
+and there is nothing to keep on disk at all.
+
+The store origins are not tokens and are recorded in `lib/production-identifiers.ts`, so there is
+nothing to look up. They are checked rather than trusted: the run is refused unless the
+destination token's own blobs all come back on the recorded preview origin. Override with
+`PREVIEW_BLOB_BASE_URL` only if a store has been recreated.
 
 Drop `--dry-run` to write. Add `--exact` to also delete preview files production does not have —
 only after every production file has been copied and byte-verified.
