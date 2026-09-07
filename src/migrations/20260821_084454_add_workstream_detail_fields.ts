@@ -1,6 +1,6 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 
-import { workstreamContent } from '../endpoints/seed/workstream-content'
+import { workstreamContent } from './data/20260821-workstream-content'
 
 /**
  * Adds the workstream detail fields (slug + boundary statement + three bullet
