@@ -40,7 +40,7 @@ export const Users: CollectionConfig = {
       },
       admin: {
         position: 'sidebar',
-        description: 'Admins manage users and can reseed the site; editors manage content only.',
+        description: 'Admins manage users; editors manage content only.',
       },
       hooks: {
         beforeChange: [

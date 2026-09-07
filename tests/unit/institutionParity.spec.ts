@@ -31,12 +31,12 @@ const BANNED = [
 const from = (...segments: string[]) => path.resolve(import.meta.dirname, '../..', ...segments)
 
 /**
- * Directories of written copy. The seed is on its way out — content is moving
- * to the production CMS — so a missing one is skipped rather than fatal, and
- * the fixture is scanned alongside it. Copy that ships to a reader is the
- * point; where it happens to live is not.
+ * Directories of written copy. Most of the site's words now live in the
+ * production CMS, where a test cannot reach them — what stays here is the
+ * fixture and the components that write their own copy. A missing directory is
+ * skipped rather than fatal, so this survives the next reorganisation.
  */
-const COPY_DIRS = ['src/endpoints/seed', 'tests/fixtures'].map((dir) => from(dir))
+const COPY_DIRS = ['tests/fixtures'].map((dir) => from(dir))
 
 /** Components that write their own copy, and must always be checked. */
 const COMPONENTS = [

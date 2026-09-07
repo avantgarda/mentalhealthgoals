@@ -143,7 +143,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
   // raising the depth far enough to reach each partner's logo would pull the
   // whole graph for every workstream page. Resolve them from the cached
   // partner list instead, which the footer has already warmed, keeping the
-  // seeded order rather than the relationship's.
+  // curated order rather than the relationship's.
   const partnerIds = new Set(
     (partners ?? []).map((p) => (typeof p === 'object' && p !== null ? p.id : p)),
   )

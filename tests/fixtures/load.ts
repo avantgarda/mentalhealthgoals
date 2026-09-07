@@ -4,11 +4,11 @@
  *
  *   pnpm fixture
  *
- * The suite used to run against `pnpm seed`, which meant the tests were
- * asserting on the programme's real content: a copy change and a rendering
- * regression failed the same way. Now content lives in the production CMS and
- * the seed is going, so the tests bring their own — invented people, invented
- * institutions, and just enough shape to exercise every path the site renders.
+ * The suite used to run against the content seed, which meant the tests
+ * asserted on the programme's real copy: a copy change and a rendering
+ * regression failed the same way. Content lives in the production CMS now, so
+ * the tests bring their own — invented people, invented institutions, and just
+ * enough shape to exercise every path the site renders.
  *
  * It runs as its own process rather than from a Playwright globalSetup,
  * deliberately. Importing the Payload config into the Playwright process drags
