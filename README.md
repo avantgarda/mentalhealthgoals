@@ -27,8 +27,8 @@ pnpm bootstrap
 pnpm dev
 ```
 
-`pnpm bootstrap` checks your tools, writes a `.env.local`, creates the database and fills it with
-content. It asks where the content should come from; either answer gets you a working site.
+`pnpm bootstrap` checks your tools, writes a `.env.local`, creates the database and fills it —
+either with a copy of production, or with the test fixture if you have no production access yet.
 
 The site runs at [http://localhost:3000](http://localhost:3000) and the admin panel at
 [http://localhost:3000/admin](http://localhost:3000/admin). Configuration lives in `.env.local`,
@@ -52,25 +52,14 @@ leaves personal data behind by default — no users, no sessions, no form submis
 will offer to create your first local user. `sync:media` needs no credentials; the blob store is
 public-read.
 
+There is no way to push content the other way, and that is deliberate. The repository holds no
+copy of the site's content to overwrite production with.
+
 Restart `pnpm dev` after a sync. Globals are cached per server process, so a running dev server
 keeps serving the ones it read at startup.
 
 Full detail, including what each script is allowed to touch, is in
 [`scripts/README.md`](scripts/README.md).
-
-### Seeding
-
-`pnpm seed` **replaces all content** with the starter MHGP content committed to this branch: 11
-pages, 6 workstreams, the leadership team, news posts, both forms, and header/footer navigation.
-It also creates the admin user (`SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env.local` —
-required, there are no defaults). The same seed can be run from the admin dashboard's "Seed"
-button (admins only).
-
-The script refuses to run against a non-local database.
-
-**This is on its way out.** Once production holds the content everyone edits, the seed stops being
-a source of truth and becomes a way to overwrite one — `sync:db` replaces it for development, and
-the tests will bring their own fixture.
 
 ### Changing the schema
 
@@ -89,7 +78,7 @@ and the migrations disagree.
 
 ### Users & roles
 
-Users have a **role**: `admin` (manage users, run the seed) or `editor` (manage content only).
+Users have a **role**: `admin` (manage users) or `editor` (manage content only).
 The first account ever created is automatically an admin; accounts created after that default to
 editor unless an admin grants the admin role.
 
@@ -168,7 +157,7 @@ before sending artwork to print.
    automatically switches media uploads to Vercel Blob. **Give preview deployments their own
    store** (create a second Blob store and scope each store's token to one environment): unlike
    the database, Blob has no preview branching, so with a shared store a preview's media
-   uploads, deletes and reseeds act on the same files production serves. Done: the stores are
+   uploads and deletes act on the same files production serves. Done: the stores are
    `blob-mentalhealthgoals-prod` and `blob-mentalhealthgoals-preview`. The cost is that previews
    start with none of production's files — run `pnpm blobs:mirror` after uploading anything real.
 4. **Set the remaining environment variables** (Project → Settings → Environment Variables):
@@ -186,11 +175,9 @@ before sending artwork to print.
    that branch, never the production database. Keep preview branching enabled; without it,
    preview builds would run unmerged branch migrations against production.
 6. **Deploy**, then create the first admin account at `https://mentalhealthgoals.co.uk/admin`
-   (the first user is automatically an admin). On a brand-new deployment, press the dashboard's
-   **Seed** button once to load the starter content. After that, content is edited in the CMS and
-   the Seed button only destroys it — see "Where content comes from". Never point a local
-   `.env.local` at the production database; every script here refuses a non-local target, and
-   that is the reason why.
+   (the first user is automatically an admin) and add the content through the CMS. Never point a
+   local `.env.local` at the production database; every script here refuses a non-local target,
+   and that is the reason why.
 7. **Point the domain**: Project → Settings → Domains → add `mentalhealthgoals.co.uk` and follow
    the DNS instructions from your registrar (A record to `76.76.21.21` or CNAME to
    `cname.vercel-dns.com` for `www`).
@@ -206,10 +193,8 @@ before sending artwork to print.
 | `pnpm sync:db`                       | Copy production's content into the local database                |
 | `pnpm sync:media`                    | Download the files that content refers to into `public/media`    |
 | `pnpm blobs:mirror`                  | Copy the production blob store into the preview one (owner-only) |
-| `pnpm seed`                          | Reset content to the MHGP starter seed                           |
 | `pnpm generate:types`                | Regenerate `src/payload-types.ts` after schema changes           |
 | `pnpm generate:brand`                | Regenerate all logo asset files in `public/brand`                |
-| `pnpm generate:seed-imagery`         | Regenerate the seed's placeholder images from the ridge geometry |
 | `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields             |
 | `pnpm lint` / `pnpm typecheck`       | ESLint / TypeScript                                              |
 | `pnpm format` / `pnpm format:check`  | Prettier write / verify                                          |
@@ -255,10 +240,11 @@ If you change collections or fields: run `pnpm payload migrate:create <name>` an
   documents that should not be published.
 - Site content was drafted from the MHGP brochure and programme documents. **Review all copy,
   names and contact details with the team before go-live.**
-- The images in the Media library are **generated placeholders, not photographs** — the ridge
-  motif rendered from `src/brand/ridge.ts` by `pnpm generate:seed-imagery`. They exist so the
-  layouts hold something on-brand until a shoot happens. **Commission real photography before
-  launch** and replace them in the admin; no code change is needed to swap them.
+- Some images in the Media library are **generated placeholders, not photographs** — the ridge
+  motif drawn from `src/brand/ridge.ts`. They exist so the layouts hold something on-brand until a
+  shoot happens. **Commission real photography before launch** and replace them in the admin; no
+  code change is needed to swap them. Provenance and permission notes for the images and partner
+  logos already in use are in [CONTENT-PROVENANCE.md](CONTENT-PROVENANCE.md).
 - **How images are served:** pages hand the _original_ upload to Next's image optimizer, which
   resizes per viewport/DPR on demand and caches the result. Payload generates only two
   derivatives — `og` (the social-sharing card) and `thumbnail` (the admin preview). Don't judge

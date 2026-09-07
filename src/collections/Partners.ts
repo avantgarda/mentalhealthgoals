@@ -13,8 +13,8 @@ import { anyone } from '../access/anyone'
  * mark, university identities — need the owner's consent before they appear
  * on a third-party site. Record the state of that consent in `usageNote`,
  * and upload the artwork the owner supplies when it arrives; nothing else
- * changes. Provenance for the seeded logos lives in
- * src/endpoints/seed/logos/LOGOS.md.
+ * changes. Provenance and permission state for the logos already in use are
+ * recorded in CONTENT-PROVENANCE.md at the root of this repository.
  */
 export const Partners: CollectionConfig = {
   slug: 'partners',
@@ -32,7 +32,7 @@ export const Partners: CollectionConfig = {
     useAsTitle: 'name',
   },
   hooks: {
-    // The seed runs outside a request, where revalidateTag has no store to
+    // A bulk load runs outside a request, where revalidateTag has no store to
     // talk to — it opts out via context, as every other collection does.
     afterChange: [
       ({ doc, req: { context } }) => {

@@ -384,7 +384,7 @@ export interface User {
   id: number;
   name?: string | null;
   /**
-   * Admins manage users and can reseed the site; editors manage content only.
+   * Admins manage users; editors manage content only.
    */
   role: 'admin' | 'editor';
   updatedAt: string;

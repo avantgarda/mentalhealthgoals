@@ -40,15 +40,7 @@ const nextConfig: NextConfig = {
       }),
     ],
   },
-  // The seed reads its .webp assets from disk at runtime (src/endpoints/seed/index.ts).
-  // Next.js can't trace a computed readFileSync path, so include them explicitly —
-  // without this the admin Seed button throws "Seed asset not found" in production.
   outputFileTracingIncludes: {
-    '/next/seed': [
-      './src/endpoints/seed/*.png',
-      './src/endpoints/seed/images/*.jpg',
-      './src/endpoints/seed/logos/*',
-    ],
     // The well-known icon routes read the current variant's file from disk so
     // they can answer 200 (icon scrapers refuse redirects) — every variant is
     // traced because the Brand global decides at runtime.

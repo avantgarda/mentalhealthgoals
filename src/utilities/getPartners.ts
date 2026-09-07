@@ -19,7 +19,7 @@ async function findPartners(): Promise<Partner[]> {
 /**
  * Every partner, ordered, with logos resolved.
  *
- * Invalidated by the collection's hooks on any admin edit, and by the seed
+ * Invalidated by the collection's hooks on any admin edit, and by a bulk load
  * route's cache purge. The hourly window is the backstop: a write that reaches
  * the database without a Next request behind it — the CLI seed, a migration, a
  * direct query — leaves this entry stale, and without an expiry it would stay

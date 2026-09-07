@@ -16,8 +16,8 @@ export const FOOTER_DESCRIPTION =
  * programme itself (individual people live in the People collection). Shown in
  * the footer; edit once here and it updates everywhere it's used.
  *
- * Like the Brand global, this persists across reseeds — the field defaults
- * cover a fresh database, and editor changes are never overwritten by the seed.
+ * Like the Brand global, the field defaults cover a fresh database, and an
+ * editor's changes are never overwritten from the repository.
  */
 export const ProgrammeDetails: GlobalConfig = {
   slug: 'programmeDetails',

@@ -28,8 +28,8 @@ structural, not a convention:
 ## `pnpm bootstrap`
 
 From a fresh clone to a running site. Checks Node and the PostgreSQL client, writes a
-`.env.local`, creates the local database, and fills it either from production or from the content
-committed to the branch.
+`.env.local`, creates the local database, and fills it either from production or from the test
+fixture — the second being the path for somebody who does not have production access yet.
 
 It installs nothing. Where a prerequisite is missing it names it and stops.
 

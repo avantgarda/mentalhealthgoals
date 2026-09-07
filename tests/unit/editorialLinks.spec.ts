@@ -17,8 +17,8 @@ const PROFILE_URL = /https?:\/\/[^'"\s]*(\/staff\/|\/people\/|\/person\/|\/profi
 
 const from = (...segments: string[]) => path.resolve(__dirname, '../..', ...segments)
 
-/** Skipped if absent: the seed is being retired in favour of the fixture. */
-const COPY_DIRS = ['src/endpoints/seed', 'tests/fixtures'].map((dir) => from(dir))
+/** Skipped if absent, so this survives the next reorganisation. */
+const COPY_DIRS = ['tests/fixtures'].map((dir) => from(dir))
 
 const SOURCES = [
   ...COPY_DIRS.filter(existsSync).flatMap((dir) =>

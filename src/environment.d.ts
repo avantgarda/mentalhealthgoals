@@ -11,10 +11,7 @@ declare global {
       RESEND_API_KEY?: string
       EMAIL_OVERRIDE_RECIPIENT?: string
       SITE_NOINDEX?: string
-      CONTACT_NOTIFICATION_EMAIL?: string
       BLOB_READ_WRITE_TOKEN?: string
-      SEED_ADMIN_EMAIL?: string
-      SEED_ADMIN_PASSWORD?: string
     }
   }
 }

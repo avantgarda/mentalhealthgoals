@@ -43,9 +43,9 @@ const CRISP_WEBP = {
 export const Media: CollectionConfig = {
   slug: 'media',
   // No `folders`. It was on and never used — not one folder was ever created —
-  // and it cannot work with this content model: the seed wipes `media` but not
-  // `payload-folders`, so any filing an editor did would come back after the
-  // next seed as a set of empty folders with every image loose again.
+  // and it does not survive a bulk load: anything that wipes `media` leaves
+  // `payload-folders` behind, so an editor's filing would come back as a set of
+  // empty folders with every image loose again.
   admin: {
     group: 'Content',
   },

@@ -1,7 +1,7 @@
 /**
  * Browsers can fill a form in one tap, but only when told what each field is
  * for. The form builder has no such setting, so the token is derived from the
- * field's name — the names are ours, set in the seed, and stable.
+ * field's name — the names are ours, set on the form in the CMS, and stable.
  */
 const TOKENS: Record<string, string> = {
   'full-name': 'name',

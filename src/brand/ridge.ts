@@ -2,9 +2,8 @@
  * Canonical geometry for the ridge motif.
  *
  * This module is the single source of truth, mirroring `src/brand/marks.ts`:
- * the React component in `src/components/Ridge` and the imagery generator in
- * `scripts/generate-seed-imagery.ts` both render from these definitions, so
- * the ridge on the site and the exported files can never drift apart.
+ * everything that draws the ridge renders from these definitions, so the motif
+ * can never drift between the places it appears.
  *
  * The motif is a field of contour lines rising to the Summit M skyline, with
  * the amber goal above the summit. It is generated deterministically — there

@@ -3,9 +3,9 @@
  * bootstrap.ts — from a fresh clone to a running site.
  *
  * Checks the tools, writes a `.env.local` if there is not one, creates the
- * local database, and fills it either from production or from the repository's
- * own content. Everything it does can be done by hand; this exists so nobody
- * has to work out the order from the README on their first morning.
+ * local database, and fills it either from production or from the test
+ * fixture. Everything it does can be done by hand; this exists so nobody has
+ * to work out the order from the README on their first morning.
  *
  * Named `bootstrap` rather than `setup` because `pnpm setup` is one of pnpm's
  * own commands and would shadow the script.
@@ -222,7 +222,7 @@ async function main(): Promise<void> {
       canSync
         ? 'Production — a copy of the live site, minus users and form submissions'
         : 'Production — unavailable: SYNC_DATABASE_URL is not set',
-      'The repository — the content committed to this branch',
+      'The test fixture — invented content, enough to see every page render',
     ],
     1,
   )
@@ -241,7 +241,7 @@ async function main(): Promise<void> {
     runVisibly('pnpm', ['sync:media'])
   } else {
     runVisibly('pnpm', ['payload', 'migrate'])
-    runVisibly('pnpm', ['seed'])
+    runVisibly('pnpm', ['fixture'])
   }
 
   console.log('')

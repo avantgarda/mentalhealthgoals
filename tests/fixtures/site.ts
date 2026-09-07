@@ -2,9 +2,9 @@
  * The names the test suite and its fixture agree on.
  *
  * Tests assert on these constants rather than on literal strings, so content
- * and assertions move together. A test that hardcodes "Prof. Mitul Mehta" is
- * really a test of the seed; a test that reads `FIXTURE.people.lead.name` is a
- * test of the page.
+ * and assertions move together. A test that hardcodes a real person's name is
+ * really a test of the content; a test that reads `FIXTURE.person.lead.name`
+ * is a test of the page.
  *
  * This module is deliberately free of imports. Playwright loads it into its own
  * process, and pulling Payload's config in there drags `next/cache` behind it.

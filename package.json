@@ -25,7 +25,6 @@
     "check:migrations": "./scripts/check-migrations.sh",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",
-    "seed": "cross-env NODE_ENV=development NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env.local src/endpoints/seed/run.ts",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "sync:db": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/sync-db.ts",
     "sync:media": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/sync-media.ts",
@@ -33,7 +32,6 @@
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
     "generate:brand": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/generate-brand-assets.ts",
-    "generate:seed-imagery": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/generate-seed-imagery.ts",
     "prepare": "husky"
   },
   "lint-staged": {

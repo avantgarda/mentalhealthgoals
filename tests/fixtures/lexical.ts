@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Helpers for building Lexical rich-text JSON in fixture data.
 //
-// A copy of the seed's helpers rather than an import from it: the point of the
-// fixture is that the test suite owns its own content and stops depending on
-// src/endpoints/seed, which is on its way out.
+// These began as the seed's helpers. The seed has gone; the test suite owns
+// its content now, so it owns these too.
 
 export const text = (t: string, format: number = 0): any => ({
   type: 'text',
