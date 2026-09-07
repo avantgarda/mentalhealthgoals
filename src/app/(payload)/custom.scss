@@ -1,0 +1,12 @@
+/**
+ * Admin panel overrides. Imported by `src/app/(payload)/layout.tsx`.
+ */
+
+/* The dashboard's container is a `gutter`, and Payload gives that class no
+   bottom padding here — so the last row of collection cards ends 18px from the
+   bottom of the page and reads as clipped. Collection list views already solve
+   this with 60px on their own gutter; match that rather than invent a number,
+   so the two views sit the same distance off the bottom. */
+.dashboard {
+  padding-bottom: 60px;
+}

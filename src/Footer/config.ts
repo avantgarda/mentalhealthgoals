@@ -17,7 +17,10 @@ export const Footer: GlobalConfig = {
           appearances: false,
         }),
       ],
-      maxRows: 12,
+      // Headroom: the list flows into two columns in the footer, so it is no
+      // longer the height of the block that limits it. It was capped at 12 and
+      // already held 12.
+      maxRows: 18,
       admin: {
         initCollapsed: true,
         components: {

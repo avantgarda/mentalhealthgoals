@@ -40,7 +40,7 @@ export async function Footer() {
       <footer className="mt-auto bg-brand-deep text-white" data-theme="dark">
         <div className="container pb-10 pt-14">
           <div className="grid grid-cols-1 gap-x-10 gap-y-12 border-t border-white/15 pt-10 lg:grid-cols-12">
-            <div className="flex max-w-md flex-col gap-5 lg:col-span-5">
+            <div className="flex max-w-md flex-col gap-5 lg:col-span-4">
               <Link className="flex w-fit items-center" href="/">
                 <Logo showTagline={brand.showTagline} variant={brand.variant} />
               </Link>
@@ -49,12 +49,19 @@ export async function Footer() {
               </p>
             </div>
 
-            <nav aria-label="Footer navigation" className="lg:col-span-3">
+            {/* Two columns, not one tower. A single stack of a dozen links was
+                already the height of the whole footer and the nav is capped in
+                the CMS, so it could not grow without running past the block
+                beside it. Flowing them into columns halves the height and takes
+                any number of links — `margin-bottom` on each row rather than a
+                gap, because a column gap would leave the first item of the
+                second column indented by one row against the first. */}
+            <nav aria-label="Footer navigation" className="lg:col-span-5">
               <p className="eyebrow mb-4 !text-white/55">Site</p>
-              <ul className="flex flex-col gap-2.5 text-[1rem]">
+              <ul className="columns-1 gap-x-8 text-[1rem] sm:columns-2">
                 {navItems.map(({ link }, i) => {
                   return (
-                    <li key={i}>
+                    <li className="mb-2.5 break-inside-avoid" key={i}>
                       <CMSLink
                         appearance="inline"
                         className="link-line text-white/85 hover:text-white"
@@ -66,7 +73,7 @@ export async function Footer() {
               </ul>
             </nav>
 
-            <div className="lg:col-span-4">
+            <div className="lg:col-span-3">
               {hasContact && (
                 <>
                   <p className="eyebrow mb-4 !text-white/55">Contact</p>
