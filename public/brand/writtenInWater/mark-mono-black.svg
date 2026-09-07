@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="184" height="96" viewBox="0 0 184 96" role="img" aria-label="Written in Water — H and G beside the mountain">
+<svg xmlns="http://www.w3.org/2000/svg" width="174" height="96" viewBox="0 0 174 96" role="img" aria-label="Written in Water — H and G beside the mountain">
     <path d="M 16 82 L 33 46 L 46 72 L 61 38 L 80 82" fill="none" stroke="#111111" stroke-width="8" stroke-linecap="round" stroke-linejoin="miter"/>
     <circle cx="61" cy="17.5" r="8" fill="#111111"/>
-    <path d="M 98 82 L 98 46 M 98 64 L 116 64 M 116 46 L 116 82" fill="none" stroke="#111111" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.4"/>
-    <path d="M 162.1 49.8 A 18 18 0 1 0 169 64 L 159.1 64" fill="none" stroke="#111111" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.4"/>
+    <path d="M 94 82 L 94 46 M 94 64 L 114 64 M 114 46 L 114 82" fill="none" stroke="#111111" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.4"/>
+    <path d="M 152.2 49.8 A 15 18 0 1 0 158 64 L 149.8 64" fill="none" stroke="#111111" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.4"/>
 </svg>

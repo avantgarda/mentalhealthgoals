@@ -135,13 +135,13 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
     label: 'Written in Water — H and G beside the mountain',
     description:
       'Summit M with the H and G standing alongside it on the shoreline, spelling the acronym.',
-    note: 'The acronym mark. The letters share the mountain’s stroke and sit level with its lower peak, drawn at 40% so they keep the translucent, written-on-water quality of the original; the G is a true single-stroke G with an inward spur. Below 48 px it tiers down to Summit M alone.',
-    width: 184,
+    note: 'The acronym mark. The letters share the mountain’s stroke and sit level with its lower peak, drawn at 40% so they keep the translucent, written-on-water quality of the original. The G is an oval rather than a circle so it matches the H’s width as one typeface would, and the pair sits close in against the mountain. Below 48 px it tiers down to Summit M alone.',
+    width: 174,
     elements: [
       ...SUMMIT_ELEMENTS,
       {
         kind: 'path',
-        d: 'M 98 82 L 98 46 M 98 64 L 116 64 M 116 46 L 116 82',
+        d: 'M 94 82 L 94 46 M 94 64 L 114 64 M 114 46 L 114 82',
         role: 'form',
         strokeWidth: 8,
         linecap: 'round',
@@ -150,7 +150,7 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
       },
       {
         kind: 'path',
-        d: 'M 162.1 49.8 A 18 18 0 1 0 169 64 L 159.1 64',
+        d: 'M 152.2 49.8 A 15 18 0 1 0 158 64 L 149.8 64',
         role: 'form',
         strokeWidth: 8,
         linecap: 'round',
@@ -164,7 +164,7 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
     label: 'Goal in the Water — the G reflected below',
     description:
       'The mountain and an H stand on the shore; what reflects in the water beneath is the amber G.',
-    note: 'The narrative mark: look into the water and the goal is what you find. As in the original, the G is reflected beneath the point where the mountain meets the H, at 80% amber so it reads as submerged without going pale. Below 48 px it tiers down to the peaks over the reflected G.',
+    note: 'The narrative mark: look into the water and the goal is what you find. As in the original, the G is reflected beneath the point where the mountain meets the H, at 80% amber so it reads as submerged without going pale. Below 48 px it tiers down to the peaks over a single amber point — the G has no definition to keep at that size.',
     elements: [
       {
         kind: 'path',
@@ -202,15 +202,7 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
         linecap: 'round',
         linejoin: 'round',
       },
-      {
-        kind: 'path',
-        d: 'M 53.5 70.9 A 9 9 0 1 0 57 78 L 51.6 78',
-        role: 'accent',
-        strokeWidth: 7,
-        linecap: 'round',
-        linejoin: 'round',
-        opacity: 0.8,
-      },
+      { kind: 'circle', cx: 48, cy: 76, r: 8.5, role: 'accent' },
     ],
   },
 }

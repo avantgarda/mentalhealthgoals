@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="Goal in the Water — the G reflected below">
     <rect width="96" height="96" rx="20" fill="#05313A"/>
     <path d="M 16 58 L 33 22 L 46 48 L 61 14 L 80 58" fill="none" stroke="#ECF4F3" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M 53.5 70.9 A 9 9 0 1 0 57 78 L 51.6 78" fill="none" stroke="#D78A46" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.8"/>
+    <circle cx="48" cy="76" r="8.5" fill="#D78A46"/>
 </svg>
