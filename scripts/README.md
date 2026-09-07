@@ -96,9 +96,18 @@ copied across. **Run this after uploading anything real in production.**
 ```bash
 PRODUCTION_BLOB_READ_WRITE_TOKEN=... \
 PREVIEW_BLOB_READ_WRITE_TOKEN=... \
-PREVIEW_BLOB_BASE_URL=https://....public.blob.vercel-storage.com/ \
   pnpm blobs:mirror --dry-run
 ```
+
+Both tokens come from Vercel → Storage → the store's own page. They cannot be pulled: the
+production environment's variables are marked Sensitive, so `vercel env pull` returns
+`[SENSITIVE]` rather than the value. That is the intended shape — a token is what grants the
+write, so supplying one stays a deliberate act.
+
+The store origins are not tokens and are recorded in `lib/production-identifiers.ts`, so there is
+nothing to look up. They are checked rather than trusted: the run is refused unless the
+destination token's own blobs all come back on the recorded preview origin. Override with
+`PREVIEW_BLOB_BASE_URL` only if a store has been recreated.
 
 Drop `--dry-run` to write. Add `--exact` to also delete preview files production does not have —
 only after every production file has been copied and byte-verified.

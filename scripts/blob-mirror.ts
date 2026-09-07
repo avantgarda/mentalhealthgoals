@@ -18,8 +18,12 @@
  *
  *   PRODUCTION_BLOB_READ_WRITE_TOKEN=... \
  *   PREVIEW_BLOB_READ_WRITE_TOKEN=... \
- *   PREVIEW_BLOB_BASE_URL=https://....public.blob.vercel-storage.com/ \
  *     pnpm blobs:mirror --dry-run
+ *
+ * The two store origins are recorded in ./lib/production-identifiers.ts, so the
+ * tokens are the only thing to supply. They stay explicit because a token is
+ * what grants the write; the origins are only claims the script has to
+ * disprove.
  *
  * If you are here because a token "isn't being picked up": that is this,
  * working as intended. Tokens are never accepted as command-line arguments,
@@ -34,7 +38,7 @@ import {
   type MirrorPlan,
 } from './lib/blob-mirror-core'
 import { confirmDestructive } from './lib/confirm'
-import { requireProductionBlobBaseUrl } from './lib/production-identifiers'
+import { previewBlobBaseUrl, requireProductionBlobBaseUrl } from './lib/production-identifiers'
 
 const UNATTENDED_CONFIRMATION_ENV = 'BLOB_MIRROR_ALLOW_UNATTENDED'
 
@@ -67,7 +71,9 @@ function printUsage(): void {
   console.log('Required in the environment (never as arguments):')
   console.log('  PRODUCTION_BLOB_READ_WRITE_TOKEN   read-write token for the production store')
   console.log('  PREVIEW_BLOB_READ_WRITE_TOKEN      read-write token for the preview store')
-  console.log('  PREVIEW_BLOB_BASE_URL              public origin of the preview store')
+  console.log('')
+  console.log('Both store origins are recorded in the repository. Override the destination')
+  console.log('with PREVIEW_BLOB_BASE_URL only if the store has been recreated.')
   console.log('')
   console.log('Writing to the production store is refused outright.')
 }
@@ -89,7 +95,10 @@ async function main(argv: string[]): Promise<void> {
 
   const sourceToken = requireEnvironment('PRODUCTION_BLOB_READ_WRITE_TOKEN')
   const destinationToken = requireEnvironment('PREVIEW_BLOB_READ_WRITE_TOKEN')
-  const destinationBaseUrl = requireEnvironment('PREVIEW_BLOB_BASE_URL')
+  // Recorded in the repository rather than typed out each time. It is checked,
+  // not trusted: the run is refused unless the destination token's own blobs
+  // all come back on this origin.
+  const destinationBaseUrl = previewBlobBaseUrl()
 
   await mirrorProductionToPreview({
     confirm: async (plan: MirrorPlan) => {
