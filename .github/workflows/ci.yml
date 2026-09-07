@@ -208,12 +208,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm payload migrate
-      # Config comes from the job env; there is no env file on a runner, which
-      # is why the seed reads .env.local only if it happens to exist.
-      - run: pnpm seed
-        env:
-          SEED_ADMIN_EMAIL: ci-admin@example.com
-          SEED_ADMIN_PASSWORD: ci-only-password
+      # The suite brings its own content: invented people and institutions,
+      # shaped to exercise every path the site renders. Config comes from the
+      # job env, so the fixture reads .env.local only if it happens to exist.
+      - run: pnpm fixture
       # No --with-deps: it apt-installs system libraries, and apt on runners
       # can hang indefinitely. The runner image already carries Chromium's
       # system dependencies (it ships with Chrome).
