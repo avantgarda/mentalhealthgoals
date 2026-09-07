@@ -116,12 +116,21 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # The service container is Postgres 17 and pg_dump refuses to dump a
-      # server newer than itself, so the image's 16 client is not enough. The
-      # pgdg repository is already configured on the runner, so this is one
-      # package; the timeouts are there because apt on runners can hang
-      # indefinitely and eat the job's own timeout.
+      # server newer than itself, so the image's 16 client is not enough.
+      #
+      # The runner's client is a pgdg build, but the pgdg apt source is not in
+      # its sources list at runtime — only Ubuntu, Microsoft and Google are —
+      # so the repository has to be added before the package can be found.
+      # The timeouts are there because apt on runners can hang indefinitely and
+      # eat the job's own timeout.
       - name: Install the PostgreSQL 17 client
         run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error --max-time 60 \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
           sudo timeout 180 apt-get update
           sudo timeout 180 apt-get install -y --no-install-recommends postgresql-client-17
       # pg_wrapper resolves pg_dump to the highest installed major, so this both
