@@ -104,8 +104,20 @@ html[data-theme='light'] {
   }
 }
 
-/* The small mark beside the nav. */
+/* The mark beside the nav. Sized by height, not width: the marks are not all
+   the same shape, and a width cap left the wide acronym mark at half the height
+   of the square ones. Every variant now stands 32px tall and takes whatever
+   width its own proportions need. */
 .mhg-admin-icon {
-  width: 24px;
-  height: auto;
+  height: 32px;
+  width: auto;
+}
+
+/* Payload gives the breadcrumb's home link a fixed 16px box and lets the
+   graphic overflow it, which only works while the graphic is small. Let the
+   link take the mark's real size so the breadcrumb's gap measures from the
+   mark, not from a box hidden inside it. */
+.step-nav .step-nav__home {
+  width: auto;
+  height: 32px;
 }
