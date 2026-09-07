@@ -1,6 +1,31 @@
 /**
- * Admin panel overrides. Imported by `src/app/(payload)/layout.tsx`.
+ * Admin panel styling. Imported by `src/app/(payload)/layout.tsx`.
+ *
+ * Cosmetic only, and deliberately narrow: typeface, the accent colour Payload
+ * uses for links and focus, and the brand marks. Payload derives its greys,
+ * field backgrounds, borders and button contrast from `--theme-elevation-*`,
+ * and those are left alone — repainting them is how an admin theme quietly
+ * breaks legibility in a view nobody thought to check.
  */
+
+/* IBM Plex Sans is the site's body face. Loaded here rather than in the admin
+   layout, which Payload generates and warns it may rewrite. */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --mhg-petrol: #15545b;
+  --mhg-amber: #ce7a3b;
+}
+
+body {
+  --font-body: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --theme-success-500: var(--mhg-petrol);
+}
+
+/* Payload's own accent, used for links, focus rings and active nav items. */
+html[data-theme='light'] {
+  --theme-success-550: #{'#0f4249'};
+}
 
 /* The dashboard's container is a `gutter`, and Payload gives that class no
    bottom padding here — so the last row of collection cards ends 18px from the
@@ -9,4 +34,17 @@
    so the two views sit the same distance off the bottom. */
 .dashboard {
   padding-bottom: 60px;
+}
+
+/* The brand marks, sized to the slots Payload gives them. Width only — the
+   lockup and the mark carry their own aspect ratios. */
+.mhg-admin-logo {
+  width: 15rem;
+  max-width: 100%;
+  height: auto;
+}
+
+.mhg-admin-icon {
+  width: 1.75rem;
+  height: auto;
 }

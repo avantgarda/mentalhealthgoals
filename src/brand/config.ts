@@ -17,6 +17,7 @@ export const Brand: GlobalConfig = {
     read: () => true,
   },
   admin: {
+    group: 'Settings',
     description:
       'Choose the programme logo. The change applies across the site, including the browser tab icon and social sharing image.',
   },

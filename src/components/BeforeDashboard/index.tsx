@@ -8,68 +8,45 @@ import './index.scss'
 
 const baseClass = 'before-dashboard'
 
+/**
+ * The block at the top of the dashboard.
+ *
+ * It used to carry Payload's starter copy — links to the Payload docs, an
+ * instruction to commit and push, and a note explaining that the block itself
+ * is a custom component. None of that is any use to the people who actually
+ * sign in here, and it pushed the one genuinely dangerous control on the page
+ * down into a numbered list of developer chores.
+ *
+ * What is left is the seed, with the warning it deserves. Editors see only the
+ * welcome and the link to the site.
+ */
 const BeforeDashboard: React.FC<ServerProps> = ({ user }) => {
   const isAdmin = user?.role === 'admin'
 
   return (
     <div className={baseClass}>
       <Banner className={`${baseClass}__banner`} type="success">
-        <h4>Welcome to the Mental Health Goals Programme dashboard</h4>
+        <h4>Mental Health Goals Programme</h4>
       </Banner>
-      Here&apos;s what to do next:
-      <ul className={`${baseClass}__instructions`}>
-        {isAdmin && (
-          <li>
-            <SeedButton />
+      <p className={`${baseClass}__intro`}>
+        {'Edit the site from the sections below, then '}
+        <a href="/" rel="noopener noreferrer" target="_blank">
+          view the site
+        </a>
+        {' to see your changes.'}
+      </p>
+
+      {isAdmin && (
+        <div className={`${baseClass}__seed`}>
+          <p>
+            <strong>Reset the site content.</strong>
             {
-              ' to reset the site to its starter MHG content (pages, workstreams, people and news), then '
+              ' Replaces every page, workstream, person, partner, post and form with the ones written into the code — and deletes all form submissions with them, including Forum registrations. It cannot be undone. Export anything you need first.'
             }
-            <a href="/" target="_blank">
-              visit your website
-            </a>
-            {' to see the results. Careful: this replaces all existing content.'}
-          </li>
-        )}
-        <li>
-          {'Modify your '}
-          <a
-            href="https://payloadcms.com/docs/configuration/collections"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            collections
-          </a>
-          {' and add more '}
-          <a
-            href="https://payloadcms.com/docs/fields/overview"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            fields
-          </a>
-          {' as needed. If you are new to Payload, we also recommend you check out the '}
-          <a
-            href="https://payloadcms.com/docs/getting-started/what-is-payload"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Getting Started
-          </a>
-          {' docs.'}
-        </li>
-        <li>
-          Commit and push your changes to the repository to trigger a redeployment of your project.
-        </li>
-      </ul>
-      {'Pro Tip: This block is a '}
-      <a
-        href="https://payloadcms.com/docs/custom-components/overview"
-        rel="noopener noreferrer"
-        target="_blank"
-      >
-        custom component
-      </a>
-      , you can remove it at any time by updating your <strong>payload.config</strong>.
+          </p>
+          <SeedButton />
+        </div>
+      )}
     </div>
   )
 }
