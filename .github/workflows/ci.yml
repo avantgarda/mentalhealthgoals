@@ -193,9 +193,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm payload migrate
-      # pnpm seed runs tsx --env-file=.env; config comes from job env, but the
-      # file must exist
-      - run: touch .env
+      # Config comes from the job env; there is no env file on a runner, which
+      # is why the seed reads .env.local only if it happens to exist.
       - run: pnpm seed
         env:
           SEED_ADMIN_EMAIL: ci-admin@example.com
