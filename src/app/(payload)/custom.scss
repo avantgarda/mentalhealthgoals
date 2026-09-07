@@ -27,6 +27,23 @@ html[data-theme='light'] {
   --theme-success-550: #{'#0f4249'};
 }
 
+/* Hides "Edit Dashboard" and "Reset Layout" from the breadcrumb.
+   
+   Which cards appear and how they are grouped is decided in the collection
+   configs, and per-user rearranging would quietly undo that for one person
+   with no way for anyone else to see it. Payload offers no flag for this —
+   `admin.dashboard` is an experimental widget API, not a switch — so it is
+   hidden rather than disabled.
+
+   Scoped to the step nav because that is the only place it appears: measured
+   across the dashboard, list, edit, global and account views, this is the one
+   `.dropdown-indicator` inside `.step-nav`, and the account screen's two sit
+   outside it. Nobody has a saved layout for this to strand — there is no
+   dashboard key in `payload_preferences`. */
+.step-nav .dropdown-indicator {
+  display: none;
+}
+
 /* The dashboard's container is a `gutter`, and Payload gives that class no
    bottom padding here — so the last row of collection cards ends 18px from the
    bottom of the page and reads as clipped. Collection list views already solve
@@ -36,15 +53,20 @@ html[data-theme='light'] {
   padding-bottom: 60px;
 }
 
-/* The brand marks, sized to the slots Payload gives them. Width only — the
-   lockup and the mark carry their own aspect ratios. */
+/* The brand marks, sized to the slots Payload gives them. Width only — both
+   SVGs carry their own aspect ratio.
+
+   In pixels rather than rem: the admin sets `html { font-size: 13px }`, so a
+   rem here is not the 16px it is everywhere else on the site and sizes come
+   out a fifth smaller than they read in the source. The login column is 480px
+   wide, which is what 300 is measured against. */
 .mhg-admin-logo {
-  width: 15rem;
+  width: 300px;
   max-width: 100%;
   height: auto;
 }
 
 .mhg-admin-icon {
-  width: 1.75rem;
+  width: 24px;
   height: auto;
 }
