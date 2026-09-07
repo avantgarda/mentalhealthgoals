@@ -77,7 +77,18 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
-    push: process.env.NODE_ENV === 'development', // Auto-sync schema in dev, use migrations in production
+    // Off everywhere by default, including dev.
+    //
+    // Push silently reshapes the local database to match the config, so a
+    // schema change works locally whether or not a migration was written for
+    // it — and the omission only surfaces when the deploy runs `payload
+    // migrate` against production. Turning it off makes local development use
+    // the same mechanism production does: change a collection, run
+    // `pnpm payload migrate:create`, run `pnpm payload migrate`.
+    //
+    // scripts/check-migrations.sh still needs a push-built schema to compare
+    // the committed migrations against, so it sets this flag for that one step.
+    push: process.env.PAYLOAD_DB_PUSH === '1',
   }),
   // Order matters for the admin: the dashboard and nav list groups in the order
   // their first collection appears here, so Users last keeps Admin at the
