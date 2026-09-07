@@ -51,7 +51,7 @@ describe('revalidatePage', () => {
     expect(calledPaths()).toContain('/about')
   })
 
-  it('does nothing when revalidation is disabled (seeding)', () => {
+  it('does nothing when revalidation is disabled (fixture and other bulk loads)', () => {
     revalidatePage(
       makeArgs({ _status: 'published', slug: 'about' }, undefined, { disableRevalidate: true }),
     )
@@ -77,7 +77,7 @@ describe('revalidatePost', () => {
     expect(calledPaths()).toEqual(expect.arrayContaining(['/posts/news-two', '/posts/news-one']))
   })
 
-  it('does nothing when revalidation is disabled (seeding)', () => {
+  it('does nothing when revalidation is disabled (fixture and other bulk loads)', () => {
     revalidatePost(
       makeArgs({ _status: 'published', slug: 'news-one' }, undefined, { disableRevalidate: true }),
     )

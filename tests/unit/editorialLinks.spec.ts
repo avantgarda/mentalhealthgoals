@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -9,17 +9,24 @@ import { describe, expect, it } from 'vitest'
  * imply endorsement hierarchies between partners, and leak readers mid-story —
  * and the Cardiff ones are bot-blocked outright.
  *
- * This scans the seed sources and the entity autolinker for URLs shaped like
- * personal profile pages, so the rule fails a test instead of fading into a
- * memory of a conversation.
+ * This scans every source of written copy and the entity autolinker for URLs
+ * shaped like personal profile pages, so the rule fails a test instead of
+ * fading into a memory of a conversation.
  */
 const PROFILE_URL = /https?:\/\/[^'"\s]*(\/staff\/|\/people\/|\/person\/|\/profile\/|profiles\.)/i
 
+const from = (...segments: string[]) => path.resolve(__dirname, '../..', ...segments)
+
+/** Skipped if absent: the seed is being retired in favour of the fixture. */
+const COPY_DIRS = ['src/endpoints/seed', 'tests/fixtures'].map((dir) => from(dir))
+
 const SOURCES = [
-  ...readdirSync(path.resolve(__dirname, '../../src/endpoints/seed'))
-    .filter((f) => f.endsWith('.ts'))
-    .map((f) => path.resolve(__dirname, '../../src/endpoints/seed', f)),
-  path.resolve(__dirname, '../../src/utilities/linkifyEntities.tsx'),
+  ...COPY_DIRS.filter(existsSync).flatMap((dir) =>
+    readdirSync(dir)
+      .filter((f) => f.endsWith('.ts'))
+      .map((f) => path.join(dir, f)),
+  ),
+  from('src/utilities/linkifyEntities.tsx'),
 ]
 
 describe('editorial rule: people never link out', () => {

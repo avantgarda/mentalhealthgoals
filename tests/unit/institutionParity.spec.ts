@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync, readdirSync } from 'fs'
+import { existsSync, readFileSync, readdirSync } from 'fs'
 import path from 'path'
 
 /**
@@ -28,16 +28,31 @@ const BANNED = [
   },
 ]
 
-const SEED_DIR = path.resolve(import.meta.dirname, '../../src/endpoints/seed')
+const from = (...segments: string[]) => path.resolve(import.meta.dirname, '../..', ...segments)
 
-const sources = [
-  ...readdirSync(SEED_DIR)
-    .filter((file) => file.endsWith('.ts'))
-    .map((file) => path.join(SEED_DIR, file)),
-  path.resolve(import.meta.dirname, '../../src/Footer/Component.tsx'),
-  path.resolve(import.meta.dirname, '../../src/blocks/Workstreams/Component.tsx'),
-  path.resolve(import.meta.dirname, '../../src/blocks/People/Component.tsx'),
+/**
+ * Directories of written copy. The seed is on its way out — content is moving
+ * to the production CMS — so a missing one is skipped rather than fatal, and
+ * the fixture is scanned alongside it. Copy that ships to a reader is the
+ * point; where it happens to live is not.
+ */
+const COPY_DIRS = ['src/endpoints/seed', 'tests/fixtures'].map((dir) => from(dir))
+
+/** Components that write their own copy, and must always be checked. */
+const COMPONENTS = [
+  from('src/Footer/Component.tsx'),
+  from('src/blocks/Workstreams/Component.tsx'),
+  from('src/blocks/People/Component.tsx'),
 ]
+
+const inDir = (dir: string) =>
+  existsSync(dir)
+    ? readdirSync(dir)
+        .filter((file) => file.endsWith('.ts'))
+        .map((file) => path.join(dir, file))
+    : []
+
+const sources = [...COPY_DIRS.flatMap(inDir), ...COMPONENTS]
 
 describe('institution parity in published copy', () => {
   const REPO_ROOT = path.resolve(import.meta.dirname, '../..')
@@ -53,6 +68,12 @@ describe('institution parity in published copy', () => {
   }
 
   it('scans the files it thinks it does', () => {
-    expect(sources.length).toBeGreaterThanOrEqual(8)
+    // A readdir that silently returns nothing would make every test above
+    // pass by scanning no copy at all. Naming what must be there catches
+    // that, and keeps working when one of the copy directories goes away.
+    expect(sources).toEqual(expect.arrayContaining(COMPONENTS))
+    for (const dir of COPY_DIRS.filter(existsSync)) {
+      expect(inDir(dir).length, `${path.basename(dir)} contributed no files`).toBeGreaterThan(0)
+    }
   })
 })

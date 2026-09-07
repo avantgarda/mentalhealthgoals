@@ -1,6 +1,12 @@
 import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
+import { FIXTURE } from '../fixtures/site'
+import { personAnchor } from '../../src/utilities/personAnchor'
+
+/** Has both a photograph and a biography, so their card opens a dialog. */
+const personId = `#${personAnchor(FIXTURE.person.lead.name)}`
+
 /**
  * Automated WCAG 2.2 AA scanning with axe-core, plus keyboard-access checks.
  * Automation catches roughly a third of WCAG issues (contrast, names/labels,
@@ -159,14 +165,14 @@ test.describe('keyboard access', () => {
     // survive a window change, which blurs the button without focus going
     // anywhere and then hands it straight back.
     await page.goto('/people')
-    const name = page.locator('#vaibhav-narayan h3 button')
+    const name = page.locator(`${personId} h3 button`)
     const outline = () => name.evaluate((el) => getComputedStyle(el).outlineStyle)
 
     // The card is interactive only once it has hydrated; on a cold dev server
     // this page compiles lazily, and clicking into the gap is a flake.
     await name.waitFor()
-    await page.locator('#vaibhav-narayan img').click()
-    await page.locator('#vaibhav-narayan dialog button', { hasText: 'Close' }).click()
+    await page.locator(`${personId} img`).click()
+    await page.locator(`${personId} dialog button`, { hasText: 'Close' }).click()
     expect(await outline()).toBe('none')
 
     // Leave the window and come back.
@@ -183,10 +189,10 @@ test.describe('keyboard access', () => {
 
   test('dismissing with the keyboard still shows where focus went', async ({ page }) => {
     await page.goto('/people')
-    await page.locator('#vaibhav-narayan h3 button').waitFor()
-    await page.locator('#vaibhav-narayan img').click()
+    await page.locator(`${personId} h3 button`).waitFor()
+    await page.locator(`${personId} img`).click()
     await page.keyboard.press('Escape')
-    const name = page.locator('#vaibhav-narayan h3 button')
+    const name = page.locator(`${personId} h3 button`)
     await expect(name).toBeFocused()
     expect(await name.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid')
   })
@@ -194,7 +200,7 @@ test.describe('keyboard access', () => {
   test('the sticky header never covers the element being focused', async ({ page }) => {
     // WCAG 2.2 SC 2.4.11, Focus Not Obscured — the same contract the sticky
     // call-to-action bar honours from the bottom of the screen.
-    await page.goto('/workstreams/lived-experience-industry-partnership')
+    await page.goto(`/workstreams/${FIXTURE.workstream.withSections.slug}`)
     await page.locator('a[href="#key-questions"]').click()
     await page.waitForTimeout(400)
 

@@ -1,16 +1,21 @@
 import { test, expect } from '@playwright/test'
 
+import { FIXTURE } from '../fixtures/site'
+// A pure function with no imports of its own, so it is safe to pull into the
+// Playwright process — unlike anything that reaches the Payload config.
+import { personAnchor } from '../../src/utilities/personAnchor'
+
 test.describe('Frontend', () => {
   test('can load homepage', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveTitle(/Mental Health Goals Programme/)
     const heading = page.locator('h1').first()
-    await expect(heading).toContainText(/mental health/i)
+    await expect(heading).toContainText(FIXTURE.home.heading)
   })
 
-  test('lists the seeded news posts', async ({ page }) => {
+  test('lists the news posts', async ({ page }) => {
     await page.goto('/posts')
-    await expect(page.getByText(/£50 million commitment/i).first()).toBeVisible()
+    await expect(page.getByText(FIXTURE.posts.news.title).first()).toBeVisible()
   })
 
   test('serves the legal pages from the footer', async ({ page }) => {
@@ -26,13 +31,12 @@ test.describe('Frontend', () => {
   })
 
   test('serves workstream detail pages from the listing', async ({ page }) => {
+    const { slug, title } = FIXTURE.workstream.withSections
     await page.goto('/workstreams')
-    await expect(
-      page.locator('a[href="/workstreams/alliance-management-team"]').first(),
-    ).toBeVisible()
+    await expect(page.locator(`a[href="/workstreams/${slug}"]`).first()).toBeVisible()
 
-    await page.goto('/workstreams/alliance-management-team')
-    await expect(page.locator('h1')).toContainText(/alliance management team/i)
+    await page.goto(`/workstreams/${slug}`)
+    await expect(page.locator('h1')).toContainText(title)
     await expect(page.getByRole('heading', { name: /primary focus/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /key questions/i })).toBeVisible()
   })
@@ -41,52 +45,57 @@ test.describe('Frontend', () => {
     await page.goto('/workstreams')
     await page.getByRole('link', { name: /About DIGIT/ }).click()
     await page.waitForURL(/\/digit$/)
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(
-      /Data and Digital Industry Alliance Team/i,
-    )
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(FIXTURE.umbrella.pageTitle)
     // Typographic by design: a page about one team inside the programme does
     // not get a logo the other workstreams' teams do not have.
     await expect(page.locator('main').getByRole('img')).toHaveCount(0)
   })
 
-  test('industry has an address to write to, and the Forum has replaced the founding members', async ({
-    page,
-  }) => {
-    // The Industry Engagement Forum superseded the Founding Members Programme,
-    // so the old name should survive nowhere — and the page industry lands on
-    // should offer a way to write to the team, not only a link to a form.
+  test('industry has an address to write to, not only a form', async ({ page }) => {
+    // A visitor who would rather write than fill something in should not have
+    // to hunt for the address.
     await page.goto('/industry')
 
     const mailto = page.locator('main a[href^="mailto:"]').first()
     await expect(mailto).toBeVisible()
-    await expect(mailto).toContainText('@mentalhealthgoals.co.uk')
+    await expect(mailto).toContainText(FIXTURE.contactEmail)
 
+    // The Forum is named as itself here, not as the meeting at which it
+    // launches — those are different things and the page should say so.
     await expect(
-      page.locator('main').getByRole('heading', { name: 'Industry Engagement Forum', exact: true }),
+      page.locator('main').getByRole('heading', { name: FIXTURE.forum.plainName, exact: true }),
     ).toBeVisible()
-    await expect(page.getByText(/founding members/i)).toHaveCount(0)
-
-    await page.goto('/digit')
-    await expect(page.getByText(/founding members/i)).toHaveCount(0)
   })
 
-  test('the October date is a meeting, not the Forum itself', async ({ page }) => {
-    // The Forum is a standing body; 8 October 2026 is the meeting at which it
-    // launches. Several surfaces used to name the day as though it were the
-    // Forum, which read as though the Forum ended when the day did.
+  test('a meeting is named as a meeting, wherever it is announced', async ({ page }) => {
+    // The Forum is a standing body and the launch meeting is one day of it.
+    // Several surfaces used to name the day as though it were the Forum, which
+    // read as though the Forum ended when the day did. Every surface that
+    // announces the meeting should call it one.
+    const { heading } = FIXTURE.forum
+
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: /launch meeting/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: heading })).toBeVisible()
 
     await page.goto('/industry-engagement-forum')
-    await expect(page.locator('h1')).toContainText(/launch meeting/i)
+    await expect(page.locator('h1')).toContainText(heading)
     // The bar that follows the reader down the page says so too.
-    await expect(page.locator('[data-sticky-cta]')).toContainText(/launch meeting/i)
+    await expect(page.locator('[data-sticky-cta]')).toContainText(FIXTURE.forum.stickyMessage)
+  })
 
-    // And the workstream it all hangs off leads with what it is for. The
-    // summary is what the home page's card index shows; the listing at
-    // /workstreams renders the longer description instead.
+  test('a workstream shows its summary on the home page and its description on the index', async ({
+    page,
+  }) => {
+    // Two fields, two jobs: the card index leads with the one-line summary,
+    // the listing has room for the longer description. They were rendered
+    // interchangeably once, which made the index unreadable.
+    const workstream = FIXTURE.workstreams[0]
+
     await page.goto('/')
-    await expect(page.getByText(/national structure/i).first()).toBeVisible()
+    await expect(page.getByText(workstream.summary).first()).toBeVisible()
+
+    await page.goto('/workstreams')
+    await expect(page.getByText(workstream.description).first()).toBeVisible()
   })
 
   test('an upcoming event is pinned above the news, and only appears once', async ({ page }) => {
@@ -95,8 +104,16 @@ test.describe('Frontend', () => {
     await expect(band).toBeVisible()
 
     // The event leads with the date it happens, not the date it was announced.
-    await expect(band.getByText('8 Oct 2026')).toBeVisible()
-    const forum = /Industry Engagement Forum/
+    // Computed, because a literal here would stop being upcoming the day after
+    // it passed and fail for a reason that has nothing to do with the code.
+    const eventDay = new Date(Date.now() + FIXTURE.posts.event.daysAhead * 86_400_000)
+    const shown = eventDay.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
+    await expect(band.getByText(shown)).toBeVisible()
+    const forum = FIXTURE.posts.event.title
     await expect(band.getByRole('link', { name: forum })).toBeVisible()
 
     // Pinned above means lifted out of the list below, not copied into it.
@@ -108,9 +125,10 @@ test.describe('Frontend', () => {
   test('a team card is its own trigger: the biography opens from the portrait and closes to the name', async ({
     page,
   }) => {
+    const person = FIXTURE.person.lead
     await page.goto('/people')
-    const card = page.locator('#mitul-mehta')
-    const bio = card.getByText(/Professor of Neuroimaging/)
+    const card = page.locator(`#${personAnchor(person.name)}`)
+    const bio = card.getByText(person.bio)
     await expect(bio).toBeHidden()
 
     // Clicking the portrait, not the name, still opens it: the whole card is
@@ -123,16 +141,23 @@ test.describe('Frontend', () => {
     // dialog doing its job because the click went through the button.
     await page.keyboard.press('Escape')
     await expect(bio).toBeHidden()
-    await expect(card.getByRole('button', { name: /Mitul Mehta/ })).toBeFocused()
+    await expect(card.getByRole('button', { name: person.name })).toBeFocused()
 
     // The workstream comes before the institution — this is a programme site.
-    const order = await card.evaluate((el) => {
-      const text = (el as HTMLElement).innerText
-      return {
-        workstream: text.indexOf('Alliance Management Team'),
-        institution: text.indexOf('King’s College London'),
-      }
-    })
+    const workstreamTitle = FIXTURE.workstreams.find((w) => w.slug === person.workstreams[0])!.title
+    // innerText reflects `text-transform`, and the card sets the workstream in
+    // capitals — so this compares case-insensitively rather than against what
+    // the CMS stores.
+    const order = await card.evaluate(
+      (el, { workstreamTitle: ws, organisation }) => {
+        const text = (el as HTMLElement).innerText.toLowerCase()
+        return {
+          workstream: text.indexOf(ws.toLowerCase()),
+          institution: text.indexOf(organisation.toLowerCase()),
+        }
+      },
+      { organisation: person.organisation, workstreamTitle },
+    )
     expect(order.workstream).toBeGreaterThan(-1)
     expect(order.workstream).toBeLessThan(order.institution)
   })
@@ -146,18 +171,21 @@ test.describe('Frontend', () => {
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/people')
 
-    const measured = await page.evaluate(() => {
-      const note = [...document.querySelectorAll('p')].find((p) =>
-        p.textContent?.startsWith('Governance connects'),
-      )!
-      const container = note.closest('.container')!
-      const box = container.getBoundingClientRect()
-      return {
-        note: note.getBoundingClientRect().left,
-        // The container's own left padding is the page's text edge.
-        textEdge: box.left + parseFloat(getComputedStyle(container).paddingLeft),
-      }
-    })
+    const measured = await page.evaluate(
+      (note) => {
+        const paragraph = [...document.querySelectorAll('p')].find((p) =>
+          p.textContent?.startsWith(note),
+        )!
+        const container = paragraph.closest('.container')!
+        const box = container.getBoundingClientRect()
+        return {
+          note: paragraph.getBoundingClientRect().left,
+          // The container's own left padding is the page's text edge.
+          textEdge: box.left + parseFloat(getComputedStyle(container).paddingLeft),
+        }
+      },
+      FIXTURE.closingNote.slice(0, 20),
+    )
 
     expect(measured.note).toBeCloseTo(measured.textEdge, 0)
   })
@@ -369,10 +397,10 @@ test.describe('Frontend', () => {
 
   test('a workstream title uses the width its column actually has', async ({ page }) => {
     // A `max-w-[16ch]` cap used to sit narrower than this column at every
-    // width, breaking "Alliance Management Team" after its first word on
-    // every screen. The column should be the only constraint.
+    // width, breaking a two-word title after its first word on every screen.
+    // The column should be the only constraint.
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.goto('/workstreams/alliance-management-team')
+    await page.goto(`/workstreams/${FIXTURE.workstream.shortTitle.slug}`)
 
     const measured = await page.evaluate(() => {
       const h1 = document.querySelector('h1')!
@@ -393,27 +421,17 @@ test.describe('Frontend', () => {
       has: page.getByRole('heading', { name: 'Workstream leads' }),
     })
     const names = await leads.locator('[data-person-name]').allTextContents()
-    expect(names).toEqual([
-      'Prof. Mitul Mehta', // 01 Alliance Management Team
-      'Dr Matthias Pierce',
-      'Prof. Richard Emsley', // 02 Innovative Clinical Trials Hub
-      'Prof. Paula Williamson',
-      'Prof. Edward Harcourt', // 03 Lived Experience Industry Partnership
-      'Dr Siân Rees',
-      'Dr Trina Histon', // 04 Digital Innovation
-      'Dr Pauline Whelan',
-      'Prof. Ann John', // 05 Data Observatory
-      'Prof. Rob Stewart',
-      'Prof. Gerome Breen', // 06 Multi-omics
-      'Prof. James Walters',
-    ])
+    // Lowest workstream number first, then surname. One of these people is on
+    // two workstreams and must sort under the lower; another carries a
+    // deliberately misleading `order` value, which nothing reads.
+    expect(names).toEqual([...FIXTURE.expectedLeadOrder])
   })
 
   test('a biography is real page content, not data behind a click', async ({ page }) => {
     // The dialog is in the document from the first paint, so the text is in
     // the HTML for a crawler or reader mode — just not shown until asked for.
     const html = await (await page.request.get('/people')).text()
-    expect(html).toContain('Professor of Neuroimaging')
+    expect(html).toContain(FIXTURE.person.lead.bio)
   })
 
   test('the well-known icon paths follow the brand', async ({ request }) => {

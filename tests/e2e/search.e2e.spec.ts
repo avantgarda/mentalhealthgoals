@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test'
 
+import { FIXTURE } from '../fixtures/site'
+import { personAnchor } from '../../src/utilities/personAnchor'
+
+const person = FIXTURE.person.lead
+const personPath = `/people#${personAnchor(person.name)}`
+/** Surname alone, which is how somebody would actually search for a person. */
+const surname = person.name.split(' ').pop()!
+
 /**
  * Site search covers pages, workstreams, news and people, and matches on body
  * text as well as titles. Each case below returned nothing before that: the
@@ -20,12 +28,12 @@ test.describe('Search', () => {
   })
 
   test('finds workstreams, people and pages, not just posts', async ({ page }) => {
-    await page.goto('/search?q=Mehta')
-    const person = page.locator('article', { hasText: 'Mehta' }).first()
-    await expect(person).toContainText('Person')
-    await expect(person.locator('a[href="/people#mitul-mehta"]')).toBeVisible()
+    await page.goto(`/search?q=${surname}`)
+    const result = page.locator('article', { hasText: surname }).first()
+    await expect(result).toContainText('Person')
+    await expect(result.locator(`a[href="${personPath}"]`)).toBeVisible()
 
-    await page.goto('/search?q=DIGIT')
+    await page.goto(`/search?q=${encodeURIComponent(FIXTURE.workstream.grouped.title)}`)
     await expect(page.locator('article').first()).toBeVisible()
 
     await page.goto('/search?q=accessibility')
@@ -33,13 +41,13 @@ test.describe('Search', () => {
   })
 
   test('matches text from the middle of a page, not just its title', async ({ page }) => {
-    // "SWOT" appears only in the Forum page's event-details block.
-    await page.goto('/search?q=SWOT')
+    // This word appears in the Forum page's body and in no title anywhere.
+    await page.goto(`/search?q=${FIXTURE.forum.onlyHereToken}`)
     await expect(page.locator('a[href="/industry-engagement-forum"]').first()).toBeVisible()
   })
 
   test('says so when there is nothing, and prompts when nothing is typed', async ({ page }) => {
-    await page.goto('/search?q=zzzznothing')
+    await page.goto(`/search?q=${FIXTURE.search.absentToken}`)
     await expect(page.getByRole('status')).toContainText(/no results/i)
 
     await page.goto('/search')
@@ -57,9 +65,9 @@ test.describe('Search', () => {
   })
 
   test('a person result lands on their card', async ({ page }) => {
-    await page.goto('/search?q=Mehta')
-    await page.locator('a[href="/people#mitul-mehta"]').first().click()
-    await page.waitForURL(/\/people#mitul-mehta/)
-    await expect(page.locator('#mitul-mehta')).toBeVisible()
+    await page.goto(`/search?q=${surname}`)
+    await page.locator(`a[href="${personPath}"]`).first().click()
+    await page.waitForURL(new RegExp(personPath.replace('#', '#')))
+    await expect(page.locator(`#${personAnchor(person.name)}`)).toBeVisible()
   })
 })

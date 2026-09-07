@@ -4,10 +4,13 @@ import { comparePeople, sortPeople, surname } from '@/utilities/people'
 
 const ws = (number: number, title = `WS ${number}`) => ({ id: number, number, title }) as never
 
+// Invented names throughout. This exercises the comparator, not the team —
+// the real team lives in the production CMS, and a unit test that names them
+// would go stale the first time somebody joins or leaves.
 describe('surname', () => {
   it('takes the last word, whatever the honorific', () => {
-    expect(surname('Prof. Mitul Mehta')).toBe('mehta')
-    expect(surname('Dr Siân Rees')).toBe('rees')
+    expect(surname('Prof. Ada Fenwick')).toBe('fenwick')
+    expect(surname('Dr Siân Quill')).toBe('quill')
     expect(surname('Non Hill')).toBe('hill')
   })
 })
@@ -15,33 +18,33 @@ describe('surname', () => {
 describe('sortPeople', () => {
   it('orders by workstream number, then surname, then forename', () => {
     const out = sortPeople([
-      { name: 'Prof. James Walters', workstreams: [ws(6)] },
-      { name: 'Dr Matthias Pierce', workstreams: [ws(1), ws(5)] },
-      { name: 'Prof. Gerome Breen', workstreams: [ws(6)] },
-      { name: 'Prof. Mitul Mehta', workstreams: [ws(1)] },
-      { name: 'Prof. Edward Harcourt', workstreams: [ws(3)] },
-      { name: 'Dr Siân Rees', workstreams: [ws(3)] },
+      { name: 'Prof. James Wray', workstreams: [ws(6)] },
+      { name: 'Dr Matthias Osric', workstreams: [ws(1), ws(5)] },
+      { name: 'Prof. Gerome Bramley', workstreams: [ws(6)] },
+      { name: 'Prof. Ada Fenwick', workstreams: [ws(1)] },
+      { name: 'Prof. Edward Halloway', workstreams: [ws(3)] },
+      { name: 'Dr Siân Quill', workstreams: [ws(3)] },
     ])
     expect(out.map((p) => p.name)).toEqual([
-      'Prof. Mitul Mehta',
-      'Dr Matthias Pierce',
-      'Prof. Edward Harcourt',
-      'Dr Siân Rees',
-      'Prof. Gerome Breen',
-      'Prof. James Walters',
+      'Prof. Ada Fenwick',
+      'Dr Matthias Osric',
+      'Prof. Edward Halloway',
+      'Dr Siân Quill',
+      'Prof. Gerome Bramley',
+      'Prof. James Wray',
     ])
   })
 
   it('puts people with no workstream first — the co-chairs sit above the workstreams', () => {
     const out = sortPeople([
-      { name: 'Dr Vaibhav Narayan', workstreams: [ws(1)] },
-      { name: 'Prof. Husseini Manji', workstreams: [] },
-      { name: 'Prof. Kathryn Abel', workstreams: undefined },
+      { name: 'Dr Vera Tarrant', workstreams: [ws(1)] },
+      { name: 'Prof. Husseini Ashby', workstreams: [] },
+      { name: 'Prof. Kathryn Alder', workstreams: undefined },
     ])
     expect(out.map((p) => p.name)).toEqual([
-      'Prof. Kathryn Abel',
-      'Prof. Husseini Manji',
-      'Dr Vaibhav Narayan',
+      'Prof. Kathryn Alder',
+      'Prof. Husseini Ashby',
+      'Dr Vera Tarrant',
     ])
   })
 
