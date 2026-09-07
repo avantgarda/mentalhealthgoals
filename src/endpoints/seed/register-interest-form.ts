@@ -37,7 +37,7 @@ export const registerInterestForm: RequiredDataFromCollectionSlug<'forms'> = {
       message: root(
         paragraph(
           text(
-            'Thank you for registering your interest in the Mental Health Goals Industry Engagement Forum, launching 8 October 2026 at the SGDP Centre, Denmark Hill Campus, King’s College London.',
+            'Thank you for registering your interest in the MHG Industry Engagement Forum, which launches with a meeting on 8 October 2026 at the SGDP Centre, Denmark Hill Campus, King’s College London.',
           ),
         ),
         paragraph(
@@ -54,9 +54,11 @@ export const registerInterestForm: RequiredDataFromCollectionSlug<'forms'> = {
       emailFrom: '"Mental Health Goals Programme" <noreply@mentalhealthgoals.co.uk>',
       emailTo: process.env.CONTACT_NOTIFICATION_EMAIL || 'enquiries@mentalhealthgoals.co.uk',
       replyTo: '{{email}}',
-      subject: 'Forum registration — {{full-name}}, {{organisation}}',
+      subject: 'Launch meeting registration — {{full-name}}, {{organisation}}',
       message: root(
-        paragraph(text('A new registration of interest for the Industry Engagement Forum:')),
+        paragraph(
+          text('A new registration of interest for the Industry Engagement Forum launch meeting:'),
+        ),
         paragraph(text('{{*:table}}')),
       ),
     },
@@ -107,7 +109,7 @@ export const registerInterestForm: RequiredDataFromCollectionSlug<'forms'> = {
           value: 'attending',
         },
         {
-          label: 'I cannot make this one, but I am interested in future forums',
+          label: 'I cannot make this one, but I am interested in future Forum meetings',
           value: 'future',
         },
         {

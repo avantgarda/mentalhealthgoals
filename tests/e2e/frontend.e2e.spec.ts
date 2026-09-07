@@ -49,6 +49,46 @@ test.describe('Frontend', () => {
     await expect(page.locator('main').getByRole('img')).toHaveCount(0)
   })
 
+  test('industry has an address to write to, and the Forum has replaced the founding members', async ({
+    page,
+  }) => {
+    // The Industry Engagement Forum superseded the Founding Members Programme,
+    // so the old name should survive nowhere — and the page industry lands on
+    // should offer a way to write to the team, not only a link to a form.
+    await page.goto('/industry')
+
+    const mailto = page.locator('main a[href^="mailto:"]').first()
+    await expect(mailto).toBeVisible()
+    await expect(mailto).toContainText('@mentalhealthgoals.co.uk')
+
+    await expect(
+      page.locator('main').getByRole('heading', { name: 'Industry Engagement Forum', exact: true }),
+    ).toBeVisible()
+    await expect(page.getByText(/founding members/i)).toHaveCount(0)
+
+    await page.goto('/digit')
+    await expect(page.getByText(/founding members/i)).toHaveCount(0)
+  })
+
+  test('the October date is a meeting, not the Forum itself', async ({ page }) => {
+    // The Forum is a standing body; 8 October 2026 is the meeting at which it
+    // launches. Several surfaces used to name the day as though it were the
+    // Forum, which read as though the Forum ended when the day did.
+    await page.goto('/')
+    await expect(page.getByRole('heading', { name: /launch meeting/i })).toBeVisible()
+
+    await page.goto('/industry-engagement-forum')
+    await expect(page.locator('h1')).toContainText(/launch meeting/i)
+    // The bar that follows the reader down the page says so too.
+    await expect(page.locator('[data-sticky-cta]')).toContainText(/launch meeting/i)
+
+    // And the workstream it all hangs off leads with what it is for. The
+    // summary is what the home page's card index shows; the listing at
+    // /workstreams renders the longer description instead.
+    await page.goto('/')
+    await expect(page.getByText(/national structure/i).first()).toBeVisible()
+  })
+
   test('an upcoming event is pinned above the news, and only appears once', async ({ page }) => {
     await page.goto('/posts')
     const band = page.getByRole('region', { name: 'Coming up' })

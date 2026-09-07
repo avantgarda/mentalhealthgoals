@@ -331,7 +331,7 @@ export const seed = async ({
       slug: 'alliance-management-team',
       group: 'digit' as const,
       summary:
-        'A single, simple front door bringing industry into UK mental health research and trials.',
+        'Create a simple, national structure to support entry into the UK for industry-led research and trials.',
       description:
         'The AMT is a wrap-around service for industry — linking companies with methodology expertise in trial design and delivery, the lived experience partnership, bespoke IP and royalty strategies, funding applications and advisory board development. It provides a seamless structure that is simple to navigate for companies of every size, complementing the NIHR Innovation Service and the MRC Mental Health Platform.',
       deliveredBy: 'King’s College London',
@@ -866,10 +866,10 @@ export const seed = async ({
         {
           blockType: 'cta',
           richText: root(
-            heading('h3', text('Industry Engagement Forum — launching October 2026')),
+            heading('h3', text('Industry Engagement Forum launch meeting — 8 October 2026')),
             paragraph(
               text(
-                'Join MHG and global CROs, pharmaceutical, digital and biotech partners for a day of strategic dialogue in London.',
+                'The Forum launches with a day of strategic dialogue in London, bringing together MHG and global CROs, pharmaceutical, digital and biotech partners.',
               ),
             ),
           ),
@@ -1266,7 +1266,7 @@ export const seed = async ({
                 heading('h3', text('Alliance Management Team')),
                 paragraph(
                   text(
-                    'A single, simple front door bringing industry into UK mental health research and trials.',
+                    'Create a simple, national structure to support entry into the UK for industry-led research and trials.',
                   ),
                 ),
               ),
@@ -1319,7 +1319,7 @@ export const seed = async ({
                 heading('h2', text('Beyond the three workstreams')),
                 paragraph(
                   text(
-                    'DIGIT also supports the policy and regulatory work the programme does with NICE and the MHRA on what industry needs to run mental health trials in the UK. The tools it builds for industry — the capabilities database, the recruitment simulator and the Founding Members Programme — are described on ',
+                    'DIGIT also supports the policy and regulatory work the programme does with NICE and the MHRA on what industry needs to run mental health trials in the UK. The tools it builds for industry — the capabilities database, the recruitment simulator and the Industry Engagement Forum — are described on ',
                   ),
                   link('For industry', '/industry'),
                   text('.'),
@@ -1454,6 +1454,16 @@ export const seed = async ({
                   link('MRC', 'https://www.ukri.org/councils/mrc/', true),
                   text(' Mental Health Platform to avoid duplication.'),
                 ),
+                paragraph(
+                  text(
+                    'To talk to the team about a study, a partnership or the UK landscape, email ',
+                  ),
+                  link(
+                    'enquiries@mentalhealthgoals.co.uk',
+                    'mailto:enquiries@mentalhealthgoals.co.uk',
+                  ),
+                  text('.'),
+                ),
               ),
             },
           ],
@@ -1486,10 +1496,17 @@ export const seed = async ({
             {
               size: 'oneThird',
               richText: root(
-                heading('h3', text('Founding Members Programme')),
+                heading('h3', text('Industry Engagement Forum')),
+                // The strapline is the way through to the meeting. A button
+                // here would hang off one column of three and unbalance the
+                // row; the call to action directly below carries that weight.
+                paragraph(
+                  link('Launching 8 October 2026', '/industry-engagement-forum'),
+                  text('.'),
+                ),
                 paragraph(
                   text(
-                    'For larger pharmaceutical and technology companies: bespoke, rapid access to data and patient samples from the cohorts, and to the UK’s mental health expertise network.',
+                    'The MHG Industry Engagement Forum enables industry partners to shape programme priorities and co-design new initiatives through workshops and bespoke engagement. Members gain early access to emerging data and digital tools, rapid support from the Alliance Management Team, and opportunities to collaborate with leading organisations across pharma, biotech, diagnostics and digital health. Together, we aim to accelerate innovation and improve outcomes for people with mental ill health.',
                   ),
                 ),
               ),
@@ -1505,7 +1522,7 @@ export const seed = async ({
         {
           blockType: 'cta',
           richText: root(
-            heading('h3', text('Join us at the Industry Engagement Forum')),
+            heading('h3', text('Join the Forum’s launch meeting')),
             paragraph(
               text(
                 'A strategic dialogue between MHG and global CROs, pharmaceutical and digital industry partners, biotech organisations, ABPI and ABHI — 8 October 2026, in London.',
@@ -1517,7 +1534,7 @@ export const seed = async ({
               link: {
                 type: 'custom',
                 appearance: 'default',
-                label: 'Forum details',
+                label: 'Launch meeting details',
                 url: '/industry-engagement-forum',
               },
             },
@@ -1535,7 +1552,7 @@ export const seed = async ({
       meta: {
         title: 'For industry',
         description:
-          'A single front door to UK mental health research: the Alliance Management Team, Capabilities Database, Recruitment Simulator and Founding Members Programme.',
+          'A single front door to UK mental health research: the Alliance Management Team, Capabilities Database, Recruitment Simulator and Industry Engagement Forum.',
         image: cardAmberDoc.id,
       },
     },
@@ -1630,15 +1647,15 @@ export const seed = async ({
     {
       slug: 'industry-engagement-forum',
       _status: 'published',
-      title: 'Industry Engagement Forum',
+      title: 'Industry Engagement Forum launch meeting',
       hero: {
         type: 'mediumImpact',
         media: cardAmberDoc.id,
         richText: root(
-          heading('h1', text('Industry Engagement Forum')),
+          heading('h1', text('Industry Engagement Forum launch meeting')),
           paragraph(
             text(
-              'A strategic dialogue between MHG and global CROs, pharmaceutical and digital industry partners, biotech organisations, ABPI and ABHI — launching 8 October 2026 at the SGDP Centre, Denmark Hill Campus, King’s College London.',
+              'A strategic dialogue between MHG and global CROs, pharmaceutical and digital industry partners, biotech organisations, ABPI and ABHI. The Forum launches with this one-day meeting on 8 October 2026 at the SGDP Centre, Denmark Hill Campus, King’s College London.',
             ),
           ),
         ),
@@ -1813,14 +1830,14 @@ export const seed = async ({
       ],
       stickyCta: {
         enabled: true,
-        message: 'Forum — 8 October 2026, King’s College London',
+        message: 'Launch meeting — 8 October 2026, King’s College London',
         label: 'Register your interest',
         href: '#register',
       },
       meta: {
-        title: 'Industry Engagement Forum',
+        title: 'Industry Engagement Forum launch meeting',
         description:
-          'The MHG Industry Engagement Forum launches 8 October 2026 at the SGDP Centre, Denmark Hill Campus, King’s College London — agenda, audience and outcomes.',
+          'The MHG Industry Engagement Forum launches with a one-day meeting on 8 October 2026 at the SGDP Centre, Denmark Hill Campus, King’s College London — agenda, audience and outcomes.',
         image: cardAmberDoc.id,
       },
     },
@@ -2242,7 +2259,7 @@ export const seed = async ({
     data: {
       slug: 'mhg-launches-its-industry-engagement-forum',
       _status: 'published',
-      title: 'MHG launches its Industry Engagement Forum',
+      title: 'Industry Engagement Forum launch meeting',
       // The teal card, not the amber one: post heroes crop to roughly 2:1, which
       // lifts the amber goal to the very top of the frame and sits it behind the
       // navigation. The amber card is kept for the Forum page, where it is shown
@@ -2257,12 +2274,12 @@ export const seed = async ({
       content: root(
         paragraph(
           text(
-            'On 8 October 2026, the Mental Health Goals Programme (MHG) will launch its Industry Engagement Forum at the SGDP Centre, Denmark Hill Campus, King’s College London — bringing together global CROs, pharmaceutical and digital industry partners, biotech organisations, the ABPI and ABHI for a single day of strategic dialogue.',
+            'On 8 October 2026, the Mental Health Goals Programme (MHG) will hold the launch meeting of its Industry Engagement Forum at the SGDP Centre, Denmark Hill Campus, King’s College London — bringing together global CROs, pharmaceutical and digital industry partners, biotech organisations, the ABPI and ABHI for a single day of strategic dialogue.',
           ),
         ),
         paragraph(
           text(
-            'The forum will demonstrate the strengths of the UK mental health research ecosystem, identify barriers to industry collaboration, and provide input for a roadmap for accelerating novel therapeutics in severe mental illness and neurodegeneration.',
+            'The meeting will demonstrate the strengths of the UK mental health research ecosystem, identify barriers to industry collaboration, and provide input for a roadmap for accelerating novel therapeutics in severe mental illness and neurodegeneration.',
           ),
         ),
         paragraph(
@@ -2271,9 +2288,9 @@ export const seed = async ({
         ),
       ),
       meta: {
-        title: 'MHG launches its Industry Engagement Forum',
+        title: 'Industry Engagement Forum launch meeting',
         description:
-          'The MHG Industry Engagement Forum launches 8 October 2026 at the SGDP Centre, Denmark Hill Campus, King’s College London.',
+          'The MHG Industry Engagement Forum launches with a one-day meeting on 8 October 2026 at the SGDP Centre, Denmark Hill Campus, King’s College London.',
         image: cardAmberDoc.id,
       },
     },
