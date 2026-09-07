@@ -42,7 +42,7 @@ export const LogoPreview: React.FC = () => {
                 borderRadius: 6,
                 padding: '0.9rem 1rem',
                 background: BRAND_COLORS.paper,
-                minWidth: 190,
+                minWidth: 220,
                 opacity: isSelected ? 1 : 0.55,
               }}
             >
@@ -59,10 +59,10 @@ export const LogoPreview: React.FC = () => {
                     lineHeight: 0,
                   }}
                 >
-                  <BrandMark size={32} variant={variant} />
+                  <BrandMark compact size={32} variant={variant} />
                 </div>
                 <div style={{ color: BRAND_COLORS.petrol, lineHeight: 0 }}>
-                  <BrandMark size={16} variant={variant} />
+                  <BrandMark compact size={16} variant={variant} />
                 </div>
               </div>
 

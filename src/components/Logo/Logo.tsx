@@ -24,7 +24,7 @@ export const Logo = (props: Props) => {
 
   return (
     <span className={clsx('flex items-center gap-2.5', className)}>
-      <BrandMark className="h-8 w-8" variant={variant} />
+      <BrandMark className="h-8 w-auto" variant={variant} />
       <span className="flex flex-col leading-none">
         <span className="font-brand text-[1.15rem] font-semibold tracking-tight whitespace-nowrap">
           {BRAND_NAME}

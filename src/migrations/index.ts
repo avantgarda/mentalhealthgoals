@@ -18,6 +18,7 @@ import * as migration_20260904_120000_digit_page_and_institution_parity from './
 import * as migration_20260904_125500_add_post_event_fields from './20260904_125500_add_post_event_fields'
 import * as migration_20260907_113000_add_footer_small_print from './20260907_113000_add_footer_small_print'
 import * as migration_20260907_120000_drop_media_folders from './20260907_120000_drop_media_folders';
+import * as migration_20260907_233000_add_water_logo_variants from './20260907_233000_add_water_logo_variants';
 
 export const migrations = [
   {
@@ -119,5 +120,10 @@ export const migrations = [
     up: migration_20260907_120000_drop_media_folders.up,
     down: migration_20260907_120000_drop_media_folders.down,
     name: '20260907_120000_drop_media_folders'
+  },
+  {
+    up: migration_20260907_233000_add_water_logo_variants.up,
+    down: migration_20260907_233000_add_water_logo_variants.down,
+    name: '20260907_233000_add_water_logo_variants',
   },
 ];

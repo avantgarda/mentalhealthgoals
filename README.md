@@ -120,7 +120,7 @@ Content, Call to Action, Media, Archive and Form blocks.
 
 ## Branding & the logo
 
-The site ships with three logo marks and a Payload global that decides which one
+The site ships with five logo marks and a Payload global that decides which one
 is in use. Change it in the admin under **Globals → Brand & Logo**; the header,
 footer, browser tab icon, app icons and social sharing card all follow the same
 setting, and the field shows a live preview of each option.
@@ -130,6 +130,8 @@ setting, and the field shows a live preview of each option.
 | `summit` _(default)_ | **Summit M** — rising peaks forming an M, amber goal above the summit              |
 | `sunInCol`           | **Sun in the Col** — the same mountain with round shoulders, holding the amber sun |
 | `rings`              | **Concentric Rings** — the original launch mark                                    |
+| `writtenInWater`     | **Written in Water** — Summit M with the H and G standing alongside it             |
+| `goalInWater`        | **Goal in the Water** — mountain and H on the shore, the amber G reflected below   |
 
 Geometry lives in `src/brand/marks.ts` and colours in `src/brand/tokens.ts`.
 That module is the single source of truth: the React components in
