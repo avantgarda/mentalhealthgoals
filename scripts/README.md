@@ -11,6 +11,7 @@ production CMS**, so data flows down to laptops, never up from them.
 | `pnpm sync:db`          | Production database (read-only role) | Local database — drops and recreates it | `SYNC_DATABASE_URL`         |
 | `pnpm sync:media`       | Local database, public blob URLs     | `public/media`                          | No                          |
 | `pnpm blobs:mirror`     | Production blob store                | Preview blob store                      | Two blob tokens, owner-only |
+| `pnpm fixture`          | `tests/fixtures`                     | Local database — wipes every collection | No                          |
 | `pnpm check:migrations` | Payload config, `src/migrations`     | Two scratch databases, dropped after    | No                          |
 | `pnpm generate:brand`   | `src/brand/*`                        | `public/brand`                          | No                          |
 
@@ -19,6 +20,8 @@ structural, not a convention:
 
 - `sync:db` refuses any target that is not localhost, because it drops what it points at.
 - `sync:media` only ever downloads.
+- `fixture` refuses any target that is not localhost, for the same reason as
+  `sync:db`.
 - `blobs:mirror` refuses production as a destination, and refuses to run at all if it cannot
   positively identify which store each token belongs to.
 

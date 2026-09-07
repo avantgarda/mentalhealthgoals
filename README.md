@@ -213,9 +213,27 @@ before sending artwork to print.
 | `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields             |
 | `pnpm lint` / `pnpm typecheck`       | ESLint / TypeScript                                              |
 | `pnpm format` / `pnpm format:check`  | Prettier write / verify                                          |
+| `pnpm fixture`                       | Load the test fixture into the local database (wipes content)    |
 | `pnpm test:int` / `pnpm test:e2e`    | Vitest integration tests / Playwright e2e (port 3210)            |
 | `pnpm check:types-drift`             | Fail if `payload-types.ts` is stale                              |
 | `pnpm check:migrations`              | Fail if the Payload config has schema changes with no migration  |
+
+### Running the tests
+
+The end-to-end suite brings its own content — invented people and institutions,
+shaped to exercise every path the site renders — rather than asserting on the real
+programme's copy. Load it first:
+
+```bash
+pnpm fixture     # replaces all content with the test fixture
+pnpm test:e2e
+```
+
+`pnpm fixture` wipes every collection, so run it against a local database you are
+happy to lose, not one you have just synced from production. If a dev server is
+already running, stop it and `rm -rf .next` first: Next caches the partner and
+global queries on disk, and a stale cache makes the suite fail against content
+that is no longer in the database.
 
 ## Quality gates
 

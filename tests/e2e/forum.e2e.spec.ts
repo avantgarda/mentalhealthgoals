@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test'
 
+import { FIXTURE } from '../fixtures/site'
+
 /**
  * The Industry Engagement Forum page runs to roughly six screens on desktop
  * and eight on a phone. Before the sticky bar its only call to action sat 84%
@@ -81,10 +83,11 @@ test.describe('Industry Engagement Forum', () => {
     await page.goto('/industry-engagement-forum#register')
 
     const form = page.locator('#register form')
-    await form.getByLabel('Full name').fill('Test Registrant')
-    await form.getByLabel('Organisation').fill('Example Pharma')
-    await form.getByLabel('Role or job title').fill('Head of Clinical Development')
-    await form.getByLabel('Email').fill('test.registrant@example.com')
+    const [fullName, organisation, jobTitle, email] = FIXTURE.forum.formLabels
+    await form.getByLabel(fullName).fill('Test Registrant')
+    await form.getByLabel(organisation).fill('Example Pharma')
+    await form.getByLabel(jobTitle).fill('Head of Clinical Development')
+    await form.getByLabel(email).fill('test.registrant@example.com')
 
     // A Radix select, not a native one.
     await form.getByRole('combobox').click()
@@ -96,9 +99,9 @@ test.describe('Industry Engagement Forum', () => {
     const submission = page.waitForResponse(
       (res) => res.url().includes('/api/form-submissions') && res.request().method() === 'POST',
     )
-    await form.getByRole('button', { name: /register your interest/i }).click()
+    await form.getByRole('button', { name: FIXTURE.forum.stickyLabel }).click()
     expect((await submission).status()).toBeLessThan(400)
 
-    await expect(page.getByText(/your interest is registered/i)).toBeVisible()
+    await expect(page.getByText(FIXTURE.forum.confirmation)).toBeVisible()
   })
 })

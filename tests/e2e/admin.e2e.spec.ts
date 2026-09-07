@@ -1,7 +1,7 @@
 import { test, expect, Page } from '@playwright/test'
 import { E2E_BASE_URL } from '../../playwright.config'
 import { login } from '../helpers/login'
-import { seedTestUser, cleanupTestUser, testUser } from '../helpers/seedUser'
+import { FIXTURE } from '../fixtures/site'
 
 test.describe('Admin Panel', () => {
   // The cold-compile warm-up in beforeAll needs headroom beyond the default.
@@ -14,13 +14,12 @@ test.describe('Admin Panel', () => {
     // this one signs in and compiles the admin bundle. Raise it here or the
     // whole suite fails on a cold `.next` before a single assertion runs.
     test.setTimeout(240_000)
-    await seedTestUser()
 
     // Contexts created manually don't inherit `use` options — pass baseURL
     const context = await browser.newContext({ baseURL: E2E_BASE_URL })
     page = await context.newPage()
 
-    await login({ page, user: testUser })
+    await login({ page, user: FIXTURE.admin })
 
     // Warm the admin bundle once, here, where a generous timeout is honest
     // about what is happening: the suite runs against `next dev`, so the
@@ -31,10 +30,6 @@ test.describe('Admin Panel', () => {
     for (const route of ['/admin', '/admin/collections/users', '/admin/collections/pages/create']) {
       await page.goto(route, { timeout: 180_000, waitUntil: 'domcontentloaded' })
     }
-  })
-
-  test.afterAll(async () => {
-    await cleanupTestUser()
   })
 
   test('can navigate to dashboard', async () => {
