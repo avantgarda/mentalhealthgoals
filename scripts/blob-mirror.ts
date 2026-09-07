@@ -9,12 +9,16 @@
  * across. Run this after uploading anything real in production.
  *
  * This script deliberately does NOT read `.env.local`, unlike every other
- * script here.
+ * script here. It reads `.env.blob-mirror`, and the difference is the point.
  *
  * `.env.local` is a file every collaborator has, and `vercel env pull` puts a
  * blob token in it. Reading it would let whichever token happened to be sitting
- * there decide which stores get written to. The two tokens have to be put into
- * the invoking process on purpose:
+ * there decide which stores get written to — nobody chose it, it simply
+ * arrived. `.env.blob-mirror` is a file that exists only because somebody made
+ * it for this, holding tokens they went and fetched for this. Supplying a token
+ * stays a deliberate act; it just stops being a nightly one.
+ *
+ * Either form works, and an exported variable beats the file:
  *
  *   PRODUCTION_BLOB_READ_WRITE_TOKEN=... \
  *   PREVIEW_BLOB_READ_WRITE_TOKEN=... \
@@ -25,12 +29,21 @@
  * what grants the write; the origins are only claims the script has to
  * disprove.
  *
+ * Be aware what the file costs. A production blob read-write token can delete
+ * every file the live site serves. This script will not do that — it refuses
+ * production as a destination — but the token sitting on disk is not limited to
+ * this script. Keep the file to yourself (chmod 600), and delete it when the
+ * mirroring is done.
+ *
  * If you are here because a token "isn't being picked up": that is this,
  * working as intended. Tokens are never accepted as command-line arguments,
  * where they would end up in shell history and process listings.
  */
 
+import { existsSync, statSync } from 'node:fs'
+
 import { del, list, put } from '@vercel/blob'
+import { config as loadEnv } from 'dotenv'
 
 import {
   mirrorProductionToPreview,
@@ -42,6 +55,29 @@ import { previewBlobBaseUrl, requireProductionBlobBaseUrl } from './lib/producti
 
 const UNATTENDED_CONFIRMATION_ENV = 'BLOB_MIRROR_ALLOW_UNATTENDED'
 
+/** Not `.env.local` — see the note at the top of this file. */
+const TOKEN_FILE = '.env.blob-mirror'
+
+/**
+ * Load the tokens from their own file, if it is there.
+ *
+ * `override: false`, so anything already exported wins: a one-off run should
+ * not be quietly overruled by a file somebody forgot they had.
+ */
+function loadTokenFile(): void {
+  if (!existsSync(TOKEN_FILE)) return
+
+  // A production read-write token is worth more than the file it sits in.
+  const mode = statSync(TOKEN_FILE).mode & 0o077
+  if (mode !== 0) {
+    console.warn(`⚠️  ${TOKEN_FILE} is readable by other users on this machine.`)
+    console.warn(`   chmod 600 ${TOKEN_FILE}`)
+  }
+
+  loadEnv({ path: TOKEN_FILE, override: false, quiet: true })
+  console.log(`Read tokens from ${TOKEN_FILE}\n`)
+}
+
 const operations: BlobOperations = { del, fetch, list, put }
 
 function requireEnvironment(name: string): string {
@@ -49,8 +85,9 @@ function requireEnvironment(name: string): string {
   if (!value) {
     throw new Error(
       `Missing ${name}.\n` +
-        'Both tokens come from Vercel → Storage → the store → Settings, and must be passed\n' +
-        'in the environment of this command. See the comment at the top of this file.',
+        "Both tokens come from Vercel → Storage → the store's own page. They cannot be pulled:\n" +
+        'the production environment is marked Sensitive, so `vercel env pull` returns\n' +
+        `[SENSITIVE]. Export them for one run, or keep them in ${TOKEN_FILE} (gitignored).`,
     )
   }
   return value
@@ -68,7 +105,7 @@ function printUsage(): void {
   console.log('              (only after every production file has been verified)')
   console.log(`  --yes       Skip the typed confirmation; needs ${UNATTENDED_CONFIRMATION_ENV}=1`)
   console.log('')
-  console.log('Required in the environment (never as arguments):')
+  console.log(`Required, either exported or in ${TOKEN_FILE} (never as arguments):`)
   console.log('  PRODUCTION_BLOB_READ_WRITE_TOKEN   read-write token for the production store')
   console.log('  PREVIEW_BLOB_READ_WRITE_TOKEN      read-write token for the preview store')
   console.log('')
@@ -88,6 +125,8 @@ async function main(argv: string[]): Promise<void> {
         'Blob tokens must be supplied through environment variables.',
     )
   }
+
+  loadTokenFile()
 
   const dryRun = argv.includes('--dry-run')
   const exact = argv.includes('--exact')

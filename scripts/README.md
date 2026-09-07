@@ -101,8 +101,29 @@ PREVIEW_BLOB_READ_WRITE_TOKEN=... \
 
 Both tokens come from Vercel → Storage → the store's own page. They cannot be pulled: the
 production environment's variables are marked Sensitive, so `vercel env pull` returns
-`[SENSITIVE]` rather than the value. That is the intended shape — a token is what grants the
-write, so supplying one stays a deliberate act.
+`[SENSITIVE]` rather than the value.
+
+To avoid fetching them every time, keep them in **`.env.blob-mirror`** (gitignored):
+
+```
+PRODUCTION_BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
+PREVIEW_BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
+```
+
+```bash
+chmod 600 .env.blob-mirror   # the script warns if you forget
+pnpm blobs:mirror --dry-run
+```
+
+That file, and not `.env.local`, and the difference is the point. `.env.local` is a file every
+collaborator has and `vercel env pull` writes a blob token into it, so reading it would let a
+token nobody chose decide which store gets written to. `.env.blob-mirror` exists only because
+somebody made it for this. Supplying a token stays deliberate; it just stops being nightly.
+Anything already exported wins over the file.
+
+Know what the file costs. A production read-write token can delete every file the live site
+serves. This script will not — it refuses production as a destination — but the token on disk is
+not limited to this script. Delete the file when the mirroring is done.
 
 The store origins are not tokens and are recorded in `lib/production-identifiers.ts`, so there is
 nothing to look up. They are checked rather than trusted: the run is refused unless the
