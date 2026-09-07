@@ -5,7 +5,8 @@ declare global {
       DATABASE_URL: string
       NEXT_PUBLIC_SERVER_URL: string
       VERCEL_PROJECT_PRODUCTION_URL: string
-      CRON_SECRET: string
+      /** Optional: the jobs endpoint denies unauthenticated callers without it. */
+      CRON_SECRET?: string
       PREVIEW_SECRET: string
       RESEND_API_KEY?: string
       EMAIL_OVERRIDE_RECIPIENT?: string

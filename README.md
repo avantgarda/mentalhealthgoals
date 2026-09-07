@@ -174,7 +174,10 @@ before sending artwork to print.
 4. **Set the remaining environment variables** (Project → Settings → Environment Variables):
    - `PAYLOAD_SECRET` — a long random string (generate with `openssl rand -hex 24`)
    - `NEXT_PUBLIC_SERVER_URL` — `https://mentalhealthgoals.co.uk`
-   - `CRON_SECRET` / `PREVIEW_SECRET` — random strings (jobs endpoint & draft preview)
+   - `PREVIEW_SECRET` — a random string (validates draft preview requests)
+   - `CRON_SECRET` — optional. Nothing schedules a job here, and without it the jobs
+     endpoint denies unauthenticated callers rather than opening up. Set it only if
+     scheduled publishing is turned on.
    - `RESEND_API_KEY` — from Resend, once the domain is verified there (email sending)
 5. **Set the build command** to `pnpm build:deploy` (Project → Settings → Build & Development).
    This runs the database migrations before building. Safe for previews too: the Neon

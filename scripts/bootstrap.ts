@@ -27,8 +27,12 @@ const ENV_FILE = '.env.local'
 const REQUIRED_NODE_MAJOR = 24
 const DEFAULT_DATABASE = 'mentalhealthgoals'
 
-/** Secrets bootstrap will invent rather than ask for. */
-const GENERATED_SECRETS = ['PAYLOAD_SECRET', 'PREVIEW_SECRET', 'CRON_SECRET'] as const
+/**
+ * Secrets bootstrap will invent rather than ask for. CRON_SECRET is not among
+ * them: nothing here schedules a job, and its absence closes the jobs endpoint
+ * rather than opening it.
+ */
+const GENERATED_SECRETS = ['PAYLOAD_SECRET', 'PREVIEW_SECRET'] as const
 
 type Step = { ok: boolean; label: string; detail?: string }
 
