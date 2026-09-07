@@ -10,7 +10,7 @@
 
 /* IBM Plex Sans is the site's body face. Loaded here rather than in the admin
    layout, which Payload generates and warns it may rewrite. */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
 :root {
   --mhg-petrol: #15545b;
@@ -27,21 +27,31 @@ html[data-theme='light'] {
   --theme-success-550: #{'#0f4249'};
 }
 
-/* Hides "Edit Dashboard" and "Reset Layout" from the breadcrumb.
-   
+/* Takes "Edit Dashboard" and "Reset Layout" out of the breadcrumb.
+ 
    Which cards appear and how they are grouped is decided in the collection
    configs, and per-user rearranging would quietly undo that for one person
-   with no way for anyone else to see it. Payload offers no flag for this —
-   `admin.dashboard` is an experimental widget API, not a switch — so it is
-   hidden rather than disabled.
+   with no way for anyone else to see it. Payload offers no flag —
+   `admin.dashboard` is an experimental widget API, not a switch — so this is a
+   UI-level removal, not a permission.
 
-   Scoped to the step nav because that is the only place it appears: measured
-   across the dashboard, list, edit, global and account views, this is the one
-   `.dropdown-indicator` inside `.step-nav`, and the account screen's two sit
-   outside it. Nobody has a saved layout for this to strand — there is no
-   dashboard key in `payload_preferences`. */
-.step-nav .dropdown-indicator {
-  display: none;
+   The whole react-select has to go inert, not just its arrow. The breadcrumb
+   is a select whose entire control is the click target, so hiding the
+   `.dropdown-indicator` alone left the word "Dashboard" opening the menu
+   exactly as before. `pointer-events` closes the mouse route and the input is
+   what react-select focuses, so removing it closes the keyboard one; the label
+   stays visible and reads as plain text. Scoped to this select by name, so the
+   account screen's own dropdowns are untouched. */
+.dashboard-breadcrumb-select {
+  pointer-events: none;
+
+  input {
+    display: none;
+  }
+
+  .rs__indicators {
+    display: none;
+  }
 }
 
 /* The dashboard's container is a `gutter`, and Payload gives that class no
@@ -53,19 +63,48 @@ html[data-theme='light'] {
   padding-bottom: 60px;
 }
 
-/* The brand marks, sized to the slots Payload gives them. Width only — both
-   SVGs carry their own aspect ratio.
-
-   In pixels rather than rem: the admin sets `html { font-size: 13px }`, so a
-   rem here is not the 16px it is everywhere else on the site and sizes come
-   out a fifth smaller than they read in the source. The login column is 480px
-   wide, which is what 300 is measured against. */
+/* The lockup on the login screen: mark plus real text, so the words can be
+   given a legible size instead of inheriting one from an SVG's viewBox.
+   Sizes in pixels because the admin sets `html { font-size: 13px }` — a rem
+   here is not the 16px it is on the site, and anything written in rem comes
+   out a fifth smaller than it reads in the source. The tagline sits at 12px,
+   the floor the site uses for its own smallest label. */
 .mhg-admin-logo {
-  width: 300px;
-  max-width: 100%;
-  height: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  &__mark {
+    width: 44px;
+    height: auto;
+    flex-shrink: 0;
+  }
+
+  &__words {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+
+  &__name {
+    font-family: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--theme-elevation-800);
+  }
+
+  &__tagline {
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--theme-elevation-600);
+  }
 }
 
+/* The small mark beside the nav. */
 .mhg-admin-icon {
   width: 24px;
   height: auto;
