@@ -59,9 +59,14 @@ Create a read-only role on the **production** Neon database and put its **unpool
 string in the Vercel environment as `SYNC_DATABASE_URL`, scoped to **Development** — which is what
 `vercel env pull` reads and where the other local-only values live.
 
-Development variables cannot be marked "Sensitive", and that is what you want here. A sensitive
-value cannot be pulled back out of Vercel, so a credential nobody can retrieve would quietly break
-the self-serve flow. Scope the credential tightly instead: this one is read-only, so a leak
+Do not mark it **Sensitive**. A sensitive value cannot be read back out of Vercel, and a
+credential nobody can retrieve would quietly break the self-serve flow this whole document rests
+on. Vercel's default storage type is "Encrypted", which is fine — it is what almost every variable
+on this project already uses, and `vercel env pull` decrypts it.
+
+"Encrypted" in `vercel env ls` is not a judgement that a value is secret. It is simply the default
+for anything added by hand, which is why `SITE_NOINDEX`, whose value is `1`, is listed the same way
+as the Resend key. Scope this credential by what it can do instead: it is read-only, so a leak
 exposes content without being able to change anything.
 
 Create the role with SQL in the Neon console's **SQL Editor** — not its Roles UI. Roles created
