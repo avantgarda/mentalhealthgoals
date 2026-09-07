@@ -97,8 +97,15 @@ editor unless an admin grants the admin role.
 Payload sends email (password resets, contact-form notifications) through
 [Resend](https://resend.com) when `RESEND_API_KEY` is set; without it, emails are written to the
 server console — fine for dev, not for production. The `mentalhealthgoals.co.uk` domain must be
-verified in Resend (DNS records) before mail will send from it. The seeded contact form notifies
-`enquiries@mentalhealthgoals.co.uk` — **confirm the team inbox address before go-live**.
+verified in Resend (DNS records) before mail will send from it. **Confirm the team inbox address
+before go-live** — it is stored on the contact form itself, in the CMS, not in an environment
+variable.
+
+Because it lives on the form, it travels with the database: a preview runs on a branch of
+production's, and `pnpm sync:db` brings production's rows to your laptop. Set
+`EMAIL_OVERRIDE_RECIPIENT` in Preview and Development and every message goes there instead,
+whatever the CMS says. A preview deployment with a Resend key and no override sends nothing at
+all, on purpose.
 
 Scheduled publishing is disabled: on Vercel nothing runs Payload's jobs queue, so scheduled
 publishes would silently never fire. To enable it, add a `vercel.json` cron hitting

@@ -42,9 +42,11 @@ credential into a chat.
   URLs.
 - Blob read-write tokens and any write-capable database credential are **owner-only**. The local
   flow never needs them. Do not circulate them.
-- Leave `RESEND_API_KEY` out of your local environment. A database synced from production carries
-  the real notification address on the contact form, so a test submission with a live key would
-  email the programme team.
+- Set `EMAIL_OVERRIDE_RECIPIENT` to your own address before doing anything that sends mail. A
+  database synced from production carries the real notification address on the contact form, so
+  without it a test submission reaches whoever production would have reached. The override applies
+  to every message, including password resets. Leaving `RESEND_API_KEY` unset works too, and puts
+  mail in the console instead.
 - `pnpm sync:db` caches an unencrypted dump under `temp/neon-dumps/`. By default it holds content
   only — no users, no sessions, no form submissions. `--with-pii` includes all of them, including
   password hashes, so use it only when you actually need them and delete the cache afterwards.

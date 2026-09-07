@@ -8,6 +8,7 @@ declare global {
       CRON_SECRET: string
       PREVIEW_SECRET: string
       RESEND_API_KEY?: string
+      EMAIL_OVERRIDE_RECIPIENT?: string
       SITE_NOINDEX?: string
       CONTACT_NOTIFICATION_EMAIL?: string
       BLOB_READ_WRITE_TOKEN?: string
