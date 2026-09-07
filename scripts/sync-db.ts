@@ -216,7 +216,10 @@ async function syncDatabase(sourceConnectionString: string, options: Options): P
     )
   }
 
-  console.log(`   Target: ${targetDatabase} on ${local.host}:${local.port} as ${local.user}\n`)
+  // The shared DATABASE_URL carries no username on purpose, so libpq falls back
+  // to the operating-system user. Saying so beats printing "as " and nothing.
+  const connectingAs = local.user || `${process.env.USER ?? 'your OS user'} (from the environment)`
+  console.log(`   Target: ${targetDatabase} on ${local.host}:${local.port} as ${connectingAs}\n`)
 
   // PG* variables for the local client calls. Only set what differs from the
   // client's own defaults, so a developer using a socket connection is left
