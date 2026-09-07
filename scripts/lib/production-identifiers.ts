@@ -1,12 +1,13 @@
 /**
  * How the scripts recognise Production.
  *
- * Not a secret: the blob origin is a public-read host. It lives here so the
- * commands that need to know where production's files are share one definition
- * instead of each carrying a copy.
+ * Not a secret: the blob origin is a public-read host, and anyone with the URL
+ * of any image on the site can read it. It lives here so the commands that need
+ * to know where production's files are share one definition instead of each
+ * carrying a copy.
  *
- * It starts empty and the guard below refuses to run until it is filled in. A
- * check that cannot recognise Production is worse than no check: it reads as
+ * The accessor below still refuses to continue if this is ever emptied. A check
+ * that cannot recognise Production is worse than no check: it reads as
  * protection while allowing exactly the operation it exists to prevent.
  *
  * There is deliberately no equivalent for the production *database*. Copying
@@ -18,14 +19,21 @@
 /**
  * Public base URL of the production blob store, with a trailing slash.
  *
- * Find it in Vercel → Storage → `blob-mentalhealthgoals-prod` → any file's
- * public URL, keeping only the origin:
- * `https://<id>.public.blob.vercel-storage.com/`.
+ * This is `blob-mentalhealthgoals-prod` (store_Qv61VrYdLkYi0fiN). The preview
+ * store is `blob-mentalhealthgoals-preview`, at
+ * `https://paihjs63torh2qcg.public.blob.vercel-storage.com/` — that one is the
+ * destination of `pnpm blobs:mirror`, and is passed in rather than hardcoded so
+ * a wrong value cannot silently become the target of a write.
  *
  * It is not visible in this site's page source, because Payload proxies uploads
- * through `/api/media/file/…` rather than linking the store directly.
+ * through `/api/media/file/…` rather than linking the store directly. To
+ * re-derive it if a store is ever recreated:
+ *
+ *   vercel blob get-store <store-id>     # prints "Base URL"
+ *   vercel blob list-stores              # if you need the id
  */
-export const PRODUCTION_BLOB_BASE_URL: string | undefined = undefined
+export const PRODUCTION_BLOB_BASE_URL: string | undefined =
+  'https://qv61vrydlkyi0fin.public.blob.vercel-storage.com/'
 
 /** The production blob origin, or a clear error explaining how to set it. */
 export function requireProductionBlobBaseUrl(): string {
