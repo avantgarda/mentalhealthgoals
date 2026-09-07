@@ -636,6 +636,19 @@ html[data-motion='on'] .rise {
   .aside-note p + p {
     margin-top: 0.6rem;
   }
+  /* A narrow column renders without `prose`, so a link inside one inherits no
+     underline and reads as plain text — the first one anybody wrote went
+     unnoticed for exactly that reason. Same treatment prose gives body copy. */
+  .aside-note a {
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    text-decoration-color: color-mix(in oklab, var(--primary) 45%, transparent);
+    transition: text-decoration-color var(--dur-ui) var(--ease-out);
+  }
+  .aside-note a:hover {
+    text-decoration-color: var(--primary);
+  }
 }
 
 /* ------------------------------------------------------------------
