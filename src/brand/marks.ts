@@ -165,7 +165,7 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
     label: 'Goal in the Water — the G reflected below',
     description:
       'The mountain and an H stand on the shore; what reflects in the water beneath is the amber G.',
-    note: 'The narrative mark: look into the water and the goal is what you find. As in the original, the G is reflected beneath the point where the mountain meets the H, at 80% amber so it reads as submerged without going pale. Three things stack vertically here, so the mountain is drawn as large as the height allows and at the family’s stroke weight, otherwise it reads smaller than the other marks at the same header height; the G is drawn lighter so its counter stays open. Below 48 px it tiers down to the peaks over a single amber point — the G has no definition to keep at that size.',
+    note: 'The narrative mark: look into the water and the goal is what you find. As in the original, the G is reflected beneath the point where the mountain meets the H, at 80% amber so it reads as submerged without going pale. Three things stack vertically here, so the mountain is drawn as large as the height allows and at the family’s stroke weight, otherwise it reads smaller than the other marks at the same header height; the G is drawn lighter so its counter stays open, and the H sits three units short of the lower peak so it reads as a letter beside the mountain rather than level with it. Below 48 px it tiers down to the peaks over a single amber point — the G has no definition to keep at that size.',
     width: 108,
     elements: [
       {
@@ -179,7 +179,7 @@ export const MARKS: Record<LogoVariant, MarkDefinition> = {
       { kind: 'circle', cx: 50.7, cy: 9, r: 7, role: 'accent' },
       {
         kind: 'path',
-        d: 'M 83.1 61.6 L 83.1 28.2 M 83.1 44.9 L 101.1 44.9 M 101.1 28.2 L 101.1 61.6',
+        d: 'M 83.1 61.6 L 83.1 31.5 M 83.1 46.6 L 101.1 46.6 M 101.1 31.5 L 101.1 61.6',
         role: 'form',
         strokeWidth: 8,
         linecap: 'round',
