@@ -15,7 +15,16 @@ import { fileURLToPath } from 'node:url'
 
 import sharp from 'sharp'
 
-import { LOGO_VARIANTS, MARKS, markElementsToSVG, type LogoVariant } from '../src/brand/marks.js'
+import {
+  LOGO_VARIANTS,
+  MARK_HEIGHT,
+  MARKS,
+  markElementsToSVG,
+  markViewBox,
+  markWidth,
+  type LogoVariant,
+  type MarkMode,
+} from '../src/brand/marks.js'
 import { BRAND_COLORS, BRAND_NAME, BRAND_TAGLINE } from '../src/brand/tokens.js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -24,18 +33,51 @@ const PUBLIC_BRAND_DIR = path.resolve(dirname, '../public/brand')
 const SERIF_STACK = "Fraunces, 'Iowan Old Style', 'Palatino Nova', Georgia, serif"
 const SANS_STACK = "Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif"
 
-/** A standalone SVG document containing just the mark. */
+/**
+ * A standalone SVG document containing just the mark. `size` is the height;
+ * width follows the mark's aspect ratio. `mode: 'compact'` draws the small-size
+ * glyph (always square) used for favicons, app icons and avatars.
+ */
 const markSVG = (
   variant: LogoVariant,
   colors: { form: string; accent: string },
-  { size = 96, background }: { size?: number; background?: { fill: string; radius: number } } = {},
+  {
+    size = MARK_HEIGHT,
+    background,
+    mode = 'full',
+  }: { size?: number; background?: { fill: string; radius: number }; mode?: MarkMode } = {},
 ): string => {
+  const w = markWidth(variant, mode)
   const bg = background
-    ? `\n    <rect width="96" height="96" rx="${background.radius}" fill="${background.fill}"/>`
+    ? `\n    <rect width="${w}" height="${MARK_HEIGHT}" rx="${background.radius}" fill="${background.fill}"/>`
     : ''
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 96 96" role="img" aria-label="${MARKS[variant].label}">${bg}
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${(size * w) / MARK_HEIGHT}" height="${size}" viewBox="${markViewBox(variant, mode)}" role="img" aria-label="${MARKS[variant].label}">${bg}
+    ${markElementsToSVG(variant, colors, mode)}
+</svg>
+`
+}
+
+/**
+ * Square tile carrying the full mark — app icons and PWA icons, where the real
+ * mark is legible. Wide marks are scaled to fit inside a margin; square marks
+ * draw at full size, byte-for-byte the same as the favicon tile.
+ */
+const appIconSVG = (variant: LogoVariant, colors: { form: string; accent: string }): string => {
+  const w = markWidth(variant)
+  const background = { fill: BRAND_COLORS.deep, radius: 20 }
+  if (w <= MARK_HEIGHT) return markSVG(variant, colors, { background })
+
+  const inner = 84
+  const s = inner / w
+  const tx = (MARK_HEIGHT - w * s) / 2
+  const ty = (MARK_HEIGHT - MARK_HEIGHT * s) / 2
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="${MARKS[variant].label}">
+    <rect width="96" height="96" rx="${background.radius}" fill="${background.fill}"/>
+    <g transform="translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${s.toFixed(4)})">
     ${markElementsToSVG(variant, colors)}
+    </g>
 </svg>
 `
 }
@@ -50,15 +92,20 @@ const markSVG = (
 const lockupHorizontalSVG = (
   variant: LogoVariant,
   colors: { form: string; accent: string; text: string },
-): string =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="520" height="96" viewBox="0 0 520 96" role="img" aria-label="${BRAND_NAME} — ${BRAND_TAGLINE}">
+): string => {
+  const w = markWidth(variant)
+  const textX = w + 16
+  const total = w + 424
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${total}" height="96" viewBox="0 0 ${total} 96" role="img" aria-label="${BRAND_NAME} — ${BRAND_TAGLINE}">
   <g transform="translate(0 0)">
     ${markElementsToSVG(variant, colors)}
   </g>
-  <text x="112" y="47" font-family="${SERIF_STACK}" font-size="30" font-weight="600" letter-spacing="-0.3" fill="${colors.text}">${BRAND_NAME}</text>
-  <text x="113" y="68" font-family="${SANS_STACK}" font-size="11.5" font-weight="500" letter-spacing="2.6" fill="${colors.text}" opacity="0.75">${BRAND_TAGLINE.toUpperCase()}</text>
+  <text x="${textX}" y="47" font-family="${SERIF_STACK}" font-size="30" font-weight="600" letter-spacing="-0.3" fill="${colors.text}">${BRAND_NAME}</text>
+  <text x="${textX + 1}" y="68" font-family="${SANS_STACK}" font-size="11.5" font-weight="500" letter-spacing="2.6" fill="${colors.text}" opacity="0.75">${BRAND_TAGLINE.toUpperCase()}</text>
 </svg>
 `
+}
 
 /** Stacked lockup: mark above centred type, for square placements. */
 const lockupStackedSVG = (
@@ -66,7 +113,7 @@ const lockupStackedSVG = (
   colors: { form: string; accent: string; text: string },
 ): string =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200" role="img" aria-label="${BRAND_NAME} — ${BRAND_TAGLINE}">
-  <g transform="translate(152 0)">
+  <g transform="translate(${(400 - markWidth(variant)) / 2} 0)">
     ${markElementsToSVG(variant, colors)}
   </g>
   <text x="200" y="146" text-anchor="middle" font-family="${SERIF_STACK}" font-size="30" font-weight="600" letter-spacing="-0.3" fill="${colors.text}">${BRAND_NAME}</text>
@@ -92,17 +139,27 @@ const ogSVG = (variant: LogoVariant): string =>
  * Avatar: mark reversed out of a deep field, sized so nothing important is lost
  * when a platform crops it to a circle (content stays inside the inscribed circle).
  */
-const avatarSVG = (variant: LogoVariant): string =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+const avatarSVG = (variant: LogoVariant): string => {
+  const w = markWidth(variant)
+  // 336 px content box centred in 512 keeps everything inside the circle crop.
+  const s = Math.min(336 / w, 3.5)
+  const tx = (512 - w * s) / 2
+  const ty = (512 - MARK_HEIGHT * s) / 2
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="${BRAND_COLORS.deep}"/>
-  <g transform="translate(88 88) scale(3.5)">
+  <g transform="translate(${+tx.toFixed(2)} ${+ty.toFixed(2)}) scale(${+s.toFixed(4)})">
     ${markElementsToSVG(variant, { form: BRAND_COLORS.reversed, accent: BRAND_COLORS.amberOnDark })}
   </g>
 </svg>
 `
+}
 
 const png = async (svg: string, size: number, out: string): Promise<void> => {
-  await sharp(Buffer.from(svg)).resize(size, size).png({ compressionLevel: 9 }).toFile(out)
+  await sharp(Buffer.from(svg))
+    .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png({ compressionLevel: 9 })
+    .toFile(out)
 }
 
 const writeVariant = async (variant: LogoVariant): Promise<string[]> => {
@@ -142,25 +199,30 @@ const writeVariant = async (variant: LogoVariant): Promise<string[]> => {
     lockupStackedSVG(variant, { ...onLight, text: BRAND_COLORS.ink }),
   )
 
-  // Favicon master: mark reversed out of a rounded deep tile, which holds up
-  // against both light and dark browser chrome far better than a bare mark.
+  // Favicon master: the compact glyph reversed out of a rounded deep tile,
+  // which holds up against both light and dark browser chrome far better than
+  // a bare mark. Browser tabs run 16–48 px, where a wide mark cannot survive.
   const faviconSvg = markSVG(variant, onDark, {
     background: { fill: BRAND_COLORS.deep, radius: 20 },
+    mode: 'compact',
   })
   await write('favicon.svg', faviconSvg)
 
+  // App icons are large enough for the real mark.
+  const appIconSvg = appIconSVG(variant, onDark)
+
   // --- Raster exports -------------------------------------------------------
-  const rasters: Array<[string, number]> = [
-    ['favicon-16.png', 16],
-    ['favicon-32.png', 32],
-    ['favicon-48.png', 48],
-    ['apple-touch-icon.png', 180],
-    ['icon-192.png', 192],
-    ['icon-512.png', 512],
+  const rasters: Array<[string, number, string]> = [
+    ['favicon-16.png', 16, faviconSvg],
+    ['favicon-32.png', 32, faviconSvg],
+    ['favicon-48.png', 48, faviconSvg],
+    ['apple-touch-icon.png', 180, appIconSvg],
+    ['icon-192.png', 192, appIconSvg],
+    ['icon-512.png', 512, appIconSvg],
   ]
 
-  for (const [file, size] of rasters) {
-    await png(faviconSvg, size, path.join(dir, file))
+  for (const [file, size, source] of rasters) {
+    await png(source, size, path.join(dir, file))
     written.push(file)
   }
 
@@ -210,6 +272,12 @@ icon and social card all follow that setting.
 | \`avatar-512.png\` | Social profile pictures — safe under a circular crop |
 | \`og.png\` | 1200x630 social sharing card |
 | \`mark-512.png\`, \`mark-on-dark-512.png\` | Transparent PNGs for slides and documents |
+
+Wide or detailed marks (the acronym and reflection variants) tier down to a
+simpler **compact glyph** for the browser-tab favicons (16–48 px), where three
+letterforms or a faint reflection are illegible. App icons, the avatar and the
+social card carry the full mark. The compact glyph is declared alongside the
+full mark in \`src/brand/marks.ts\`.
 
 ## Usage rules
 

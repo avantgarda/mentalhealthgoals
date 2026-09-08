@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="584" height="96" viewBox="0 0 584 96" role="img" aria-label="Mental Health Goals — UK-wide Programme">
+  <g transform="translate(0 0)">
+    <path d="M 80 76 L 80 40 M 80 58 L 100 58 M 100 40 L 100 76" fill="none" stroke="#15545B" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.4"/>
+    <path d="M 138.2 43.8 A 15 18 0 1 0 144 58 L 135.8 58" fill="none" stroke="#15545B" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.4"/>
+    <path d="M 16 82 L 33 46 L 46 72 L 61 38 L 80 82" fill="none" stroke="#15545B" stroke-width="8" stroke-linecap="round" stroke-linejoin="miter"/>
+    <circle cx="61" cy="17.5" r="8" fill="#CE7A3B"/>
+  </g>
+  <text x="176" y="47" font-family="Fraunces, 'Iowan Old Style', 'Palatino Nova', Georgia, serif" font-size="30" font-weight="600" letter-spacing="-0.3" fill="#18272B">Mental Health Goals</text>
+  <text x="177" y="68" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="500" letter-spacing="2.6" fill="#18272B" opacity="0.75">UK-WIDE PROGRAMME</text>
+</svg>

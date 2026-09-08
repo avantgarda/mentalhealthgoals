@@ -1937,7 +1937,7 @@ export interface Brand {
   /**
    * Used in the header, the footer, the browser tab and shared links.
    */
-  logoVariant: 'summit' | 'sunInCol' | 'rings';
+  logoVariant: 'summit' | 'sunInCol' | 'rings' | 'writtenInWater' | 'goalInWater';
   showTagline?: boolean | null;
   updatedAt?: string | null;
   createdAt?: string | null;

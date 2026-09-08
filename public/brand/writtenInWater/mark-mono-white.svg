@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="96" viewBox="0 0 160 96" role="img" aria-label="Written in Water — H and G beside the mountain">
+    <path d="M 80 76 L 80 40 M 80 58 L 100 58 M 100 40 L 100 76" fill="none" stroke="#F2F2F2" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.4"/>
+    <path d="M 138.2 43.8 A 15 18 0 1 0 144 58 L 135.8 58" fill="none" stroke="#F2F2F2" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.4"/>
+    <path d="M 16 82 L 33 46 L 46 72 L 61 38 L 80 82" fill="none" stroke="#F2F2F2" stroke-width="8" stroke-linecap="round" stroke-linejoin="miter"/>
+    <circle cx="61" cy="17.5" r="8" fill="#F2F2F2"/>
+</svg>
