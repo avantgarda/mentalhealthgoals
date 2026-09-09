@@ -55,4 +55,7 @@ export const Brand: GlobalConfig = {
   hooks: {
     afterChange: [revalidateBrand],
   },
+  // Editorial history without a publish gate — see Workstreams. Globals use
+  // `max` rather than `maxPerDoc`, and there is only ever one document.
+  versions: { max: 10 },
 }

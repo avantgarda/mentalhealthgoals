@@ -139,4 +139,6 @@ export const Partners: CollectionConfig = {
       },
     },
   ],
+  // Editorial history without a publish gate — see Workstreams for the reasoning.
+  versions: { maxPerDoc: 10 },
 }

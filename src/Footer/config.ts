@@ -48,4 +48,7 @@ export const Footer: GlobalConfig = {
   hooks: {
     afterChange: [revalidateFooter],
   },
+  // Editorial history without a publish gate — see Workstreams. Globals use
+  // `max` rather than `maxPerDoc`, and there is only ever one document.
+  versions: { max: 10 },
 }

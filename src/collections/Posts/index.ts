@@ -259,6 +259,8 @@ export const Posts: CollectionConfig<'posts'> = {
       // Off for the same reason as Pages — see the comment there (F11).
       schedulePublish: false,
     },
-    maxPerDoc: 50,
+    // A post is one rich text field rather than a block layout, so it does not
+    // need Pages' deeper history. See the note there on what a version counts.
+    maxPerDoc: 10,
   },
 }

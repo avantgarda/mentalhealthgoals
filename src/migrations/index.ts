@@ -19,6 +19,7 @@ import * as migration_20260904_125500_add_post_event_fields from './20260904_125
 import * as migration_20260907_113000_add_footer_small_print from './20260907_113000_add_footer_small_print'
 import * as migration_20260907_120000_drop_media_folders from './20260907_120000_drop_media_folders';
 import * as migration_20260907_233000_add_water_logo_variants from './20260907_233000_add_water_logo_variants';
+import * as migration_20260909_121500_add_versions_to_remaining_collections from './20260909_121500_add_versions_to_remaining_collections';
 
 export const migrations = [
   {
@@ -125,5 +126,10 @@ export const migrations = [
     up: migration_20260907_233000_add_water_logo_variants.up,
     down: migration_20260907_233000_add_water_logo_variants.down,
     name: '20260907_233000_add_water_logo_variants',
+  },
+  {
+    up: migration_20260909_121500_add_versions_to_remaining_collections.up,
+    down: migration_20260909_121500_add_versions_to_remaining_collections.down,
+    name: '20260909_121500_add_versions_to_remaining_collections',
   },
 ];

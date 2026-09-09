@@ -26,4 +26,6 @@ export const Categories: CollectionConfig = {
       position: undefined,
     }),
   ],
+  // Editorial history without a publish gate — see Workstreams for the reasoning.
+  versions: { maxPerDoc: 10 },
 }
