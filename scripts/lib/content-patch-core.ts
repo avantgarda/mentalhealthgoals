@@ -1,7 +1,7 @@
 import { isDeepStrictEqual } from 'node:util'
 
 export type ContentChange = {
-  collection: 'pages' | 'workstreams' | 'people'
+  collection: 'pages' | 'posts' | 'workstreams' | 'people'
   match: { field: 'slug' | 'name'; value: string }
   before: Record<string, unknown>
   after: Record<string, unknown>
@@ -9,9 +9,17 @@ export type ContentChange = {
 }
 export type ContentPlan = { version: 1; name: string; changes: ContentChange[] }
 
+/** Pages keep their URLs out of reach: they carry the site's navigation and the
+ * bulk of inbound links. A workstream's `slug` is editable because its title and
+ * its URL are expected to move together, and only ever before launch.
+ */
 const allowedFields: Record<ContentChange['collection'], string[]> = {
   pages: ['layout', 'hero', 'meta'],
+  // Body only. A post is dated news, so its title and URL stay put; the case for
+  // editing one at all is a link or a fact that has since gone wrong.
+  posts: ['content'],
   workstreams: [
+    'slug',
     'title',
     'summary',
     'description',
@@ -63,11 +71,41 @@ export function validatePlan(value: unknown): ContentPlan {
         ))
     )
       throw new Error('Generated IDs must identify new rows only')
-    const identity = `${change.collection}/${change.match.value}`
-    if (seen.has(identity)) throw new Error(`Duplicate content target: ${identity}`)
-    seen.add(identity)
+    // A change may rewrite the very field it matches on. The match value has to be
+    // the baseline, so the record is found before the change and named consistently.
+    const field = change.match.field
+    if (field in change.before && change.before[field] !== change.match.value)
+      throw new Error(`Match value must be the baseline ${field}: ${change.match.value}`)
+    if (field in change.after && (typeof change.after[field] !== 'string' || !change.after[field]))
+      throw new Error(`A rewritten ${field} must be a non-empty string`)
+
+    for (const value of matchValues(change)) {
+      const identity = `${change.collection}/${value}`
+      if (seen.has(identity)) throw new Error(`Duplicate content target: ${identity}`)
+      seen.add(identity)
+    }
   }
   return plan
+}
+
+/** A collection that keeps drafts reports a `_status`; one that does not omits it
+ * entirely. Reading that from the document rather than naming the collection means
+ * a collection added to the allowlist later cannot quietly skip the check — and
+ * because autosave writes drafts continuously, an unpublished latest draft is also
+ * how an editor working in the admin right now is detected.
+ */
+export function isUnpublishedDraft(doc: Record<string, unknown>): boolean {
+  return doc._status !== undefined && doc._status !== 'published'
+}
+
+/** The names a record may answer to: its baseline value, and the rewritten one
+ * where the plan changes it. Looking under both keeps a re-run — and a reversal —
+ * finding the same document after its slug has moved.
+ */
+export function matchValues(change: ContentChange): string[] {
+  const field = change.match.field
+  const candidates = [change.match.value, change.before[field], change.after[field]]
+  return [...new Set(candidates.filter((v): v is string => typeof v === 'string' && v.length > 0))]
 }
 
 export function assessChange(doc: Record<string, unknown>, change: ContentChange) {

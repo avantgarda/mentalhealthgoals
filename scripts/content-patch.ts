@@ -7,7 +7,13 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 
-import { assessChange, validatePlan, type ContentChange } from './lib/content-patch-core'
+import {
+  assessChange,
+  isUnpublishedDraft,
+  matchValues,
+  validatePlan,
+  type ContentChange,
+} from './lib/content-patch-core'
 
 const args = process.argv.slice(2)
 const option = (name: string) => args[args.indexOf(name) + 1]
@@ -87,18 +93,17 @@ async function main() {
     return run('vercel', ['curl', path, '--deployment', deployment.hostname, '--', ...curl])
   }
   const read = (change: ContentChange) => {
-    const query = new URLSearchParams({
-      [`where[${change.match.field}][equals]`]: change.match.value,
-      depth: '0',
-      limit: '2',
-      draft: 'true',
-    })
+    // Match on the baseline name and the rewritten one at once: exactly one record
+    // must answer to either, whether or not this plan has already been applied.
+    const names = matchValues(change)
+    const query = new URLSearchParams({ depth: '0', limit: '2', draft: 'true' })
+    names.forEach((name, i) => query.set(`where[or][${i}][${change.match.field}][equals]`, name))
     const result = api(`/api/${change.collection}?${query}`)
     if (result.totalDocs !== 1 || result.docs?.length !== 1) {
-      throw new Error(`Expected exactly one ${change.collection}: ${change.match.value}`)
+      throw new Error(`Expected exactly one ${change.collection}: ${names.join(' or ')}`)
     }
     const doc = result.docs[0]
-    if (change.collection === 'pages' && doc._status !== 'published') {
+    if (isUnpublishedDraft(doc)) {
       throw new Error(`Unpublished draft needs review: ${change.match.value}`)
     }
     return doc
@@ -140,7 +145,13 @@ async function main() {
       planName: plan.name,
       createdAt: new Date().toISOString(),
       originals,
-      completed: [] as { collection: string; id: number | string; updatedAt: string }[],
+      writes: [] as {
+        collection: string
+        target: string
+        id: number | string
+        status: 'in flight' | 'written' | 'verified'
+        updatedAt: string
+      }[],
     }
     const save = () => writeFileSync(backupFile, JSON.stringify(receipt, null, 2), { mode: 0o600 })
     save()
@@ -156,6 +167,18 @@ async function main() {
         throw new Error(`Content changed during this run: ${change.match.value}`)
       }
       assessChange(current, change)
+      // Record the intent before the request, not after it succeeds. A write can
+      // land while the response is lost, and a read-back can fail on a record that
+      // was written, so anything recorded only afterwards understates what changed.
+      const write = {
+        collection: change.collection,
+        target: change.match.value,
+        id: current.id as number | string,
+        status: 'in flight' as 'in flight' | 'written' | 'verified',
+        updatedAt: current.updatedAt as string,
+      }
+      receipt.writes.push(write)
+      save()
       // Predicate rechecks updatedAt at the API; no multi-document transaction is promised.
       const query = new URLSearchParams({
         'where[and][0][id][equals]': String(current.id),
@@ -168,15 +191,14 @@ async function main() {
           `Update failed or concurrent change detected: ${change.match.value}. Inspect backup before retrying.`,
         )
       }
+      write.status = 'written'
+      save()
       const saved = read(change)
       if (assessChange(saved, change) !== 'already applied') {
         throw new Error(`Read-back verification failed: ${change.match.value}`)
       }
-      receipt.completed.push({
-        collection: change.collection,
-        id: saved.id,
-        updatedAt: saved.updatedAt,
-      })
+      write.status = 'verified'
+      write.updatedAt = saved.updatedAt
       save()
       console.log(`Verified: ${change.collection}/${change.match.value}`)
     }
