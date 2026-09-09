@@ -28,6 +28,9 @@ Plans have `version: 1`, a `name`, and a `changes` array. Each change specifies:
 - `collection`: `pages`, `workstreams` or `people`.
 - `match`: a `field` (`slug`, or `name` for people) and exact `value`.
 - `before` and `after`: the same set of permitted top-level content fields.
+- `generatedIds`: optional IDs assigned in the plan to newly added rows. Payload
+  generates its own IDs for these rows; verification permits that substitution
+  while comparing every other value and preserving existing row IDs.
 
 Read at depth zero. When changing a layout or array, preserve existing block/row IDs,
 relationships, links and unaffected content; include the complete revised field.

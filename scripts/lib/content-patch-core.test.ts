@@ -52,3 +52,41 @@ test('only allows reviewed content fields and one entry per target', () => {
   )
   assert.throws(() => validatePlan({ ...plan, changes: [{ ...change, before: {} }] }), /field/)
 })
+
+test('accepts generated IDs only on explicitly new rows, including reversal', () => {
+  const next: ContentChange = {
+    ...change,
+    generatedIds: ['new-row'],
+    after: {
+      ...change.after,
+      resources: [
+        ...(change.after.resources as object[]),
+        { id: 'new-row', label: 'New', url: 'https://example.org/new' },
+      ],
+    },
+  }
+  const saved = structuredClone(next.after)
+  const rows = saved.resources as { id: string; label: string }[]
+  rows[1].id = 'server-generated'
+  assert.equal(assessChange(saved, next), 'already applied')
+  assert.equal(assessChange(saved, { ...next, before: next.after, after: next.before }), 'ready')
+  rows[1].label = 'Unexpected edit'
+  assert.throws(() => assessChange(saved, next), /baseline/)
+  rows[1].label = 'New'
+  rows[0].id = 'changed-existing-id'
+  assert.throws(() => assessChange(saved, next), /baseline/)
+})
+
+test('rejects generated ID exemptions for existing or missing rows', () => {
+  for (const generatedIds of [['existing'], ['missing']]) {
+    assert.throws(
+      () =>
+        validatePlan({
+          version: 1,
+          name: 'Invalid exemptions',
+          changes: [{ ...change, generatedIds }],
+        }),
+      /new rows/,
+    )
+  }
+})
