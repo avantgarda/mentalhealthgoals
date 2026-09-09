@@ -77,6 +77,35 @@ describe('assessChange', () => {
   })
 })
 
+describe('assessChange on rich text', () => {
+  // A block seeded without an id gets a fresh one from Payload on every read.
+  const block = (id: string, text: string) => ({
+    root: { children: [{ type: 'block', fields: { id, blockType: 'banner', text } }] },
+  })
+  const post: ContentChange = {
+    collection: 'posts',
+    match: { field: 'slug', value: 'news' },
+    before: { content: block('read-1', 'Original') },
+    after: { content: block('read-1', 'Revised') },
+  }
+
+  it('ignores a Lexical block’s regenerated fields.id and nothing else in the block', () => {
+    expect(assessChange({ content: block('read-2', 'Original') }, post)).toBe('ready')
+    expect(assessChange({ content: block('read-3', 'Revised') }, post)).toBe('already applied')
+    expect(() => assessChange({ content: block('read-4', 'Edited') }, post)).toThrow(/baseline/)
+  })
+
+  it('still holds an ordinary node’s id to the baseline', () => {
+    const para = (id: string) => ({ root: { children: [{ type: 'paragraph', id, text: 'x' }] } })
+    const change: ContentChange = {
+      ...post,
+      before: { content: para('p1') },
+      after: { content: para('p1') },
+    }
+    expect(() => assessChange({ content: para('p2') }, change)).toThrow(/baseline/)
+  })
+})
+
 describe('validatePlan', () => {
   const plan = { version: 1, name: 'Example', changes: [change] }
 

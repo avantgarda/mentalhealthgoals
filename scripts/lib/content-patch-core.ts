@@ -122,8 +122,19 @@ export function assessChange(doc: Record<string, unknown>, change: ContentChange
 
 /** Payload replaces supplied IDs on newly inserted rows. Ignore only those
  * explicitly identified new-row IDs, never existing row IDs or row contents.
+ *
+ * One further ID carries no information: a Lexical block node's `fields.id`.
+ * Where a block was seeded without one, Payload mints a fresh ObjectID on every
+ * read, so it differs between any two fetches — the snapshot, the pre-write
+ * check and the read-back alike. That single key is skipped inside a block's
+ * `fields`; every other value in the block, and every row ID beneath it, is not.
  */
-function matchesContent(actual: unknown, expected: unknown, generatedIds: Set<string>): boolean {
+function matchesContent(
+  actual: unknown,
+  expected: unknown,
+  generatedIds: Set<string>,
+  volatileId = false,
+): boolean {
   if (isDeepStrictEqual(actual, expected)) return true
   if (Array.isArray(expected)) {
     return (
@@ -136,13 +147,15 @@ function matchesContent(actual: unknown, expected: unknown, generatedIds: Set<st
     return false
   const a = actual as Record<string, unknown>
   const e = expected as Record<string, unknown>
-  const ignoreId = typeof e.id === 'string' && generatedIds.has(e.id)
+  const ignoreId = volatileId || (typeof e.id === 'string' && generatedIds.has(e.id))
   const keys = (value: Record<string, unknown>) =>
     Object.keys(value)
       .filter((k) => !(ignoreId && k === 'id'))
       .sort()
   return (
     isDeepStrictEqual(keys(a), keys(e)) &&
-    keys(e).every((k) => matchesContent(a[k], e[k], generatedIds))
+    keys(e).every((k) =>
+      matchesContent(a[k], e[k], generatedIds, e.type === 'block' && k === 'fields'),
+    )
   )
 }

@@ -40,6 +40,11 @@ Plans have `version: 1`, a `name`, and a `changes` array. Each change specifies:
   generates its own IDs for these rows; verification permits that substitution
   while comparing every other value and preserving existing row IDs.
 
+One value is ignored without being declared: a Lexical block node's `fields.id`.
+A block seeded without one is given a fresh ObjectID by Payload on every read, so
+it can never match a baseline. Nothing else in the block is exempt. Writing the
+block back stores the ID in the plan, after which it reads stably.
+
 Read at depth zero. When changing a layout or array, preserve existing block/row IDs,
 relationships, links and unaffected content; include the complete revised field.
 Use a fresh production-derived preview so nested IDs match the reviewed source.
