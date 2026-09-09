@@ -15,7 +15,7 @@ production CMS**, so data flows down to laptops, never up from them.
 | `pnpm check:migrations` | Payload config, `src/migrations`     | Two scratch databases, dropped after    | No                          |
 | `pnpm generate:brand`   | `src/brand/*`                        | `public/brand`                          | No                          |
 
-Nothing here can write to the production database or the production blob store. That is
+The sync and fixture tools below cannot write to the production database or the production blob store. That is
 structural, not a convention:
 
 - `sync:db` refuses any target that is not localhost, because it drops what it points at.
@@ -24,6 +24,11 @@ structural, not a convention:
   `sync:db`.
 - `blobs:mirror` refuses production as a destination, and refuses to run at all if it cannot
   positively identify which store each token belongs to.
+
+For targeted, reviewed editorial changes through the deployed CMS API, see
+[CONTENT-PATCH.md](CONTENT-PATCH.md). That separate tool defaults to a dry run, tests
+against a preview, and requires an explicit flag for approved production changes.
+It does not copy a local database or repository content into production.
 
 ## `pnpm bootstrap`
 

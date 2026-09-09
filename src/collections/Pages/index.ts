@@ -209,6 +209,10 @@ export const Pages: CollectionConfig<'pages'> = {
       // minute-level schedules) and turn this back on.
       schedulePublish: false,
     },
-    maxPerDoc: 50,
+    // Per document, not per collection. Autosave updates one rolling version
+    // rather than adding one per interval, so this is roughly 25 publishes.
+    // Higher than the other collections because a layout built from blocks is
+    // the most expensive thing here to reconstruct by hand.
+    maxPerDoc: 25,
   },
 }

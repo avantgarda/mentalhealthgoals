@@ -155,4 +155,9 @@ export const Workstreams: CollectionConfig = {
       },
     ],
   },
+  // Editorial history without a publish gate. `drafts` is what would add
+  // `_status` and a draft/published split; these records go live on save, and
+  // adding it would mean filtering every public query. Ten revisions per
+  // document — before this, a workstream edit left no way back at all.
+  versions: { maxPerDoc: 10 },
 }
