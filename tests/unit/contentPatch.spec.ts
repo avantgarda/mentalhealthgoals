@@ -4,6 +4,7 @@ import {
   assessChange,
   isUnpublishedDraft,
   matchValues,
+  sameDocument,
   validatePlan,
   type ContentChange,
 } from '../../scripts/lib/content-patch-core'
@@ -93,6 +94,13 @@ describe('assessChange on rich text', () => {
     expect(assessChange({ content: block('read-2', 'Original') }, post)).toBe('ready')
     expect(assessChange({ content: block('read-3', 'Revised') }, post)).toBe('already applied')
     expect(() => assessChange({ content: block('read-4', 'Edited') }, post)).toThrow(/baseline/)
+  })
+
+  it('treats two reads that differ only in a block’s minted id as the same document', () => {
+    const doc = (id: string, title: string) => ({ id: 79, title, content: block(id, 'Body') })
+    expect(sameDocument(doc('read-1', 'News'), doc('read-2', 'News'))).toBe(true)
+    expect(sameDocument(doc('read-1', 'News'), doc('read-1', 'Edited'))).toBe(false)
+    expect(sameDocument(doc('read-1', 'News'), { ...doc('read-1', 'News'), extra: 1 })).toBe(false)
   })
 
   it('still holds an ordinary node’s id to the baseline', () => {

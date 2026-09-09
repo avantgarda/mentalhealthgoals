@@ -5,12 +5,11 @@ import { spawnSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { isDeepStrictEqual } from 'node:util'
-
 import {
   assessChange,
   isUnpublishedDraft,
   matchValues,
+  sameDocument,
   validatePlan,
   type ContentChange,
 } from './lib/content-patch-core'
@@ -162,7 +161,7 @@ async function main() {
       if (
         current.id !== original.id ||
         current.updatedAt !== original.updatedAt ||
-        !isDeepStrictEqual(current, original)
+        !sameDocument(current, original)
       ) {
         throw new Error(`Content changed during this run: ${change.match.value}`)
       }

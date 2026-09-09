@@ -108,6 +108,14 @@ export function matchValues(change: ContentChange): string[] {
   return [...new Set(candidates.filter((v): v is string => typeof v === 'string' && v.length > 0))]
 }
 
+/** Two reads of one document agree, allowing only for the block IDs Payload mints
+ * on every read. This is the mid-run edit detector: `updatedAt` is compared
+ * separately, so anything a save would touch still trips it.
+ */
+export function sameDocument(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  return matchesContent(a, b, new Set())
+}
+
 export function assessChange(doc: Record<string, unknown>, change: ContentChange) {
   const pick = Object.fromEntries(Object.keys(change.after).map((key) => [key, doc[key]]))
   const generatedIds = new Set(change.generatedIds ?? [])
