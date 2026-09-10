@@ -186,24 +186,28 @@ before sending artwork to print.
 
 ## Useful scripts
 
-| Script                               | What it does                                                     |
-| ------------------------------------ | ---------------------------------------------------------------- |
-| `pnpm dev`                           | Dev server with HMR                                              |
-| `pnpm build` / `pnpm start`          | Production build / serve                                         |
-| `pnpm build:deploy`                  | Migrate then build (Vercel build command)                        |
-| `pnpm bootstrap`                     | Fresh clone to running site: tools, `.env.local`, database       |
-| `pnpm sync:db`                       | Copy production's content into the local database                |
-| `pnpm sync:media`                    | Download the files that content refers to into `public/media`    |
-| `pnpm blobs:mirror`                  | Copy the production blob store into the preview one (owner-only) |
-| `pnpm generate:types`                | Regenerate `src/payload-types.ts` after schema changes           |
-| `pnpm generate:brand`                | Regenerate all logo asset files in `public/brand`                |
-| `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields             |
-| `pnpm lint` / `pnpm typecheck`       | ESLint / TypeScript                                              |
-| `pnpm format` / `pnpm format:check`  | Prettier write / verify                                          |
-| `pnpm fixture`                       | Load the test fixture into the local database (wipes content)    |
-| `pnpm test:int` / `pnpm test:e2e`    | Vitest integration tests / Playwright e2e (port 3210)            |
-| `pnpm check:types-drift`             | Fail if `payload-types.ts` is stale                              |
-| `pnpm check:migrations`              | Fail if the Payload config has schema changes with no migration  |
+| Script                               | What it does                                                                        |
+| ------------------------------------ | ----------------------------------------------------------------------------------- |
+| `pnpm dev`                           | Dev server with HMR                                                                 |
+| `pnpm build` / `pnpm start`          | Production build / serve                                                            |
+| `pnpm build:deploy`                  | Migrate then build (Vercel build command)                                           |
+| `pnpm bootstrap`                     | Fresh clone to running site: tools, `.env.local`, database                          |
+| `pnpm sync:db`                       | Copy production's content into the local database                                   |
+| `pnpm sync:media`                    | Download the files that content refers to into `public/media`                       |
+| `pnpm blobs:mirror`                  | Copy the production blob store into the preview one (owner-only)                    |
+| `pnpm content:snapshot`              | Baseline every editable collection from a deployment into a plan dir                |
+| `pnpm content:editor create\|delete` | Temporary editor on a preview DB branch — the isolation canary                      |
+| `pnpm content:patch`                 | Apply a reviewed content plan (dry run by default) — see `scripts/CONTENT-PATCH.md` |
+| `pnpm content:verify`                | Prove a deployment shows what the plan says; derived from the plan                  |
+| `pnpm generate:types`                | Regenerate `src/payload-types.ts` after schema changes                              |
+| `pnpm generate:brand`                | Regenerate all logo asset files in `public/brand`                                   |
+| `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields                                |
+| `pnpm lint` / `pnpm typecheck`       | ESLint / TypeScript                                                                 |
+| `pnpm format` / `pnpm format:check`  | Prettier write / verify                                                             |
+| `pnpm fixture`                       | Load the test fixture into the local database (wipes content)                       |
+| `pnpm test:int` / `pnpm test:e2e`    | Vitest integration tests / Playwright e2e (port 3210)                               |
+| `pnpm check:types-drift`             | Fail if `payload-types.ts` is stale                                                 |
+| `pnpm check:migrations`              | Fail if the Payload config has schema changes with no migration                     |
 
 ### Running the tests
 
