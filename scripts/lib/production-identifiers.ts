@@ -10,11 +10,24 @@
  * that cannot recognise Production is worse than no check: it reads as
  * protection while allowing exactly the operation it exists to prevent.
  *
- * There is deliberately no equivalent for the production *database*. Copying
- * from it is the intended operation, so recognising it would gate nothing; what
- * matters is where a command writes, and `assertLocalDatabase` in
- * ./postgres-connection settles that by refusing any target but localhost.
+ * The production *database* is recognised for one purpose only: refusing to
+ * create a temporary editor on it. Copying from it is the intended operation, so
+ * the sync scripts gate nothing on it — `assertLocalDatabase` in
+ * ./postgres-connection settles those by refusing any target but localhost.
  */
+
+/** The Neon project behind every environment. Not a secret; it appears in every
+ * `neonctl` invocation and in the Vercel storage settings. */
+export const NEON_PROJECT_ID = 'royal-feather-31470094'
+
+/**
+ * The compute endpoint of Neon's primary branch (`main`), i.e. production. A
+ * preview branch has its own `ep-…` host, which is how `content-preview-editor`
+ * tells them apart before writing a canary account. Re-derive if the endpoint
+ * is ever recreated: `neonctl connection-string main --project-id …` and keep
+ * only the host.
+ */
+export const PRODUCTION_NEON_ENDPOINT_HOST = 'ep-holy-mouse-zadf8i2p.c-2.eu-west-2.aws.neon.tech'
 
 /**
  * Public base URLs of the two blob stores, with trailing slashes.

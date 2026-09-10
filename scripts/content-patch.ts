@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import {
   assessChange,
+  checkCanary,
   isUnpublishedDraft,
   matchValues,
   sameDocument,
@@ -65,6 +66,12 @@ async function main() {
   if (environment === 'production' && apply && !args.includes('--allow-production')) {
     throw new Error('Production writes require --allow-production after content approval')
   }
+  if (!process.env.MHG_CMS_EMAIL || !process.env.MHG_CMS_PASSWORD) {
+    throw new Error('Set MHG_CMS_EMAIL and MHG_CMS_PASSWORD in the process environment')
+  }
+  // Vercel's label says which environment this is, not which database it reads.
+  // The account decides that: on preview only the canary editor is accepted.
+  checkCanary(environment, process.env.MHG_CMS_EMAIL)
   console.log(`${apply ? 'APPLY' : 'DRY RUN'}: ${environment} ${deployment.hostname}`)
 
   const scratch = mkdtempSync(join(tmpdir(), 'mhg-content-patch-'))
@@ -110,9 +117,6 @@ async function main() {
 
   try {
     writeFileSync(configFile, 'header = "Content-Type: application/json"\n', { mode: 0o600 })
-    if (!process.env.MHG_CMS_EMAIL || !process.env.MHG_CMS_PASSWORD) {
-      throw new Error('Set MHG_CMS_EMAIL and MHG_CMS_PASSWORD in the process environment')
-    }
     const login = api('/api/users/login', 'POST', {
       email: process.env.MHG_CMS_EMAIL,
       password: process.env.MHG_CMS_PASSWORD,

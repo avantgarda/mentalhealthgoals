@@ -32,6 +32,44 @@ const allowedFields: Record<ContentChange['collection'], string[]> = {
   people: ['role', 'bio'],
 }
 
+export const EDITABLE_COLLECTIONS = Object.keys(allowedFields) as ContentChange['collection'][]
+
+/** People are matched by name; everything else has a slug. */
+export function matchFieldFor(collection: ContentChange['collection']): 'name' | 'slug' {
+  return collection === 'people' ? 'name' : 'slug'
+}
+
+/** An address under the reserved `.invalid` TLD: it can never receive mail and
+ * is never a real account, which is what makes it usable as a canary. */
+export function isCanaryAddress(email: string): boolean {
+  return /@[^@\s]+\.invalid$/i.test(email.trim())
+}
+
+/**
+ * Which account a run may use. A preview deployment is only known to be reading
+ * its own database branch if it can authenticate an account that exists there
+ * and nowhere else — the temporary editor `content-preview-editor` creates. A
+ * login with a real account proves nothing: it succeeds equally against
+ * production, which is exactly the failure this exists to catch. On production
+ * the reverse holds — a canary address has no business existing there.
+ */
+export function checkCanary(environment: 'preview' | 'production', email: string): void {
+  const canary = isCanaryAddress(email)
+  if (environment === 'preview' && !canary) {
+    throw new Error(
+      'Preview runs must log in as the temporary editor on the preview database branch ' +
+        '(an @….invalid address from `pnpm content:editor create`). That login succeeding ' +
+        'is the proof the deployment is reading its own branch and not production.',
+    )
+  }
+  if (environment === 'production' && canary) {
+    throw new Error(
+      'A temporary-editor address on a production deployment means a canary account ' +
+        'exists where it never should. Investigate before writing anything.',
+    )
+  }
+}
+
 export function validatePlan(value: unknown): ContentPlan {
   const plan = value as ContentPlan
   if (plan?.version !== 1 || !plan.name || !Array.isArray(plan.changes) || !plan.changes.length) {
@@ -43,7 +81,7 @@ export function validatePlan(value: unknown): ContentPlan {
     if (
       !fields ||
       !change.match?.value ||
-      change.match.field !== (change.collection === 'people' ? 'name' : 'slug') ||
+      change.match.field !== matchFieldFor(change.collection) ||
       !change.before ||
       !change.after
     )

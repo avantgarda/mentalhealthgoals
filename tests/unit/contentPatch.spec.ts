@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import {
   assessChange,
+  checkCanary,
+  isCanaryAddress,
   isUnpublishedDraft,
+  matchFieldFor,
   matchValues,
   sameDocument,
   validatePlan,
@@ -241,6 +244,28 @@ describe('isUnpublishedDraft', () => {
     // Workstreams and People have no versions config, so no _status is returned.
     expect(isUnpublishedDraft({ title: 'Data Observatory' })).toBe(false)
     expect(isUnpublishedDraft({ _status: undefined })).toBe(false)
+  })
+})
+
+describe('checkCanary', () => {
+  it('recognises a reserved .invalid address and nothing else', () => {
+    expect(isCanaryAddress('content-review-1a2b@mentalhealthgoals.invalid')).toBe(true)
+    expect(isCanaryAddress('someone@mentalhealthgoals.co.uk')).toBe(false)
+    expect(isCanaryAddress('invalid@example.com')).toBe(false)
+  })
+
+  it('accepts only the canary on preview, and never the canary on production', () => {
+    expect(() => checkCanary('preview', 'editor@mentalhealthgoals.co.uk')).toThrow(
+      /temporary editor/,
+    )
+    expect(() => checkCanary('preview', 'x@mentalhealthgoals.invalid')).not.toThrow()
+    expect(() => checkCanary('production', 'x@mentalhealthgoals.invalid')).toThrow(/canary/)
+    expect(() => checkCanary('production', 'editor@mentalhealthgoals.co.uk')).not.toThrow()
+  })
+
+  it('matches people by name and everything else by slug', () => {
+    expect(matchFieldFor('people')).toBe('name')
+    expect(matchFieldFor('pages')).toBe('slug')
   })
 })
 
