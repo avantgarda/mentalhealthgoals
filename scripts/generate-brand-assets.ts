@@ -26,6 +26,7 @@ import {
   type MarkMode,
 } from '../src/brand/marks.js'
 import { BRAND_COLORS, BRAND_NAME, BRAND_TAGLINE } from '../src/brand/tokens.js'
+import { EMAIL_LOCKUP } from '../src/utilities/emailTemplate.js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const PUBLIC_BRAND_DIR = path.resolve(dirname, '../public/brand')
@@ -231,6 +232,29 @@ const writeVariant = async (variant: LogoVariant): Promise<string[]> => {
     .toFile(path.join(dir, 'avatar-512.png'))
   written.push('avatar-512.png')
 
+  // Email header: Gmail and Outlook will not render an SVG in mail, so the
+  // on-light horizontal lockup goes out as a transparent PNG too. Rendered at
+  // twice the width the email template displays it at, and at a matching
+  // density so the type is rasterised sharp rather than scaled up afterwards.
+  // Every variant lands on the same canvas, left-aligned, so the template's
+  // width and height attributes are exact whichever mark is in use.
+  const emailLockup = Buffer.from(
+    lockupHorizontalSVG(variant, { ...onLight, text: BRAND_COLORS.ink }),
+  )
+  const emailWidth = EMAIL_LOCKUP.width * 2
+  const { width: lockupWidth = emailWidth } = await sharp(emailLockup).metadata()
+  await sharp(emailLockup, { density: Math.ceil((72 * emailWidth) / lockupWidth) })
+    .resize({
+      width: emailWidth,
+      height: EMAIL_LOCKUP.height * 2,
+      fit: 'contain',
+      position: 'left',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .png({ compressionLevel: 9 })
+    .toFile(path.join(dir, 'lockup-email.png'))
+  written.push('lockup-email.png')
+
   await sharp(Buffer.from(ogSVG(variant)))
     .png({ compressionLevel: 9 })
     .toFile(path.join(dir, 'og.png'))
@@ -265,6 +289,7 @@ icon and social card all follow that setting.
 | \`lockup-horizontal.svg\` | Mark + wordmark, the default signature |
 | \`lockup-horizontal-on-dark.svg\` | The same reversed |
 | \`lockup-stacked.svg\` | Mark above wordmark, for square placements |
+| \`lockup-email.png\` | The horizontal lockup as a 680 px transparent raster, every variant on the same canvas — the header of every email the site sends, where SVG will not render |
 | \`favicon.svg\` | Rounded deep tile + reversed mark |
 | \`favicon-16/32/48.png\` | Browser tabs and bookmarks |
 | \`apple-touch-icon.png\` | 180 px, iOS home screen |
