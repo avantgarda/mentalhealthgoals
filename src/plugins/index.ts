@@ -6,6 +6,7 @@ import { searchPlugin } from '@payloadcms/plugin-search'
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { Plugin } from 'payload'
 import { revalidateRedirects } from '@/hooks/revalidateRedirects'
+import { beforeEmail } from '@/utilities/formEmails'
 import { GenerateTitle, GenerateURL } from '@payloadcms/plugin-seo/types'
 import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 import { searchFields } from '@/search/fieldOverrides'
@@ -61,6 +62,8 @@ export const plugins: Plugin[] = [
     generateURL,
   }),
   formBuilderPlugin({
+    // Every form email goes out in the programme's branded frame.
+    beforeEmail,
     fields: {
       payment: false,
     },
