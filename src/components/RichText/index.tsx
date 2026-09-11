@@ -2,6 +2,7 @@ import { MediaBlock } from '@/blocks/MediaBlock/Component'
 import {
   DefaultNodeTypes,
   SerializedBlockNode,
+  SerializedInlineBlockNode,
   SerializedLinkNode,
   type DefaultTypedEditorState,
 } from '@payloadcms/richtext-lexical'
@@ -18,6 +19,7 @@ import type {
   CallToActionBlock as CTABlockProps,
   MediaBlock as MediaBlockProps,
   PartnerLogosBlock as PartnerLogosBlockProps,
+  ProgrammeEmailInlineBlock as ProgrammeEmailInlineBlockProps,
 } from '@/payload-types'
 import { BannerBlock } from '@/blocks/Banner/Component'
 import { CallToActionBlock } from '@/blocks/CallToAction/Component'
@@ -29,6 +31,7 @@ type NodeTypes =
   | SerializedBlockNode<
       CTABlockProps | MediaBlockProps | BannerBlockProps | CodeBlockProps | PartnerLogosBlockProps
     >
+  | SerializedInlineBlockNode<ProgrammeEmailInlineBlockProps>
 
 const internalDocToHref = ({ linkNode }: { linkNode: SerializedLinkNode }) => {
   const { value, relationTo } = linkNode.fields.doc!
@@ -66,13 +69,29 @@ type Props = {
   data: DefaultTypedEditorState
   enableGutter?: boolean
   enableProse?: boolean
+  /**
+   * The address the "Programme email" inline block shows. This component also
+   * renders in the browser (forms, the high-impact hero), so it cannot read
+   * Programme details itself: a server parent reads it and passes it down.
+   * Without it, the block renders nothing.
+   */
+  programmeEmail?: string | null
 } & React.HTMLAttributes<HTMLDivElement>
 
 export default function RichText(props: Props) {
-  const { className, enableProse = true, enableGutter = true, ...rest } = props
+  const { className, enableProse = true, enableGutter = true, programmeEmail, ...rest } = props
+
+  const converters: JSXConvertersFunction<NodeTypes> = (args) => ({
+    ...jsxConverters(args),
+    inlineBlocks: {
+      programmeEmail: () =>
+        programmeEmail ? <a href={`mailto:${programmeEmail}`}>{programmeEmail}</a> : null,
+    },
+  })
+
   return (
     <ConvertRichText
-      converters={jsxConverters}
+      converters={converters}
       className={cn(
         'payload-richtext',
         {

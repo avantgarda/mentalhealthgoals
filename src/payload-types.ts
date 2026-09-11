@@ -462,6 +462,9 @@ export interface ContentBlock {
   columns?:
     | {
         size?: ('oneThird' | 'half' | 'twoThirds' | 'full') | null;
+        /**
+         * To show the programme’s email address, insert “Programme email” instead of typing it, so it follows Settings → Programme details.
+         */
         richText?: {
           root: {
             type: string;
@@ -1943,7 +1946,7 @@ export interface Brand {
   createdAt?: string | null;
 }
 /**
- * The programme’s own description and contact details — shown in the site footer. People and their individual contact details live in the People collection.
+ * The programme’s own description and contact details — shown in the site footer, and the email wherever page text uses “Programme email”. People and their individual contact details live in the People collection.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "programmeDetails".
@@ -2048,6 +2051,15 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ProgrammeEmailInlineBlock".
+ */
+export interface ProgrammeEmailInlineBlock {
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'programmeEmail';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

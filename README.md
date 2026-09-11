@@ -118,6 +118,10 @@ Custom blocks available in the page layout builder: **Stats** (big-number tiles)
 (facts / agenda / outcomes — used on the Industry Engagement Forum page), plus the template's
 Content, Call to Action, Media, Archive and Form blocks.
 
+Inside page text, insert the **Programme email** inline block rather than typing the programme's
+address: it shows whatever **Settings → Programme details** holds, so the address is changed in
+one place.
+
 ## Branding & the logo
 
 The site ships with five logo marks and a Payload global that decides which one

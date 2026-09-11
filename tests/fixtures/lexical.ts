@@ -89,3 +89,10 @@ export const block = (fields: Record<string, unknown>): any => ({
   format: '',
   version: 2,
 })
+
+/** An inline block inside a paragraph — e.g. the programme email. */
+export const inlineBlock = (fields: Record<string, unknown>): any => ({
+  type: 'inlineBlock',
+  fields,
+  version: 1,
+})
