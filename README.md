@@ -96,6 +96,15 @@ production's, and `pnpm sync:db` brings production's rows to your laptop.
 `EMAIL_OVERRIDE_RECIPIENT` redirects every message regardless of what the CMS says, and a preview
 deployment that has a Resend key but no override sends nothing at all, on purpose.
 
+Every email a form sends goes out in a branded frame: the programme lockup from **Globals →
+Brand & Logo**, the editor's message, and a footer with the site and privacy links
+(`src/utilities/emailTemplate.ts`, applied through the form builder's `beforeEmail` hook in
+`src/utilities/formEmails.ts`). The lockup image is fetched from the permanent
+`mentalhealthgoals.vercel.app` alias rather than the site's own URL — an email is opened long
+after it is sent, the custom domain is parked until launch, and deployment URLs sit behind
+SSO. Editors need do nothing. If the frame ever fails to build, the message goes out plain
+rather than not at all.
+
 Scheduled publishing is disabled: on Vercel nothing runs Payload's jobs queue, so scheduled
 publishes would silently never fire. To enable it, add a `vercel.json` cron hitting
 `/api/payload-jobs/run` (Vercel Pro for minute-level schedules), set `schedulePublish: true` on

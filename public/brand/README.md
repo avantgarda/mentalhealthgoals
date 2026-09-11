@@ -18,6 +18,7 @@ icon and social card all follow that setting.
 | `lockup-horizontal.svg` | Mark + wordmark, the default signature |
 | `lockup-horizontal-on-dark.svg` | The same reversed |
 | `lockup-stacked.svg` | Mark above wordmark, for square placements |
+| `lockup-email.png` | The horizontal lockup as a 680 px transparent raster, every variant on the same canvas — the header of every email the site sends, where SVG will not render |
 | `favicon.svg` | Rounded deep tile + reversed mark |
 | `favicon-16/32/48.png` | Browser tabs and bookmarks |
 | `apple-touch-icon.png` | 180 px, iOS home screen |
