@@ -371,6 +371,17 @@ async function load(): Promise<void> {
           style: 'cards',
         },
         {
+          // The audience "doors": three linked one-third columns, which the
+          // content block sets as rows clickable from edge to edge.
+          blockType: 'content',
+          columns: FIXTURE.doors.map((door) => ({
+            size: 'oneThird' as const,
+            richText: root(heading('h3', text(door.heading)), paragraph(text(door.standfirst))),
+            enableLink: true,
+            link: { type: 'custom' as const, label: door.label, url: door.url },
+          })),
+        },
+        {
           blockType: 'partnerLogos',
           blockName: 'Working with',
           heading: 'Working with',

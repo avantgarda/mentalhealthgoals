@@ -60,6 +60,9 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
                     <CMSLink
                       {...col.link}
                       appearance="link"
+                      // Stretched over the whole row. Nothing may transform this
+                      // link: a transform makes it the containing block for its
+                      // own ::after, shrinking the target to its words mid-click.
                       className="text-[0.95rem] font-medium after:absolute after:inset-0 after:content-['']"
                     >
                       <span aria-hidden="true" className="arrow ml-2">

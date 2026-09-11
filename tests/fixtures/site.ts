@@ -296,6 +296,41 @@ export const registerFormLabels = [
   'The Alliance Management Team may contact me about the Forum.',
 ] as const
 
+export type FixtureDoor = {
+  heading: string
+  standfirst: string
+  /** The call to action at the end of the row. */
+  label: string
+  url: string
+}
+
+/**
+ * The home page's audience "doors": three linked one-third columns, which the
+ * content block sets as ruled rows clickable from edge to edge. Each goes
+ * somewhere different, so a test can tell which row a press opened. The copy
+ * stays clear of the words the search tests rank on.
+ */
+export const doors: FixtureDoor[] = [
+  {
+    heading: 'For partners',
+    standfirst: 'A single place to begin working with the fictional programme.',
+    label: 'Work with us',
+    url: '/industry',
+  },
+  {
+    heading: 'For the public',
+    standfirst: 'Why the programme exists, and who is behind it.',
+    label: 'About the programme',
+    url: '/about',
+  },
+  {
+    heading: 'For researchers',
+    standfirst: 'Methods, data and collaboration across the programme.',
+    label: 'Meet the team',
+    url: '/people',
+  },
+]
+
 export const FIXTURE = {
   /** The admin account the admin-panel tests sign in as. */
   admin: {
@@ -307,6 +342,7 @@ export const FIXTURE = {
   workstreams,
   partners,
   people,
+  doors,
 
   home: {
     /** The hero h1. */
