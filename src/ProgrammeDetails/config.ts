@@ -14,7 +14,8 @@ export const FOOTER_DESCRIPTION =
 /**
  * Programme-wide details — the name, contact email, phone and address of the
  * programme itself (individual people live in the People collection). Shown in
- * the footer; edit once here and it updates everywhere it's used.
+ * the footer, and the email wherever page text uses the "Programme email"
+ * inline block; edit once here and it updates everywhere it's used.
  *
  * Like the Brand global, the field defaults cover a fresh database, and an
  * editor's changes are never overwritten from the repository.
@@ -28,7 +29,7 @@ export const ProgrammeDetails: GlobalConfig = {
   admin: {
     group: 'Settings',
     description:
-      'The programme’s own description and contact details — shown in the site footer. People and their individual contact details live in the People collection.',
+      'The programme’s own description and contact details — shown in the site footer, and the email wherever page text uses “Programme email”. People and their individual contact details live in the People collection.',
   },
   fields: [
     {

@@ -6,6 +6,7 @@ import type { ContentBlock as ContentBlockProps } from '@/payload-types'
 
 import { CMSLink } from '../../components/Link'
 import { firstHeadingText } from '@/heros/splitRichText'
+import { getCachedGlobal } from '@/utilities/getGlobals'
 import { readingColumn } from '@/utilities/readingColumn'
 
 /**
@@ -27,9 +28,15 @@ export const isDoorsLayout = (block: ContentBlockProps): boolean =>
   (block.columns?.length ?? 0) === 3 &&
   (block.columns ?? []).every((col) => col.size === 'oneThird' && col.enableLink && col.link)
 
-export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
+export const ContentBlock: React.FC<ContentBlockProps> = async (props) => {
   const { columns } = props
   if (!columns || columns.length === 0) return null
+
+  // Page text can show the programme's email through the "Programme email"
+  // inline block. The address lives in Programme details and is read here, on
+  // the server, through the same cached read the footer makes — so editing it
+  // there updates every page that uses it.
+  const programmeEmail = (await getCachedGlobal('programmeDetails', 0)())?.email
 
   const isDoors = isDoorsLayout(props)
 
@@ -52,6 +59,7 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
                       data={col.richText}
                       enableGutter={false}
                       enableProse={false}
+                      programmeEmail={programmeEmail}
                     />
                   )}
                 </div>
@@ -60,6 +68,9 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
                     <CMSLink
                       {...col.link}
                       appearance="link"
+                      // Stretched over the whole row. Nothing may transform this
+                      // link: a transform makes it the containing block for its
+                      // own ::after, shrinking the target to its words mid-click.
                       className="text-[0.95rem] font-medium after:absolute after:inset-0 after:content-['']"
                     >
                       <span aria-hidden="true" className="arrow ml-2">
@@ -97,7 +108,12 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
           )}
           <div className={readingColumn(Boolean(label))} data-reveal>
             {col.richText && (
-              <RichText className="mx-0 max-w-[66ch]" data={col.richText} enableGutter={false} />
+              <RichText
+                className="mx-0 max-w-[66ch]"
+                data={col.richText}
+                enableGutter={false}
+                programmeEmail={programmeEmail}
+              />
             )}
             {col.enableLink && <CMSLink className="mt-6" {...col.link} />}
           </div>
@@ -136,6 +152,7 @@ export const ContentBlock: React.FC<ContentBlockProps> = (props) => {
                   data={richText}
                   enableGutter={false}
                   enableProse={!narrow}
+                  programmeEmail={programmeEmail}
                 />
               )}
 

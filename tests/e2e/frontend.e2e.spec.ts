@@ -41,6 +41,22 @@ test.describe('Frontend', () => {
     await expect(page.getByRole('heading', { name: /key questions/i })).toBeVisible()
   })
 
+  test('a door opens from wherever it is pressed, not only from its words', async ({ page }) => {
+    // A door's call to action stretches a pseudo-element over the whole row. The
+    // shared Button once nudged down a pixel when pressed, which made the link
+    // the containing block for its own ::after: the stretch shrank to the words
+    // mid-press, and a click on the description was released outside it.
+    for (const door of FIXTURE.doors) {
+      await page.goto('/')
+      const row = page.locator('main li.door', { hasText: door.heading })
+      await row.hover()
+      // Forced, because the description sits under the stretched link by
+      // design, and Playwright otherwise refuses to click a covered element.
+      await row.locator('p').click({ force: true })
+      await page.waitForURL((url) => url.pathname === door.url)
+    }
+  })
+
   test('the workstreams index explains its umbrella team without logos', async ({ page }) => {
     await page.goto('/workstreams')
     await page.getByRole('link', { name: /About DIGIT/ }).click()
@@ -53,12 +69,16 @@ test.describe('Frontend', () => {
 
   test('industry has an address to write to, not only a form', async ({ page }) => {
     // A visitor who would rather write than fill something in should not have
-    // to hunt for the address.
+    // to hunt for the address. The page does not type it: the "Programme
+    // email" inline block renders whatever Programme details holds, so the
+    // page and the footer cannot disagree.
     await page.goto('/industry')
 
     const mailto = page.locator('main a[href^="mailto:"]').first()
     await expect(mailto).toBeVisible()
     await expect(mailto).toContainText(FIXTURE.contactEmail)
+    await expect(mailto).toHaveAttribute('href', `mailto:${FIXTURE.contactEmail}`)
+    await expect(page.locator(`footer a[href="mailto:${FIXTURE.contactEmail}"]`)).toBeVisible()
 
     // The Forum is named as itself here, not as the meeting at which it
     // launches — those are different things and the page should say so.

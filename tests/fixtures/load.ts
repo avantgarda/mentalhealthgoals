@@ -26,7 +26,7 @@ import sharp from 'sharp'
 import config from '@payload-config'
 
 import { FIXTURE, partners, people, workstreams } from './site'
-import { block, bullets, heading, link, paragraph, root, text } from './lexical'
+import { block, bullets, heading, inlineBlock, paragraph, root, text } from './lexical'
 
 /**
  * Cleared dependents first. Parallel deletes here caused a Postgres deadlock in
@@ -371,6 +371,17 @@ async function load(): Promise<void> {
           style: 'cards',
         },
         {
+          // The audience "doors": three linked one-third columns, which the
+          // content block sets as rows clickable from edge to edge.
+          blockType: 'content',
+          columns: FIXTURE.doors.map((door) => ({
+            size: 'oneThird' as const,
+            richText: root(heading('h3', text(door.heading)), paragraph(text(door.standfirst))),
+            enableLink: true,
+            link: { type: 'custom' as const, label: door.label, url: door.url },
+          })),
+        },
+        {
           blockType: 'partnerLogos',
           blockName: 'Working with',
           heading: 'Working with',
@@ -461,7 +472,8 @@ async function load(): Promise<void> {
           heading('h2', text(FIXTURE.forum.plainName)),
           paragraph(
             text('How industry works with the fictional programme. Write to '),
-            link(FIXTURE.contactEmail, `mailto:${FIXTURE.contactEmail}`),
+            // Not typed: the inline block shows whatever Programme details holds.
+            inlineBlock({ blockType: 'programmeEmail' }),
             text('.'),
           ),
         ),
@@ -650,6 +662,14 @@ async function load(): Promise<void> {
   })
 
   payload.logger.info('— Globals...')
+
+  // The programme's own address. The footer and the "Programme email" inline
+  // block both show it, so no page has to type it.
+  await payload.updateGlobal({
+    slug: 'programmeDetails',
+    ...noRevalidate,
+    data: { email: FIXTURE.contactEmail },
+  })
 
   const navLinks = [
     FIXTURE.headerLink,

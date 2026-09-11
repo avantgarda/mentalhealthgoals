@@ -6,11 +6,12 @@ import { type VariantProps, cva } from 'class-variance-authority'
 import * as React from 'react'
 
 /**
- * Rectangular, quiet, with every state designed: hover shifts tone, active
- * presses by a pixel, focus gets the global ring, disabled fades.
+ * Rectangular, quiet, with every state designed: hover shifts tone, focus gets
+ * the global ring, disabled fades. Deliberately no press nudge — a transform
+ * breaks the stretched links in the content block's "doors".
  */
 const buttonVariants = cva(
-  "group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[2px] text-[0.95rem] font-medium tracking-[0.01em] transition-[color,background-color,border-color,transform] duration-[var(--dur-ui)] ease-[var(--ease-out)] active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-current aria-invalid:focus-visible:outline-destructive",
+  "group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[2px] text-[0.95rem] font-medium tracking-[0.01em] transition-[color,background-color,border-color] duration-[var(--dur-ui)] ease-[var(--ease-out)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-current aria-invalid:focus-visible:outline-destructive",
   {
     variants: {
       variant: {

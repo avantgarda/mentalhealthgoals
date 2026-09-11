@@ -11,6 +11,7 @@ import {
 import { link } from '@/fields/link'
 
 import { PartnerLogos } from '../PartnerLogos/config'
+import { ProgrammeEmail } from '../ProgrammeEmail/config'
 const columnFields: Field[] = [
   {
     name: 'size',
@@ -43,13 +44,17 @@ const columnFields: Field[] = [
         return [
           ...rootFeatures,
           HeadingFeature({ enabledHeadingSizes: ['h2', 'h3', 'h4'] }),
-          BlocksFeature({ blocks: [PartnerLogos] }),
+          BlocksFeature({ blocks: [PartnerLogos], inlineBlocks: [ProgrammeEmail] }),
           FixedToolbarFeature(),
           InlineToolbarFeature(),
         ]
       },
     }),
     label: false,
+    admin: {
+      description:
+        'To show the programme’s email address, insert “Programme email” instead of typing it, so it follows Settings → Programme details.',
+    },
   },
   {
     name: 'enableLink',
