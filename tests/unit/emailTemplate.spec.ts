@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { brandedEmailHtml, emailText, styleMessage } from '@/utilities/emailTemplate'
-import { EMAIL_ASSET_ORIGIN, beforeEmail, brandFormEmails } from '@/utilities/formEmails'
+import { EMAIL_ASSET_ORIGIN, addresses, beforeEmail, brandFormEmails } from '@/utilities/formEmails'
 
 /**
  * The frame around form emails. What matters: the lockup and links are right,
  * the editor's message survives intact, the plugin's bare markup gets the
- * inline styles email clients need, and nothing here can stop an email.
+ * inline styles email clients need, the person and the team each get the
+ * footer meant for them, and nothing here can stop an email.
  */
 const body =
   '<div><p>Dear Ada,</p><p>Thank you for <a href="https://example.org">writing</a>.</p>' +
@@ -17,6 +18,9 @@ const brand = {
   programmeName: 'Mental Health Goals <Programme>',
   siteUrl: 'https://mentalhealthgoals.co.uk/',
 }
+
+const PERSON_NOTICE = 'You are receiving this email because you submitted a form on our website.'
+const TEAM_NOTICE = 'Sent automatically by the website’s forms to the programme team.'
 
 describe('brandedEmailHtml', () => {
   const html = brandedEmailHtml({
@@ -46,6 +50,19 @@ describe('brandedEmailHtml', () => {
     expect(html).toMatch(/<td style="[^"]*font-weight:600;[^"]*">Full name<\/td>/)
     expect(html).toContain('Ada &amp; Co')
   })
+
+  it('explains to the person why they got it, and to the team what it is', () => {
+    expect(html).toContain(PERSON_NOTICE)
+    const team = brandedEmailHtml({
+      body,
+      logoUrl: 'x',
+      siteUrl: brand.siteUrl,
+      programmeName: 'MHG',
+      audience: 'team',
+    })
+    expect(team).toContain(TEAM_NOTICE)
+    expect(team).not.toContain(PERSON_NOTICE)
+  })
 })
 
 describe('styleMessage', () => {
@@ -69,51 +86,87 @@ describe('emailText', () => {
   })
 })
 
+describe('addresses', () => {
+  it('reads bare addresses out of any To header shape', () => {
+    expect(addresses('Ada <Ada@Example.org>, team@example.org')).toEqual([
+      'ada@example.org',
+      'team@example.org',
+    ])
+    expect(addresses('ada@example.org')).toEqual(['ada@example.org'])
+  })
+})
+
 describe('brandFormEmails', () => {
-  const email = {
-    to: 'a@example.org',
+  const person = {
+    to: 'ada@example.org',
     from: 'noreply@example.org',
     replyTo: 'team@example.org',
     subject: 'Hello',
     html: body,
   }
+  const team = {
+    ...person,
+    to: 'team@example.org',
+    replyTo: 'ada@example.org',
+    subject: 'New enquiry',
+  }
 
   it('frames every email, adds a text part, and changes nothing else', () => {
-    const [out] = brandFormEmails([email], brand)
+    const [out] = brandFormEmails([person], brand, ['ada@example.org'])
     expect(out).toMatchObject({
-      to: email.to,
-      from: email.from,
-      replyTo: email.replyTo,
+      to: person.to,
+      from: person.from,
+      replyTo: person.replyTo,
       subject: 'Hello',
     })
     expect(out.html).toContain(`${EMAIL_ASSET_ORIGIN}/brand/rings/lockup-email.png`)
     expect(out.html).toContain('Dear Ada,')
     expect((out as { text?: string }).text).toContain('Dear Ada,')
   })
+
+  it('tells the person’s copy from the team’s by who typed the address in', () => {
+    const [toPerson, toTeam] = brandFormEmails([person, team], brand, ['Ada@Example.org'])
+    expect(toPerson.html).toContain(PERSON_NOTICE)
+    expect(toTeam.html).toContain(TEAM_NOTICE)
+  })
+
+  it('treats every email as the team’s when no address was submitted', () => {
+    const [out] = brandFormEmails([person], brand)
+    expect(out.html).toContain(TEAM_NOTICE)
+  })
 })
 
 describe('beforeEmail', () => {
-  const email = { to: 'a', from: 'b', replyTo: 'b', subject: 's', html: '<p>Hi</p>' }
+  const person = { to: 'a@example.org', from: 'b', replyTo: 'b', subject: 's', html: '<p>Hi</p>' }
+  const team = { ...person, to: 'team@example.org' }
   const req = (findGlobal: (args: { slug: string }) => Promise<unknown>) =>
     ({ payload: { findGlobal, logger: { warn: vi.fn() } } }) as never
+  const data = {
+    submissionData: [
+      { field: 'full-name', value: 'A' },
+      { field: 'email', value: 'a@example.org' },
+    ],
+  }
 
-  it('uses the lockup the site is set to and the programme name from the CMS', async () => {
+  it('uses the lockup the site is set to, the programme name, and the submitted address', async () => {
     const globals: Record<string, unknown> = {
       brand: { logoVariant: 'sunInCol' },
       programmeDetails: { name: 'Mental Health Goals Programme' },
     }
     const r = req(async ({ slug }) => globals[slug])
-    const [out] = await beforeEmail([email], { req: r } as never)
-    expect(out.html).toContain('/brand/sunInCol/lockup-email.png')
-    expect(out.html).toContain('alt="Mental Health Goals Programme"')
+    const [toPerson, toTeam] = await beforeEmail([person, team], { req: r, data } as never)
+    expect(toPerson.html).toContain('/brand/sunInCol/lockup-email.png')
+    expect(toPerson.html).toContain('alt="Mental Health Goals Programme"')
+    expect(toPerson.html).toContain(PERSON_NOTICE)
+    expect(toTeam.html).toContain(TEAM_NOTICE)
   })
 
   it('sends the message unframed rather than not at all when the frame fails', async () => {
     const r = req(async () => {
       throw new Error('database away')
     })
-    const out = await beforeEmail([email], { req: r } as never)
-    expect(out).toEqual([email])
+    const out = await beforeEmail([person], { req: r, data } as never)
+    expect(out).toEqual([person])
     expect(
       (r as { payload: { logger: { warn: ReturnType<typeof vi.fn> } } }).payload.logger.warn,
     ).toHaveBeenCalled()

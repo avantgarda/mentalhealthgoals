@@ -16,6 +16,10 @@ import { BRAND_COLORS } from '../brand/tokens'
  * twice this width, so it stays sharp on high-density screens. */
 export const EMAIL_LOCKUP = { width: 340, height: 63 }
 
+/** Who is reading: the person who filled in the form, or the team it notifies.
+ * The frame is the same; the footer's explanation of why they got it is not. */
+export type EmailAudience = 'person' | 'team'
+
 export type BrandedEmailInput = {
   /** The message HTML the form builder produced — trusted, already serialised. */
   body: string
@@ -24,12 +28,18 @@ export type BrandedEmailInput = {
   /** Where the site is; the footer names its host and links the privacy notice. */
   siteUrl: string
   programmeName: string
+  audience?: EmailAudience
 }
 
 const SANS = "Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif"
 const SERIF = "Fraunces, 'Iowan Old Style', 'Palatino Nova', Georgia, serif"
 const RULE = '#E6E2DA'
 const MUTED = '#5F6B6E'
+
+const NOTICE: Record<EmailAudience, string> = {
+  person: 'You are receiving this email because you submitted a form on our website.',
+  team: 'Sent automatically by the website’s forms to the programme team.',
+}
 
 export const escapeHtml = (value: string) =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -67,6 +77,7 @@ export function brandedEmailHtml(input: BrandedEmailInput): string {
   const name = escapeHtml(input.programmeName)
   const site = input.siteUrl.replace(/\/$/, '')
   const host = escapeHtml(new URL(site).host)
+  const notice = NOTICE[input.audience ?? 'person']
   const text = `font-family:${SANS};font-size:16px;line-height:1.55;color:${BRAND_COLORS.ink};`
   const small = `font-family:${SANS};font-size:13px;line-height:1.5;color:${MUTED};`
   const link = `color:${BRAND_COLORS.petrol};text-decoration:underline;`
@@ -100,7 +111,7 @@ ${styleMessage(input.body)}
         <tr>
           <td style="padding:20px 40px 28px;border-top:1px solid ${RULE};${small}">
             <p style="margin:0 0 6px;">${name} &middot; <a href="${escapeHtml(site)}" style="${link}">${host}</a> &middot; <a href="${escapeHtml(site)}/privacy" style="${link}">Privacy notice</a></p>
-            <p style="margin:0;">You are receiving this email because you submitted a form on our website.</p>
+            <p style="margin:0;">${notice}</p>
           </td>
         </tr>
       </table>
