@@ -24,6 +24,10 @@ name: Dependabot auto-merge
 # Auto-merge only *queues* the merge: GitHub still waits for every required
 # check, and a red check leaves the PR sitting open. It does not bypass the
 # ruleset.
+#
+# The merge itself is pushed with GITHUB_TOKEN, and GitHub starts no workflows
+# for pushes made with that token — so CI, and with it the production deploy,
+# does not run on the merge commit. deploy-catch-up.yml covers that gap.
 
 on: pull_request_target
 

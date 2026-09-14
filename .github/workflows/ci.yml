@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  # By hand — `gh workflow run ci.yml --ref main` — and from deploy-catch-up.yml,
+  # which starts CI for a commit on main that never got a run. A green run on
+  # main deploys production whichever way it was started.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}

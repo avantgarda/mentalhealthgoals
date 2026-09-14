@@ -1,0 +1,63 @@
+name: Deploy catch-up
+
+# Starts CI for `main` when a merge slipped past the normal deploy chain.
+#
+# Production deploys from deploy-production.yml, which runs once CI has gone
+# green on `main`. That chain has one hole: a merge performed with the Actions
+# token. Dependabot's auto-merge (dependabot-automerge.yml enables it with
+# GITHUB_TOKEN) pushes to `main` as github-actions[bot], and GitHub creates no
+# workflow runs for events caused by that token — so no CI run, and therefore
+# no deploy. #72 sat undeployed on 2026-09-14 for exactly this reason; #58 and
+# #59 only reached production on the back of later human merges.
+#
+# `workflow_dispatch` is the documented exception to that rule. So, once an
+# hour, this looks at the tip of `main` and, if no CI run exists for it, starts
+# one. The rest of the chain is unchanged: CI goes green, deploy-production
+# fires, Vercel builds `main`. It never deploys anything itself, and it never
+# retries a red run — that stays a person's call, as it is today.
+#
+# The zero-latency alternative is a token GitHub treats as a person — a
+# fine-grained PAT or a GitHub App token — in place of GITHUB_TOKEN when
+# enabling auto-merge. That needs a credential to create and rotate; this
+# needs nothing, at the cost of up to an hour's delay on a dependency bump.
+#
+# To deploy `main` by hand at any time:  gh workflow run ci.yml --ref main
+
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: write # starting CI
+  contents: read
+
+concurrency:
+  group: deploy-catch-up
+  cancel-in-progress: false
+
+jobs:
+  catch-up:
+    name: Start CI for main if nothing has
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the tip of main for a CI run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          sha=$(gh api "repos/${REPO}/commits/main" --jq '.sha')
+          echo "main is at ${sha}"
+
+          # Any CI run for this commit — queued, running, green or red — means
+          # the chain is already in motion or has already had its say.
+          runs=$(gh api "repos/${REPO}/actions/workflows/ci.yml/runs?head_sha=${sha}&per_page=1" --jq '.total_count')
+          if [ "${runs}" -gt 0 ]; then
+            echo "CI has run for ${sha}; nothing to do."
+            exit 0
+          fi
+
+          echo "::notice::No CI run exists for ${sha} — starting one so it deploys."
+          gh workflow run ci.yml --ref main
