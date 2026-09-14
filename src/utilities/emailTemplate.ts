@@ -12,9 +12,14 @@
  */
 import { BRAND_COLORS } from '../brand/tokens'
 
-/** The lockup as displayed in the header. `generate:brand` writes the raster at
- * twice this width, so it stays sharp on high-density screens. */
-export const EMAIL_LOCKUP = { width: 340, height: 63 }
+/**
+ * The lockup as displayed in the header — the website header's own size.
+ * `generate:email-lockup` photographs every variant onto this canvas at twice
+ * this width, so it stays sharp on high-density screens. The template sets
+ * only the width; the image's own proportions decide the height, so a
+ * regenerated lockup never gets squashed into last year's box.
+ */
+export const EMAIL_LOCKUP = { width: 236, height: 34 }
 
 /** Who is reading: the person who filled in the form, or the team it notifies.
  * The frame is the same; the footer's explanation of why they got it is not. */
@@ -53,22 +58,64 @@ export const escapeHtml = (value: string) =>
 export function styleMessage(body: string): string {
   const heading = (size: number) =>
     `margin:0 0 12px;font-family:${SERIF};font-size:${size}px;font-weight:600;line-height:1.25;color:${BRAND_COLORS.ink};`
-  const cell = `text-align:left;vertical-align:top;padding:6px 8px;border-bottom:1px solid ${RULE};font-size:15px;`
   return body
+    .replace(/<table>[\s\S]*?<\/table>/g, styleTable)
     .replace(/<p>/g, '<p style="margin:0 0 16px;">')
-    .replace(/<h1>/g, `<h1 style="${heading(26)}">`)
-    .replace(/<h2>/g, `<h2 style="${heading(22)}">`)
-    .replace(/<h3>/g, `<h3 style="${heading(19)}">`)
-    .replace(/<h4>/g, `<h4 style="${heading(17)}">`)
+    .replace(/<h1>/g, `<h1 style="${heading(22)}">`)
+    .replace(/<h2>/g, `<h2 style="${heading(19)}">`)
+    .replace(/<h3>/g, `<h3 style="${heading(17)}">`)
+    .replace(/<h4>/g, `<h4 style="${heading(15)}">`)
     .replace(/<(ul|ol)>/g, '<$1 style="margin:0 0 16px;padding-left:22px;">')
     .replace(/<a href=/g, `<a style="color:${BRAND_COLORS.petrol};" href=`)
+}
+
+/** The width the message sits in: the 600px card less its 40px side padding. */
+export const CONTENT_WIDTH = 520
+/**
+ * What a character of a 13px semibold label costs in the frame's font stack.
+ * Email clients have no Inter, so this is Helvetica: 7.2–7.8px per character
+ * at 15px across the forms' labels, measured in Chrome, scaled to 13px.
+ * Estimates, so widths carry slack.
+ */
+const LABEL_CHAR_PX = 6.6
+/** Left plus right cell padding. */
+const CELL_PADDING = 16
+/** The most of the table a label column may take; the answers keep the rest. */
+const LABEL_MAX_SHARE = 0.4
+
+/**
+ * The label column, sized from the labels themselves: wide enough to hold the
+ * longest on one line, up to two-fifths of the table. Beyond that a label
+ * wraps — the answers are what the reader is there for, and a consent
+ * sentence held on one line once squeezed them into a sliver.
+ */
+export function labelColumnWidth(labels: string[]): number {
+  const longest = Math.max(0, ...labels.map((label) => label.length))
+  const fits = Math.ceil(longest * LABEL_CHAR_PX * 1.06) + CELL_PADDING
+  return Math.min(fits, Math.round(CONTENT_WIDTH * LABEL_MAX_SHARE))
+}
+
+const visibleText = (html: string): string =>
+  html
+    .replace(/<[^>]+>/g, '')
     .replace(
-      /<table>/g,
+      /&(amp|lt|gt|quot|#39);/g,
+      (_, e: string) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" })[e] ?? '',
+    )
+
+/** A two-column key–value table, as the plugin and the form hook emit it. */
+function styleTable(table: string): string {
+  const cell = `text-align:left;vertical-align:top;padding:6px 8px;border-bottom:1px solid ${RULE};font-size:13px;`
+  const labels = [...table.matchAll(/<tr><td>(.*?)<\/td>/g)].map((m) => visibleText(m[1]))
+  const width = labelColumnWidth(labels)
+  return table
+    .replace(
+      /<table>/,
       '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;margin:0 0 16px;">',
     )
     .replace(
       /<tr><td>/g,
-      `<tr><td style="${cell}color:${MUTED};font-weight:600;white-space:nowrap;">`,
+      `<tr><td width="${width}" style="${cell}width:${width}px;color:${MUTED};font-weight:600;">`,
     )
     .replace(/<\/td><td>/g, `</td><td style="${cell}">`)
 }
@@ -78,8 +125,8 @@ export function brandedEmailHtml(input: BrandedEmailInput): string {
   const site = input.siteUrl.replace(/\/$/, '')
   const host = escapeHtml(new URL(site).host)
   const notice = NOTICE[input.audience ?? 'person']
-  const text = `font-family:${SANS};font-size:16px;line-height:1.55;color:${BRAND_COLORS.ink};`
-  const small = `font-family:${SANS};font-size:13px;line-height:1.5;color:${MUTED};`
+  const text = `font-family:${SANS};font-size:14px;line-height:1.55;color:${BRAND_COLORS.ink};`
+  const small = `font-family:${SANS};font-size:11px;line-height:1.5;color:${MUTED};`
   const link = `color:${BRAND_COLORS.petrol};text-decoration:underline;`
 
   return `<!doctype html>
@@ -99,7 +146,7 @@ export function brandedEmailHtml(input: BrandedEmailInput): string {
         <tr>
           <td style="padding:28px 40px 22px;border-bottom:1px solid ${RULE};">
             <a href="${escapeHtml(site)}" style="text-decoration:none;">
-              <img src="${escapeHtml(input.logoUrl)}" width="${EMAIL_LOCKUP.width}" height="${EMAIL_LOCKUP.height}" alt="${name}" style="display:block;border:0;outline:none;max-width:100%;height:auto;">
+              <img src="${escapeHtml(input.logoUrl)}" width="${EMAIL_LOCKUP.width}" alt="${name}" style="display:block;border:0;outline:none;max-width:100%;height:auto;">
             </a>
           </td>
         </tr>
