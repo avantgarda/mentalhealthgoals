@@ -10,6 +10,7 @@ import { Logo } from '@/components/Logo/Logo'
 import { PartnerGroup } from '@/components/PartnerLogo'
 import { getCachedPartners } from '@/utilities/getPartners'
 import { FOOTER_DESCRIPTION } from '@/ProgrammeDetails/config'
+import { BRAND_DOMAIN } from '@/brand/tokens'
 
 export async function Footer() {
   const footerData = await getCachedGlobal('footer', 1)()
@@ -112,7 +113,7 @@ export async function Footer() {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <p>
                 © {new Date().getFullYear()} {details?.name || 'Mental Health Goals Programme'} ·
-                mentalhealthgoals.co.uk
+                {BRAND_DOMAIN}
               </p>
               {smallPrintLinks.length > 0 && (
                 <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">

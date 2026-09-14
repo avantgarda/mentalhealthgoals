@@ -29,3 +29,10 @@ export const BRAND_COLORS = {
 
 export const BRAND_NAME = 'Mental Health Goals'
 export const BRAND_TAGLINE = 'UK-wide Programme'
+/**
+ * The public address, for places that print it as part of the identity — the
+ * footer colophon, the admin sign-in. Absolute links and canonical tags come
+ * from NEXT_PUBLIC_SERVER_URL instead, which follows the environment; this
+ * does not, on purpose, so a preview's footer never advertises its own host.
+ */
+export const BRAND_DOMAIN = 'www.mentalhealthgoals.co.uk'
