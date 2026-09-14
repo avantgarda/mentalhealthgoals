@@ -226,6 +226,7 @@ To deploy `main` by hand: `gh workflow run ci.yml --ref main`.
 | `pnpm content:patch`                 | Apply a reviewed content plan (dry run by default) — see `scripts/CONTENT-PATCH.md` |
 | `pnpm content:verify`                | Prove a deployment shows what the plan says; derived from the plan                  |
 | `pnpm generate:types`                | Regenerate `src/payload-types.ts` after schema changes                              |
+| `pnpm generate:email-lockup`         | Photograph the header lockup for email, every variant (needs the site running)      |
 | `pnpm generate:brand`                | Regenerate all logo asset files in `public/brand`                                   |
 | `pnpm payload migrate:create <name>` | Create a migration after changing collections/fields                                |
 | `pnpm lint` / `pnpm typecheck`       | ESLint / TypeScript                                                                 |

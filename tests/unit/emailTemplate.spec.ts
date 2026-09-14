@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { Form } from '@/payload-types'
-import { brandedEmailHtml, emailText, styleMessage } from '@/utilities/emailTemplate'
+import {
+  CONTENT_WIDTH,
+  brandedEmailHtml,
+  emailText,
+  labelColumnWidth,
+  styleMessage,
+} from '@/utilities/emailTemplate'
 import {
   EMAIL_ASSET_ORIGIN,
   addresses,
@@ -73,10 +79,12 @@ describe('brandedEmailHtml', () => {
     programmeName: brand.programmeName,
   })
 
-  it('puts the lockup in the header with its display size and an escaped alt', () => {
+  it('puts the lockup in the header at its display width, with an escaped alt', () => {
     expect(html).toContain(
-      '<img src="https://cdn.example/lockup-email.png" width="340" height="63" alt="Mental Health Goals &lt;Programme&gt;"',
+      '<img src="https://cdn.example/lockup-email.png" width="236" alt="Mental Health Goals &lt;Programme&gt;"',
     )
+    // Width only: the image's own proportions set the height.
+    expect(html).not.toMatch(/<img[^>]*height="/)
   })
 
   it('links the site host and the privacy notice in the footer, without a trailing slash', () => {
@@ -90,7 +98,7 @@ describe('brandedEmailHtml', () => {
     expect(html).toContain('<p style="margin:0 0 16px;">Dear Ada,</p>')
     expect(html).toContain('<a style="color:#15545B;" href="https://example.org">')
     expect(html).toContain('<table role="presentation"')
-    expect(html).toMatch(/<td style="[^"]*font-weight:600;[^"]*">Full name<\/td>/)
+    expect(html).toMatch(/<td[^>]*style="[^"]*font-weight:600;[^"]*">Full name<\/td>/)
     expect(html).toContain('Ada &amp; Co')
   })
 
@@ -113,6 +121,29 @@ describe('styleMessage', () => {
     expect(styleMessage('<p class="lead">x</p><p>y</p>')).toBe(
       '<p class="lead">x</p><p style="margin:0 0 16px;">y</p>',
     )
+  })
+
+  it('sizes the label column to the longest label, so answers get the rest', () => {
+    const short = styleMessage(
+      '<table><tr><td>Full name</td><td>Ada</td></tr><tr><td>Email</td><td>a@b</td></tr></table>',
+    )
+    const width = labelColumnWidth(['Full name', 'Email'])
+    expect(width).toBeLessThan(110)
+    expect(short).toContain(`<td width="${width}" style="`)
+    expect(short).toContain(`width:${width}px;`)
+    expect(short).not.toContain('nowrap')
+  })
+
+  it('caps the label column at two-fifths of the table and lets a long label wrap', () => {
+    const consent =
+      'The Alliance Management Team may also contact me about the Industry Engagement Forum.'
+    expect(labelColumnWidth([consent])).toBe(Math.round(CONTENT_WIDTH * 0.4))
+    expect(labelColumnWidth(['Full name', consent])).toBe(labelColumnWidth([consent]))
+  })
+
+  it('measures the label as read, not its markup', () => {
+    const styled = styleMessage('<table><tr><td>Ada &amp; Co</td><td>x</td></tr></table>')
+    expect(styled).toContain(`<td width="${labelColumnWidth(['Ada & Co'])}"`)
   })
 })
 
