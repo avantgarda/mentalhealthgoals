@@ -56,7 +56,8 @@ export const FormBlock: React.FC<
 
         const dataToSend = Object.entries(data).map(([name, value]) => ({
           field: name,
-          value,
+          // A box's value is a boolean; a submission stores text.
+          value: typeof value === 'boolean' ? String(value) : value,
         }))
 
         // delay loading indicator by 1s
@@ -142,8 +143,11 @@ export const FormBlock: React.FC<
         )}
         <div className={cn('max-w-[38rem]', readingColumn(showIntro, 'wide'))}>
           <FormProvider {...formMethods}>
+            {/* No gutter, like the intro: the default wraps the message in a
+                second `container`, whose side padding steps the thank-you in
+                from the edge every other heading on the page sits on. */}
             {!isLoading && hasSubmitted && confirmationType === 'message' && (
-              <RichText data={confirmationMessage} />
+              <RichText data={confirmationMessage} enableGutter={false} />
             )}
             {isLoading && !hasSubmitted && <p>Loading, please wait...</p>}
             {error && (

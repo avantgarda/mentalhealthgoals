@@ -1,6 +1,12 @@
+import type { EmailAdapter, SendEmailOptions } from 'payload'
 import { describe, expect, it } from 'vitest'
 
-import { shouldSendRealEmail } from '@/utilities/emailConfig'
+import {
+  AUDIENCE_HEADER,
+  redirectTo,
+  shouldSendRealEmail,
+  withRecipientOverride,
+} from '@/utilities/emailConfig'
 
 /**
  * Who a non-production environment is allowed to email.
@@ -65,5 +71,68 @@ describe('shouldSendRealEmail', () => {
     expect(
       shouldSendRealEmail({ RESEND_API_KEY: 'k', EMAIL_OVERRIDE_RECIPIENT: 'dev@example.com' }),
     ).toEqual({ send: true, overrideRecipientAddress: 'dev@example.com' })
+  })
+})
+
+/**
+ * What the override does to each message once it is on. The team's copy and
+ * anything unmarked are redirected; the person's own copy is not, because the
+ * only address in it is the one they typed.
+ */
+describe('redirectTo', () => {
+  const team: SendEmailOptions = {
+    to: 'team@example.org',
+    cc: 'boss@example.org',
+    bcc: 'archive@example.org',
+    subject: 'New enquiry',
+    html: '<p>x</p>',
+    headers: { [AUDIENCE_HEADER]: 'team' },
+  }
+  const person: SendEmailOptions = {
+    to: 'ada@example.org',
+    subject: 'Your enquiry',
+    html: '<p>x</p>',
+    headers: { [AUDIENCE_HEADER]: 'person' },
+  }
+  const reset: SendEmailOptions = { to: 'editor@example.org', subject: 'Reset', html: '<p>x</p>' }
+
+  it('sends the team’s copy to the override, dropping cc and bcc', () => {
+    expect(redirectTo(team, 'dev@example.com')).toEqual({
+      ...team,
+      to: 'dev@example.com',
+      cc: undefined,
+      bcc: undefined,
+    })
+  })
+
+  it('treats a message that carries no audience as the team’s', () => {
+    expect(redirectTo(reset, 'dev@example.com').to).toBe('dev@example.com')
+  })
+
+  it('leaves the person’s own copy addressed to them', () => {
+    expect(redirectTo(person, 'dev@example.com')).toBe(person)
+  })
+
+  it('reads the header in the list shape too', () => {
+    const listed = { ...person, headers: [{ key: 'x-mhg-audience', value: 'person' }] }
+    expect(redirectTo(listed, 'dev@example.com').to).toBe('ada@example.org')
+  })
+
+  it('wraps an adapter so every message goes through the redirect', async () => {
+    const sent: SendEmailOptions[] = []
+    const fake: EmailAdapter<void> = () => ({
+      name: 'fake',
+      defaultFromAddress: 'noreply@example.org',
+      defaultFromName: 'Example',
+      sendEmail: async (message) => {
+        sent.push(message)
+      },
+    })
+    const adapter = withRecipientOverride(fake, 'dev@example.com')({ payload: {} as never })
+    await adapter.sendEmail(team)
+    await adapter.sendEmail(person)
+    await adapter.sendEmail(reset)
+    expect(sent.map((m) => m.to)).toEqual(['dev@example.com', 'ada@example.org', 'dev@example.com'])
+    expect(adapter.name).toBe('fake')
   })
 })
