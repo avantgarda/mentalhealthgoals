@@ -197,6 +197,14 @@ before sending artwork to print.
    the DNS instructions from your registrar (A record to `76.76.21.21` or CNAME to
    `cname.vercel-dns.com` for `www`).
 
+**How production deploys.** Vercel's Git integration is switched off for `main` in
+`vercel.json`; every other branch still gets a preview on push. Production is deployed by
+`.github/workflows/deploy-production.yml` once CI has passed on `main`, through a Vercel deploy
+hook (the `VERCEL_DEPLOY_HOOK_URL` repository secret). One merge never triggers that chain:
+Dependabot's auto-merge is pushed with the Actions token, which starts no workflows, so
+`deploy-catch-up.yml` checks `main` hourly and starts CI for any commit that never got a run.
+To deploy `main` by hand: `gh workflow run ci.yml --ref main`.
+
 ## Useful scripts
 
 | Script                               | What it does                                                                        |

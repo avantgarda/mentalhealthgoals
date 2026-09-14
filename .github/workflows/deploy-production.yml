@@ -13,6 +13,11 @@ name: Deploy production
 # runs in its place. Every other branch still deploys on push: a preview is
 # meant to appear immediately, and nothing is served to the public from one.
 #
+# One kind of push never reaches this workflow: a merge performed with the
+# Actions token — Dependabot's auto-merge — starts no workflows at all, so CI
+# never runs on it. deploy-catch-up.yml starts CI for such a commit instead;
+# from there the chain is the same.
+#
 # Requires the VERCEL_DEPLOY_HOOK_URL repository secret — Vercel → Project →
 # Settings → Git → Deploy Hooks, pointed at `main`.
 
