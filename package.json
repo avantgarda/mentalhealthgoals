@@ -60,7 +60,7 @@
     "@payloadcms/plugin-redirects": "3.89.0",
     "@payloadcms/plugin-search": "3.89.0",
     "@payloadcms/plugin-seo": "3.89.0",
-    "@payloadcms/richtext-lexical": "3.88.0",
+    "@payloadcms/richtext-lexical": "3.89.0",
     "@payloadcms/storage-vercel-blob": "3.89.0",
     "@payloadcms/ui": "3.89.0",
     "@radix-ui/react-checkbox": "^1.0.4",
