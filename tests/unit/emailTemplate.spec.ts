@@ -65,7 +65,7 @@ const body =
 const brand = {
   logoVariant: 'rings',
   programmeName: 'Mental Health Goals <Programme>',
-  siteUrl: 'https://mentalhealthgoals.co.uk/',
+  siteUrl: 'https://www.mentalhealthgoals.co.uk/',
 }
 
 const PERSON_NOTICE = 'You are receiving this email because you submitted a form on our website.'
@@ -88,9 +88,9 @@ describe('brandedEmailHtml', () => {
   })
 
   it('links the site host and the privacy notice in the footer, without a trailing slash', () => {
-    expect(html).toContain('href="https://mentalhealthgoals.co.uk"')
-    expect(html).toContain('>mentalhealthgoals.co.uk</a>')
-    expect(html).toContain('href="https://mentalhealthgoals.co.uk/privacy"')
+    expect(html).toContain('href="https://www.mentalhealthgoals.co.uk"')
+    expect(html).toContain('>www.mentalhealthgoals.co.uk</a>')
+    expect(html).toContain('href="https://www.mentalhealthgoals.co.uk/privacy"')
   })
 
   it('keeps the message and inlines styles onto its bare tags', () => {
@@ -156,7 +156,7 @@ describe('emailText', () => {
     expect(text).not.toContain('color-scheme')
     expect(text).toContain('Dear Ada,\n')
     expect(text).toContain('Full name Ada & Co')
-    expect(text).toContain('MHG · mentalhealthgoals.co.uk · Privacy notice')
+    expect(text).toContain('MHG · www.mentalhealthgoals.co.uk · Privacy notice')
   })
 })
 

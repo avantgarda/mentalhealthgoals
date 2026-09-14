@@ -182,7 +182,7 @@ before sending artwork to print.
    start with none of production's files — run `pnpm blobs:mirror` after uploading anything real.
 4. **Set the remaining environment variables** (Project → Settings → Environment Variables):
    - `PAYLOAD_SECRET` — a long random string (generate with `openssl rand -hex 24`)
-   - `NEXT_PUBLIC_SERVER_URL` — `https://mentalhealthgoals.co.uk`
+   - `NEXT_PUBLIC_SERVER_URL` — `https://www.mentalhealthgoals.co.uk` (the canonical host; the bare domain redirects to it)
    - `PREVIEW_SECRET` — a random string (validates draft preview requests)
    - `CRON_SECRET` — optional. Nothing schedules a job here, and without it the jobs
      endpoint denies unauthenticated callers rather than opening up. Set it only if
@@ -194,13 +194,14 @@ before sending artwork to print.
    copy-on-write database branch — preview builds migrate (and their admin panels write to)
    that branch, never the production database. Keep preview branching enabled; without it,
    preview builds would run unmerged branch migrations against production.
-6. **Deploy**, then create the first admin account at `https://mentalhealthgoals.co.uk/admin`
+6. **Deploy**, then create the first admin account at `https://www.mentalhealthgoals.co.uk/admin`
    (the first user is automatically an admin) and add the content through the CMS. Never point a
    local `.env.local` at the production database; every script here refuses a non-local target,
    and that is the reason why.
-7. **Point the domain**: Project → Settings → Domains → add `mentalhealthgoals.co.uk` and follow
-   the DNS instructions from your registrar (A record to `76.76.21.21` or CNAME to
-   `cname.vercel-dns.com` for `www`).
+7. **Point the domain**: Project → Settings → Domains → Add Existing `www.mentalhealthgoals.co.uk`
+   with "Redirect apex domains to www" ticked, which adds both hosts with www as the canonical one.
+   Then at the registrar (GoDaddy): an A record at `@` and a CNAME at `www`, both with the values
+   Vercel shows. Leave the Resend email records and the nameservers alone.
 
 **How production deploys.** Vercel's Git integration is switched off for `main` in
 `vercel.json`; every other branch still gets a preview on push. Production is deployed by
