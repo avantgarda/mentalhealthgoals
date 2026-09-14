@@ -277,8 +277,8 @@ If you change collections or fields: run `pnpm payload migrate:create <name>` an
 - Some images in the Media library are **generated placeholders, not photographs** — the ridge
   motif drawn from `src/brand/ridge.ts`. They exist so the layouts hold something on-brand until a
   shoot happens. **Commission real photography before launch** and replace them in the admin; no
-  code change is needed to swap them. Provenance and permission notes for the images and partner
-  logos already in use are in [CONTENT-PROVENANCE.md](CONTENT-PROVENANCE.md).
+  code change is needed to swap them. Permission notes for a partner's logo live on the partner's
+  own record in the CMS (the admin-only "usage note" field).
 - **How images are served:** pages hand the _original_ upload to Next's image optimizer, which
   resizes per viewport/DPR on demand and caches the result. Payload generates only two
   derivatives — `og` (the social-sharing card) and `thumbnail` (the admin preview). Don't judge

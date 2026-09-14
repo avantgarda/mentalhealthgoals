@@ -13,8 +13,8 @@ import { anyone } from '../access/anyone'
  * mark, university identities — need the owner's consent before they appear
  * on a third-party site. Record the state of that consent in `usageNote`,
  * and upload the artwork the owner supplies when it arrives; nothing else
- * changes. Provenance and permission state for the logos already in use are
- * recorded in CONTENT-PROVENANCE.md at the root of this repository.
+ * changes. Permission state for a logo is recorded on the partner's own
+ * record, in the admin-only usage note below.
  */
 export const Partners: CollectionConfig = {
   slug: 'partners',
