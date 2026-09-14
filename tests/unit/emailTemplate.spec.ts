@@ -128,6 +128,9 @@ describe('brandFormEmails', () => {
     const [toPerson, toTeam] = brandFormEmails([person, team], brand, ['Ada@Example.org'])
     expect(toPerson.html).toContain(PERSON_NOTICE)
     expect(toTeam.html).toContain(TEAM_NOTICE)
+    // …and says so on the message, for the recipient override to read.
+    expect(toPerson.headers).toEqual({ 'X-MHG-Audience': 'person' })
+    expect(toTeam.headers).toEqual({ 'X-MHG-Audience': 'team' })
   })
 
   it('treats every email as the team’s when no address was submitted', () => {

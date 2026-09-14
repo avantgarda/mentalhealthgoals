@@ -8,10 +8,12 @@
  * reason the message goes out plain rather than not at all.
  */
 import type { BeforeEmail, FormattedEmail } from '@payloadcms/plugin-form-builder/types'
+import type { SendEmailOptions } from 'payload'
 
 import { DEFAULT_LOGO_VARIANT } from '@/brand/marks'
 
-import { brandedEmailHtml, emailText } from './emailTemplate'
+import { AUDIENCE_HEADER } from './emailConfig'
+import { brandedEmailHtml, emailText, type EmailAudience } from './emailTemplate'
 import { getServerSideURL } from './getURL'
 
 /**
@@ -22,6 +24,14 @@ import { getServerSideURL } from './getURL'
  * alias is public, permanent, and serves the same `public/brand` files.
  */
 export const EMAIL_ASSET_ORIGIN = 'https://mentalhealthgoals.vercel.app'
+
+/**
+ * What the hook hands back: the plugin's shape plus two parts of Payload's
+ * sendEmail options the plugin does not know about but forwards untouched —
+ * the plain-text part, and the header that tells the recipient override who
+ * the message is for.
+ */
+export type OutgoingFormEmail = FormattedEmail & Pick<SendEmailOptions, 'headers' | 'text'>
 
 export type EmailBrand = {
   logoVariant: string
@@ -41,16 +51,20 @@ export function addresses(header: string): string[] {
  * A form sends to two kinds of reader: the person who filled it in, and the
  * team it notifies. The plugin does not say which is which, but the person's
  * address is in the submission and the team's is not — so an email whose
- * recipient was typed into the form is the person's copy.
+ * recipient was typed into the form is the person's copy. That answer also
+ * goes out on the message as AUDIENCE_HEADER, so a non-production recipient
+ * override can spare the person's copy and redirect only the team's.
  */
 export function brandFormEmails(
   emails: FormattedEmail[],
   brand: EmailBrand,
   submittedAddresses: string[] = [],
-): FormattedEmail[] {
+): OutgoingFormEmail[] {
   const submitted = new Set(submittedAddresses.map((a) => a.trim().toLowerCase()))
   return emails.map((email) => {
-    const audience = addresses(email.to).some((a) => submitted.has(a)) ? 'person' : 'team'
+    const audience: EmailAudience = addresses(email.to).some((a) => submitted.has(a))
+      ? 'person'
+      : 'team'
     const html = brandedEmailHtml({
       body: email.html,
       logoUrl: `${EMAIL_ASSET_ORIGIN}/brand/${brand.logoVariant}/lockup-email.png`,
@@ -58,10 +72,9 @@ export function brandFormEmails(
       programmeName: brand.programmeName,
       audience,
     })
-    // The plugin's type has no plain-text part, but Payload's sendEmail takes
-    // one and Resend forwards it — for clients that prefer it and filters that
+    // The plain-text part is for clients that prefer it and filters that
     // distrust HTML-only mail.
-    return { ...email, html, text: emailText(html) } as FormattedEmail
+    return { ...email, html, text: emailText(html), headers: { [AUDIENCE_HEADER]: audience } }
   })
 }
 
@@ -86,6 +99,7 @@ export const beforeEmail: BeforeEmail = async (emails, { req, data }) => {
       submittedAddresses,
     )
   } catch (error) {
+    // Unframed and unmarked: with an override set, both copies go to it.
     req.payload.logger.warn({ err: error, msg: 'Form email sent without the branded frame' })
     return emails
   }

@@ -104,8 +104,9 @@ export default buildConfig({
   // a preview runs on a branch of production's, and a developer who has run
   // `pnpm sync:db` has production's rows on their laptop. Pointing a
   // non-production environment at a different address therefore has to happen
-  // at the point of sending, which is what `overrideRecipientAddress` does:
-  // every message goes there instead, whatever the CMS says.
+  // at the point of sending, which is what emailConfig's recipient override
+  // does: every message goes there instead, whatever the CMS says — except a
+  // form's reply to the person who filled it in, which goes where they typed.
   ...emailConfig(),
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer, Brand, ProgrammeDetails],

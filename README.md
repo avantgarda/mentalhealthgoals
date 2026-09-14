@@ -93,7 +93,9 @@ variable.
 
 Because it lives on the form, it travels with the database: a preview runs on a branch of
 production's, and `pnpm sync:db` brings production's rows to your laptop.
-`EMAIL_OVERRIDE_RECIPIENT` redirects every message regardless of what the CMS says, and a preview
+`EMAIL_OVERRIDE_RECIPIENT` redirects every message there regardless of what the CMS says — the
+team's notification, password resets — with one exception: a form's auto-reply goes to the address
+the person typed, exactly as in production, so a tester reads what a visitor would. A preview
 deployment that has a Resend key but no override sends nothing at all, on purpose.
 
 Every email a form sends goes out in a branded frame: the programme lockup from **Globals →
