@@ -99,7 +99,10 @@ the person typed, exactly as in production, so a tester reads what a visitor wou
 deployment that has a Resend key but no override sends nothing at all, on purpose.
 
 Every email a form sends goes out in a branded frame: the programme lockup from **Globals →
-Brand & Logo**, the editor's message, and a footer with the site and privacy links
+Brand & Logo**, the editor's message, and a footer with the site and privacy links. Where the
+message uses `{{*:table}}`, the table is rebuilt from the form itself: its field labels, the option
+a person chose rather than its stored value, Yes or No for a box, and a link to the record in the
+CMS
 (`src/utilities/emailTemplate.ts`, applied through the form builder's `beforeEmail` hook in
 `src/utilities/formEmails.ts`). The lockup image is fetched from the permanent
 `mentalhealthgoals.vercel.app` alias rather than the site's own URL — an email is opened long

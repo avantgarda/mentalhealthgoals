@@ -104,4 +104,40 @@ test.describe('Industry Engagement Forum', () => {
 
     await expect(page.getByText(FIXTURE.forum.confirmation)).toBeVisible()
   })
+
+  test('a registration is refused until the consent box is ticked, then records the tick', async ({
+    page,
+  }) => {
+    await page.goto('/industry-engagement-forum#register')
+    const form = page.locator('#register form')
+    const [fullName, organisation, , email] = FIXTURE.forum.formLabels
+    await form.getByLabel(fullName).fill('Test Registrant')
+    await form.getByLabel(organisation).fill('Example Pharma')
+    await form.getByLabel(email).fill('test.registrant@example.com')
+    await form.getByRole('combobox').click()
+    await page.getByRole('option', { name: /would like to attend/i }).click()
+
+    // The box is a Radix button whose `value` attribute is "on". Registered
+    // straight onto it, react-hook-form once read that on mount: an untouched
+    // box passed `required` and was recorded as consent.
+    const posts: string[] = []
+    page.on('request', (request) => {
+      if (request.url().includes('/api/form-submissions') && request.method() === 'POST') {
+        posts.push(request.postData() ?? '')
+      }
+    })
+    await form.getByRole('button', { name: FIXTURE.forum.stickyLabel }).click()
+    await expect(form.getByText('This field is required')).toBeVisible()
+    expect(posts).toHaveLength(0)
+
+    await form.getByRole('checkbox').click()
+    await form.getByRole('button', { name: FIXTURE.forum.stickyLabel }).click()
+    await expect(page.getByText(FIXTURE.forum.confirmation)).toBeVisible()
+    expect(posts).toHaveLength(1)
+    const { submissionData } = JSON.parse(posts[0]) as {
+      submissionData: { field: string; value: string }[]
+    }
+    expect(submissionData.some((entry) => entry.value === 'true')).toBe(true)
+    expect(submissionData.some((entry) => entry.value === 'on')).toBe(false)
+  })
 })

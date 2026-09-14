@@ -56,7 +56,8 @@ export const FormBlock: React.FC<
 
         const dataToSend = Object.entries(data).map(([name, value]) => ({
           field: name,
-          value,
+          // A box's value is a boolean; a submission stores text.
+          value: typeof value === 'boolean' ? String(value) : value,
         }))
 
         // delay loading indicator by 1s
