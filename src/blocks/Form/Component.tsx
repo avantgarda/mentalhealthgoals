@@ -142,8 +142,11 @@ export const FormBlock: React.FC<
         )}
         <div className={cn('max-w-[38rem]', readingColumn(showIntro, 'wide'))}>
           <FormProvider {...formMethods}>
+            {/* No gutter, like the intro: the default wraps the message in a
+                second `container`, whose side padding steps the thank-you in
+                from the edge every other heading on the page sits on. */}
             {!isLoading && hasSubmitted && confirmationType === 'message' && (
-              <RichText data={confirmationMessage} />
+              <RichText data={confirmationMessage} enableGutter={false} />
             )}
             {isLoading && !hasSubmitted && <p>Loading, please wait...</p>}
             {error && (

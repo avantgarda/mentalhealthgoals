@@ -23,5 +23,14 @@ test.describe('Contact form', () => {
     await expect(page.getByText(FIXTURE.contact.confirmation)).toBeVisible({
       timeout: 15000,
     })
+
+    // The thank-you sits on the same left edge as every other heading on the
+    // page. A second `container` nested inside the block's own once stepped
+    // it in by the page's side padding.
+    const [title, confirmation] = await Promise.all([
+      page.locator('main h1').first().boundingBox(),
+      page.getByText(FIXTURE.contact.confirmation).boundingBox(),
+    ])
+    expect(Math.round(confirmation!.x)).toBe(Math.round(title!.x))
   })
 })
