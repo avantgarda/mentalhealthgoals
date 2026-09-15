@@ -309,7 +309,13 @@ export type Expectation = {
   rejectText: string[]
   expectHref: string[]
   rejectHref: string[]
+  /** A page's SEO title and description render in the document head, not its
+   * body: checked against `<title>` and `<meta name="description">`. */
+  expectHead: HeadPassage[]
+  rejectHead: HeadPassage[]
 }
+
+export type HeadPassage = { head: 'title' | 'description'; text: string }
 
 /** Where a record renders. A workstream's summary and description are shown on
  * the index, its other fields on its own page; people share one page. */
@@ -363,6 +369,25 @@ function passages(value: unknown, key?: string, out: Passage[] = []): Passage[] 
   return out
 }
 
+/**
+ * A page's `meta` group never reaches the body. `generateMeta` puts the title
+ * in `<title>` (with the site name after it) and the description in
+ * `<meta name="description">`, and `visibleText` strips both along with every
+ * other tag — so a description that was correct read as missing until the
+ * verifier looked in the head instead.
+ */
+export function headPassages(meta: unknown): HeadPassage[] {
+  const m = meta as Obj | undefined
+  const out: HeadPassage[] = []
+  if (typeof m?.title === 'string' && m.title.trim()) {
+    out.push({ head: 'title', text: normalise(m.title) })
+  }
+  if (typeof m?.description === 'string' && m.description.trim()) {
+    out.push({ head: 'description', text: normalise(m.description) })
+  }
+  return out
+}
+
 export function deriveExpectations(plan: ContentPlan): Expectation[] {
   const out: Expectation[] = []
   const texts = (p: Passage[]) => p.flatMap((x) => ('text' in x ? [x.text] : []))
@@ -372,8 +397,13 @@ export function deriveExpectations(plan: ContentPlan): Expectation[] {
     const before = typeof c.before[field] === 'string' ? (c.before[field] as string) : c.match.value
     const after = typeof c.after[field] === 'string' ? (c.after[field] as string) : before
     const keys = Object.keys(c.after)
-    const was = keys.flatMap((k) => passages(c.before[k], k))
-    const now = keys.flatMap((k) => passages(c.after[k], k))
+    const body = keys.filter((k) => k !== 'meta')
+    const was = body.flatMap((k) => passages(c.before[k], k))
+    const now = body.flatMap((k) => passages(c.after[k], k))
+    const wasHead = keys.includes('meta') ? headPassages(c.before.meta) : []
+    const nowHead = keys.includes('meta') ? headPassages(c.after.meta) : []
+    const has = (list: HeadPassage[], h: HeadPassage) =>
+      list.some((x) => x.head === h.head && x.text === h.text)
     const wasText = new Set(texts(was))
     const nowText = new Set(texts(now))
     const wasHref = new Set(hrefs(was))
@@ -387,6 +417,8 @@ export function deriveExpectations(plan: ContentPlan): Expectation[] {
         rejectText: [],
         expectHref: [],
         rejectHref: [],
+        expectHead: [],
+        rejectHead: [],
       })
     }
     out.push({
@@ -397,21 +429,48 @@ export function deriveExpectations(plan: ContentPlan): Expectation[] {
       rejectText: [...wasText].filter((s) => !nowText.has(s) && s.length >= 40),
       expectHref: [...nowHref].filter((u) => !wasHref.has(u)),
       rejectHref: [...wasHref].filter((u) => !nowHref.has(u)),
+      expectHead: nowHead.filter((h) => !has(wasHead, h)),
+      rejectHead: wasHead.filter((h) => !has(nowHead, h)),
     })
   }
   return out
 }
 
-/** What a reader sees: tags gone, entities decoded, whitespace collapsed. */
-export function visibleText(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, '')
+const decodeEntities = (s: string) =>
+  s
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#x27;|&#39;|&apos;/g, "'")
     .replace(/&nbsp;/g, ' ')
-    .replace(/\s+/g, ' ')
+
+/** What a reader sees: tags gone, entities decoded, whitespace collapsed. */
+export function visibleText(html: string): string {
+  const stripped = html
+    .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+  return decodeEntities(stripped).replace(/\s+/g, ' ')
+}
+
+/** What a crawler or a link preview reads: the document title and the
+ * description meta tag, decoded and whitespace-collapsed. Attribute order is
+ * not assumed — Next writes `name` before `content`; hand-written markup often
+ * does not. */
+export function headText(html: string): { title: string; description: string } {
+  const head = html.match(/<head[\s\S]*?<\/head>/i)?.[0] ?? html
+  const title = head.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? ''
+  let description = ''
+  for (const tag of head.match(/<meta\b[^>]*>/gi) ?? []) {
+    const attribute = (name: string) =>
+      tag.match(new RegExp(`\\b${name}\\s*=\\s*"([^"]*)"`, 'i'))?.[1]
+    if (attribute('name')?.toLowerCase() === 'description') {
+      description = attribute('content') ?? ''
+      break
+    }
+  }
+  return {
+    title: normalise(decodeEntities(title)),
+    description: normalise(decodeEntities(description)),
+  }
 }

@@ -9,6 +9,7 @@ import {
   deriveExpectations,
   diff,
   fieldSegments,
+  headText,
   inline,
   links,
   paragraph,
@@ -228,5 +229,62 @@ describe('expectations derived from a plan', () => {
     expect(visibleText('<p>Tom &amp; <a href="/x">Jerry</a>’s\n  day</p>')).toBe(
       'Tom & Jerry’s day',
     )
+  })
+})
+
+describe('head metadata', () => {
+  const meta = (title: string, description: string) => ({ title, description, image: 3 })
+  const page = (before: ReturnType<typeof meta>, after: ReturnType<typeof meta>) => ({
+    version: 1 as const,
+    name: 'Meta',
+    changes: [
+      {
+        collection: 'pages' as const,
+        match: { field: 'slug' as const, value: 'industry' },
+        before: { meta: before },
+        after: { meta: after },
+      },
+    ],
+  })
+
+  it('checks a page’s SEO description against the head, never the body', () => {
+    const [e] = deriveExpectations(
+      page(
+        meta('For industry', 'The old description, long enough to have counted as a passage.'),
+        meta('For industry', 'The new description, which no reader ever sees in the body.'),
+      ),
+    )
+    expect(e.expectText).toEqual([])
+    expect(e.rejectText).toEqual([])
+    expect(e.expectHead).toEqual([
+      { head: 'description', text: 'The new description, which no reader ever sees in the body.' },
+    ])
+    expect(e.rejectHead).toEqual([
+      {
+        head: 'description',
+        text: 'The old description, long enough to have counted as a passage.',
+      },
+    ])
+  })
+
+  it('expects a changed title in the head too, and nothing for an unchanged one', () => {
+    const [same] = deriveExpectations(page(meta('T', 'D'), meta('T', 'D')))
+    expect(same.expectHead).toEqual([])
+    expect(same.rejectHead).toEqual([])
+    const [renamed] = deriveExpectations(page(meta('Old title', 'D'), meta('New title', 'D')))
+    expect(renamed.expectHead).toEqual([{ head: 'title', text: 'New title' }])
+    expect(renamed.rejectHead).toEqual([{ head: 'title', text: 'Old title' }])
+  })
+
+  it('reads the title and description out of a document head, decoded', () => {
+    const html =
+      '<html><head><title>For industry | Site &amp; Co</title>' +
+      '<meta content="Tom &amp; Jerry&#x27;s  day" name="description"/>' +
+      '<meta property="og:description" content="Not this one"/></head>' +
+      '<body><p>Body</p></body></html>'
+    expect(headText(html)).toEqual({
+      title: 'For industry | Site & Co',
+      description: "Tom & Jerry's day",
+    })
   })
 })

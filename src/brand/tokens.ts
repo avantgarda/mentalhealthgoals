@@ -28,7 +28,7 @@ export const BRAND_COLORS = {
 } as const
 
 export const BRAND_NAME = 'Mental Health Goals'
-export const BRAND_TAGLINE = 'UK-wide Programme'
+export const BRAND_TAGLINE = 'National Programme'
 /**
  * The public address, for places that print it as part of the identity — the
  * footer colophon, the admin sign-in. Absolute links and canonical tags come

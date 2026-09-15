@@ -9,7 +9,7 @@ import { revalidateProgrammeDetails } from './hooks/revalidateProgrammeDetails'
  * delivers. Exported so the footer's fallback and this default cannot drift.
  */
 export const FOOTER_DESCRIPTION =
-  'A UK Government-backed, UK-wide programme transforming mental health research, delivered by university, NHS, industry and lived experience partners across all four nations.'
+  'A UK Government-backed, national programme transforming mental health research, delivered by university, NHS, industry and lived experience partners across all four nations.'
 
 /**
  * Programme-wide details — the name, contact email, phone and address of the
