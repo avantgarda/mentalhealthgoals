@@ -6,8 +6,9 @@
  *     --deployment <host>.vercel.app --plan temp/<plan-name>/plan.json
  *
  * Every expectation is derived from the plan itself: text that appears in a
- * record's revised fields must be visible on its page, long passages that were
- * removed must be gone, links that moved must have moved, and a record whose
+ * record's revised fields must be visible on its page, a page's SEO title and
+ * description must sit in the document head, long passages that were removed
+ * must be gone, links that moved must have moved, and a record whose
  * slug changed must answer at the new path and 404 at the old one. With a login
  * it also confirms each record is found under its new name and carries a
  * version — the proof that the write went through Payload and is reversible.
@@ -21,7 +22,7 @@ import { dirname, join } from 'node:path'
 
 import { argument, createCmsClient, resolveDeployment } from './lib/cms-client'
 import { checkCanary, matchValues, validatePlan } from './lib/content-patch-core'
-import { deriveExpectations, visibleText } from './lib/content-plan'
+import { deriveExpectations, headText, visibleText, type HeadPassage } from './lib/content-plan'
 
 const args = process.argv.slice(2)
 const deployment = resolveDeployment(argument(args, '--deployment'))
@@ -45,18 +46,26 @@ try {
     const pages = e.paths.map((path) => ({ path, ...client.page(path) }))
     const status = pages[0].status
     const seen = pages.map((p) => visibleText(p.html))
+    const heads = pages.map((p) => headText(p.html))
     const anyText = (s: string) => seen.some((t) => t.includes(s))
     const anyHref = (u: string) => pages.some((p) => p.html.includes(`href="${u}"`))
+    // The title carries the site name after it, so both head fields are matched
+    // by inclusion; an old value lingering there fails the same way.
+    const anyHead = (h: HeadPassage) => heads.some((x) => x[h.head].includes(h.text))
     const missing = e.expectText.filter((s) => !anyText(s))
     const lingering = e.rejectText.filter(anyText)
     const missingHref = e.expectHref.filter((u) => !anyHref(u))
     const lingeringHref = e.rejectHref.filter(anyHref)
+    const missingHead = e.expectHead.filter((h) => !anyHead(h))
+    const lingeringHead = e.rejectHead.filter(anyHead)
     const ok =
       status === e.expectStatus &&
       !missing.length &&
       !lingering.length &&
       !missingHref.length &&
-      !lingeringHref.length
+      !lingeringHref.length &&
+      !missingHead.length &&
+      !lingeringHead.length
     results.push({
       label: e.label,
       paths: e.paths,
@@ -69,6 +78,9 @@ try {
       hrefsFound: e.expectHref.filter(anyHref),
       missingHref,
       lingeringHref,
+      headFound: e.expectHead.filter(anyHead),
+      missingHead,
+      lingeringHead,
     })
     const detail = [
       status !== e.expectStatus ? `status ${status} (want ${e.expectStatus})` : '',
@@ -76,12 +88,20 @@ try {
       lingering.length ? `${lingering.length} old passage(s) still present` : '',
       missingHref.length ? `missing link ${missingHref.join(', ')}` : '',
       lingeringHref.length ? `old link still present ${lingeringHref.join(', ')}` : '',
+      missingHead.length ? `missing head ${missingHead.map((h) => h.head).join(', ')}` : '',
+      lingeringHead.length
+        ? `old head ${lingeringHead.map((h) => h.head).join(', ')} still present`
+        : '',
     ]
       .filter(Boolean)
       .join('; ')
     report(ok, `${status} ${e.paths[0]}${detail ? `  — ${detail}` : ''}`)
     for (const s of missing)
       console.log(`       missing: ${s.slice(0, 90)}${s.length > 90 ? '…' : ''}`)
+    for (const h of missingHead)
+      console.log(
+        `       missing ${h.head}: ${h.text.slice(0, 90)}${h.text.length > 90 ? '…' : ''}`,
+      )
   }
 
   if (email && password) {
