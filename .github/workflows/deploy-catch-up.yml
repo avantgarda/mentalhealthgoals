@@ -12,8 +12,8 @@ name: Deploy catch-up
 #
 # `workflow_dispatch` is the documented exception to that rule. So, once an
 # hour, this looks at the tip of `main` and, if no CI run exists for it, starts
-# one. The rest of the chain is unchanged: CI goes green, deploy-production
-# fires, Vercel builds `main`. It never deploys anything itself, and it never
+# one. The rest of the chain is unchanged: CI goes green and its last job asks
+# Vercel to build `main`. This never deploys anything itself, and it never
 # retries a red run — that stays a person's call, as it is today.
 #
 # The zero-latency alternative is a token GitHub treats as a person — a
