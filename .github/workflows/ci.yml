@@ -6,7 +6,7 @@ on:
   pull_request:
   # By hand — `gh workflow run ci.yml --ref main` — and from deploy-catch-up.yml,
   # which starts CI for a commit on main that never got a run. A green run on
-  # main deploys production whichever way it was started.
+  # main deploys production whichever way it was started: see the last job.
   workflow_dispatch:
 
 concurrency:
@@ -227,3 +227,56 @@ jobs:
           name: playwright-report
           path: playwright-report
           retention-days: 7
+
+  # Production deploys from here, once every job above has passed on `main` —
+  # not straight off the push. Vercel's git integration and Actions both start
+  # from the same webhook and neither waits for the other, so a merge used to
+  # begin deploying while its own CI was still running, and the checks required
+  # before merge cover the pull request's head, not the merge commit.
+  # `vercel.json` therefore turns automatic deployment off for `main`, and this
+  # job stands in for it. Every other branch still deploys a preview on push.
+  #
+  # It is a job of this run, not a separate workflow listening for CI to
+  # complete, because GitHub never fans a run created with GITHUB_TOKEN out into
+  # `workflow_run` events: on 2026-09-23 a CI run that deploy-catch-up.yml had
+  # started went green and deployed nothing, while a run a person had started
+  # deployed within a minute. A job in the same run has no such dependency —
+  # a green run on `main` deploys whoever started it.
+  #
+  # Requires the VERCEL_DEPLOY_HOOK_URL repository secret — Vercel → Project →
+  # Settings → Git → Deploy Hooks, pointed at `main`.
+  deploy:
+    name: Deploy to production
+    needs: [lint, typecheck, types-drift, int-tests, migration-parity, build, e2e]
+    # Only `main`, and only when everything passed: a failed or cancelled job
+    # leaves production exactly where it was, which is the entire point.
+    if: success() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Trigger the Vercel production deployment
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "::error::VERCEL_DEPLOY_HOOK_URL secret is not configured — production will not deploy. Create a deploy hook in Vercel (Project → Settings → Git → Deploy Hooks) pointed at 'main', and add its URL as a repository secret."
+            exit 1
+          fi
+
+          echo "CI passed for ${COMMIT}; asking Vercel to deploy main."
+          status=$(curl -sS -o /tmp/hook-response.json -w '%{http_code}' -X POST "$DEPLOY_HOOK_URL")
+
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "::error::Vercel deploy hook returned HTTP ${status}."
+            cat /tmp/hook-response.json || true
+            exit 1
+          fi
+
+          echo "Vercel accepted the deployment request (HTTP ${status})."
+          cat /tmp/hook-response.json || true
