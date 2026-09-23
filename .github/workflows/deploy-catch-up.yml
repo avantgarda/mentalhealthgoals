@@ -60,4 +60,7 @@ jobs:
           fi
 
           echo "::notice::No CI run exists for ${sha} — starting one so it deploys."
-          gh workflow run ci.yml --ref main
+          # Nothing is checked out here, so gh cannot learn the repository from a
+          # git remote the way it does on a laptop: without --repo this dies with
+          # "not a git repository" — as it did, every hour, from 21 September.
+          gh workflow run ci.yml --ref main --repo "${REPO}"
