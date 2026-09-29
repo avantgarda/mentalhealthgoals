@@ -41,6 +41,24 @@ test.describe('Frontend', () => {
     await expect(page.getByRole('heading', { name: /key questions/i })).toBeVisible()
   })
 
+  test('a workstream page names the leads its record lists, and no one else', async ({ page }) => {
+    // Everyone linked to a workstream used to be listed under "Who leads this
+    // workstream", delivery staff included. The workstream now names its own
+    // leads; being linked to it only puts the workstream on a Team card.
+    const { slug, leads = [] } = FIXTURE.workstream.withSections
+    await page.goto(`/workstreams/${slug}`)
+    const team = page.locator('#team')
+    await expect(team.getByRole('heading', { name: 'Who leads this workstream' })).toBeVisible()
+    // In the site's team order: Bramley and Wray share a workstream, so by surname.
+    await expect(team.locator('li a')).toHaveText(leads)
+    await expect(team.getByRole('link', { name: 'See the full team' })).toBeVisible()
+
+    // A lead of the first workstream, linked to this one, but not its lead.
+    await page.goto(`/workstreams/${FIXTURE.workstream.withoutLeads.slug}`)
+    await expect(page.locator('h1')).toContainText(FIXTURE.workstream.withoutLeads.title)
+    await expect(page.locator('#team')).toHaveCount(0)
+  })
+
   test('a door opens from wherever it is pressed, not only from its words', async ({ page }) => {
     // A door's call to action stretches a pseudo-element over the whole row. The
     // shared Button once nudged down a pixel when pressed, which made the link

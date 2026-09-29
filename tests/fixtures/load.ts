@@ -245,8 +245,9 @@ async function load(): Promise<void> {
   }
 
   payload.logger.info('— People...')
+  const personId: Record<string, number> = {}
   for (const person of people) {
-    await payload.create({
+    const doc = await payload.create({
       collection: 'people',
       depth: 0,
       ...noRevalidate,
@@ -260,6 +261,20 @@ async function load(): Promise<void> {
         workstreams: person.workstreams.map((slug) => workstreamId[slug]),
         ...(person.withPhoto ? { photo: portrait } : {}),
       },
+    })
+    personId[person.name] = doc.id
+  }
+
+  // Leads point at people, and people point at workstreams, so they can only
+  // be named once both exist.
+  for (const ws of workstreams) {
+    if (!ws.leads?.length) continue
+    await payload.update({
+      collection: 'workstreams',
+      id: workstreamId[ws.slug],
+      depth: 0,
+      ...noRevalidate,
+      data: { leads: ws.leads.map((name) => personId[name]) },
     })
   }
 
