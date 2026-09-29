@@ -140,6 +140,7 @@ async function load(): Promise<void> {
     payload
       .create({
         collection: 'media',
+        ...noRevalidate,
         data: { alt: 'A flat teal rectangle standing in for the hero image' },
         file: await swatch('fixture-hero.png', [12, 60, 70], 960),
       })
@@ -147,6 +148,7 @@ async function load(): Promise<void> {
     payload
       .create({
         collection: 'media',
+        ...noRevalidate,
         data: { alt: 'A flat amber rectangle standing in for a card image' },
         file: await swatch('fixture-card.png', [176, 118, 40], 640),
       })
@@ -154,6 +156,7 @@ async function load(): Promise<void> {
     payload
       .create({
         collection: 'media',
+        ...noRevalidate,
         data: { alt: 'A flat grey rectangle standing in for a portrait' },
         file: await swatch('fixture-portrait.png', [110, 110, 116], 400),
       })
@@ -161,6 +164,7 @@ async function load(): Promise<void> {
     payload
       .create({
         collection: 'media',
+        ...noRevalidate,
         data: { alt: 'A flat blue rectangle standing in for a partner logo' },
         file: await swatch('fixture-logo.png', [40, 70, 140], 300),
       })
