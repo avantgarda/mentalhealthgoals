@@ -39,7 +39,13 @@ describe('workstream leads', () => {
       payload.create({
         collection: 'people',
         context,
-        data: { name, role: 'Tester', organisation: 'Test University', workstreams },
+        data: {
+          name,
+          role: 'Tester',
+          organisation: 'Test University',
+          group: 'delivery',
+          workstreams,
+        },
       })
     linkedId = (await person(`Linked ${run}`, [workstreamId])).id
     unlinkedId = (await person(`Unlinked ${run}`, [])).id
