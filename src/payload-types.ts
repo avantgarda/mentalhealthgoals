@@ -938,6 +938,10 @@ export interface Workstream {
       }[]
     | null;
   /**
+   * Shown under “Who leads this workstream” on its page. Everyone else on the workstream appears on the Team page only. Choose from the people linked to this workstream — link someone from their own record first.
+   */
+  leads?: (number | Person)[] | null;
+  /**
    * Organisations this workstream is delivered with, shown as a logo row in the body. Use it only where the set is complete — the institutions in “Delivered by” stay as text, because showing a logo for one of several co-equal universities would imply a hierarchy the programme does not claim.
    */
   partners?: (number | Partner)[] | null;
@@ -984,7 +988,7 @@ export interface Person {
    */
   group: 'leadership' | 'workstream-leads' | 'delivery';
   /**
-   * Workstreams this person leads or works on — also lists them on those workstream pages.
+   * Workstreams this person leads or works on, named on their Team card. To list them under “Who leads this workstream”, add them to that workstream’s Leads as well.
    */
   workstreams?: (number | Workstream)[] | null;
   photo?: (number | null) | Media;
@@ -1560,6 +1564,7 @@ export interface WorkstreamsSelect<T extends boolean = true> {
         point?: T;
         id?: T;
       };
+  leads?: T;
   partners?: T;
   resources?:
     | T

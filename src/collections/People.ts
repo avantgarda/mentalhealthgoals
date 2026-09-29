@@ -75,7 +75,7 @@ export const People: CollectionConfig = {
       hasMany: true,
       admin: {
         description:
-          'Workstreams this person leads or works on — also lists them on those workstream pages.',
+          'Workstreams this person leads or works on, named on their Team card. To list them under “Who leads this workstream”, add them to that workstream’s Leads as well.',
       },
     },
     {

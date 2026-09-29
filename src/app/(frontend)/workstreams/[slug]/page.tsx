@@ -51,15 +51,19 @@ const queryWorkstreamBySlug = cache(async ({ slug }: { slug: string }) => {
   return result.docs?.[0] || null
 })
 
-/** People related to this workstream, for the team section. */
-const queryWorkstreamPeople = cache(async ({ id }: { id: number }) => {
+/** The workstream's leads, as its own record names them, for the team section.
+ * Everyone else on the workstream is on the Team page only. */
+const queryWorkstreamLeads = cache(async ({ id, leadIds }: { id: number; leadIds: number[] }) => {
+  if (leadIds.length === 0) return []
   const payload = await getPayload({ config: configPromise })
   const result = await payload.find({
     collection: 'people',
     depth: 0,
     limit: 20,
     pagination: false,
-    where: { workstreams: { in: [id] } },
+    // Still linked to the workstream too: someone taken off it stops being
+    // shown as its lead even before the list is tidied in the admin.
+    where: { and: [{ id: { in: leadIds } }, { workstreams: { in: [id] } }] },
   })
   return sortPeople(result.docs)
 })
@@ -151,7 +155,10 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
     ? (await getCachedPartners()).filter((p) => partnerIds.has(p.id))
     : []
   const all = await queryAllWorkstreams()
-  const team = await queryWorkstreamPeople({ id: workstream.id })
+  const team = await queryWorkstreamLeads({
+    id: workstream.id,
+    leadIds: (workstream.leads ?? []).map((p) => (typeof p === 'object' && p !== null ? p.id : p)),
+  })
   const index = all.findIndex((w) => w.slug === workstream.slug)
   const next = index >= 0 ? all[(index + 1) % all.length] : null
   // No sections means no "on this page" nav, which means no gutter for the

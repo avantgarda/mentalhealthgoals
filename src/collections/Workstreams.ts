@@ -104,6 +104,19 @@ export const Workstreams: CollectionConfig = {
       'What distinguishes this workstream from the others and from the wider landscape.',
     ),
     {
+      name: 'leads',
+      type: 'relationship',
+      relationTo: 'people',
+      hasMany: true,
+      // Only people already linked to this workstream, so a lead's Team card
+      // names the workstream they lead.
+      filterOptions: ({ id }) => (id ? { workstreams: { in: [id] } } : true),
+      admin: {
+        description:
+          'Shown under “Who leads this workstream” on its page. Everyone else on the workstream appears on the Team page only. Choose from the people linked to this workstream — link someone from their own record first.',
+      },
+    },
+    {
       name: 'partners',
       type: 'relationship',
       relationTo: 'partners',
