@@ -10,6 +10,8 @@ import { fileURLToPath } from 'url'
 
 import { anyone } from '../access/anyone'
 import { authenticated } from '../access/authenticated'
+import { dropUploadEditsOnStorageSync } from '../hooks/dropUploadEditsOnStorageSync'
+import { revalidateMedia } from '../hooks/revalidateMedia'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -54,6 +56,11 @@ export const Media: CollectionConfig = {
     delete: authenticated,
     read: anyone,
     update: authenticated,
+  },
+  hooks: {
+    beforeOperation: [dropUploadEditsOnStorageSync],
+    afterChange: [revalidateMedia],
+    afterDelete: [revalidateMedia],
   },
   fields: [
     {
