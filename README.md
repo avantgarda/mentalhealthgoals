@@ -285,6 +285,12 @@ If you change collections or fields: run `pnpm payload migrate:create <name>` an
   derivatives — `og` (the social-sharing card) and `thumbnail` (the admin preview). Don't judge
   image quality by opening a `/api/media/file/…` derivative directly; the original is what
   visitors see.
+- **Editing an image in the library saves a new file.** A crop or a moved focal point on an image
+  that is already uploaded is stored under the next name (`photo-1.jpg` → `photo-2.jpg`) and the
+  old files are removed; pages follow the record, so nothing needs re-linking. It is done this
+  way because a file overwritten in place stays cached under its old address — by the CDN for up
+  to a year — and the next edit would be made from that stale copy
+  (`src/hooks/attachStoredImageForEdits.ts`, payloadcms/payload#15267).
 - A **Content-Security-Policy runs in report-only mode** (production builds only): nothing is
   blocked, violations are POSTed to `/csp-report` and appear in the Vercel function logs (search
   for `csp-report`). Once the logs stay quiet across real editing sessions, rename the header in

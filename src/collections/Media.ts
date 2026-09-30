@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url'
 
 import { anyone } from '../access/anyone'
 import { authenticated } from '../access/authenticated'
+import { attachStoredImageForEdits } from '../hooks/attachStoredImageForEdits'
 import { dropUploadEditsOnStorageSync } from '../hooks/dropUploadEditsOnStorageSync'
 import { revalidateMedia } from '../hooks/revalidateMedia'
 
@@ -58,7 +59,7 @@ export const Media: CollectionConfig = {
     update: authenticated,
   },
   hooks: {
-    beforeOperation: [dropUploadEditsOnStorageSync],
+    beforeOperation: [dropUploadEditsOnStorageSync, attachStoredImageForEdits],
     afterChange: [revalidateMedia],
     afterDelete: [revalidateMedia],
   },

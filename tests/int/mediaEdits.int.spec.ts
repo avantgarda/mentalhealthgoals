@@ -13,6 +13,8 @@
  *
  * Runs against local storage, as CI does. Creates one image and removes it.
  */
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { getPayload, Payload } from 'payload'
 import config from '@/payload.config'
 import sharp from 'sharp'
@@ -60,7 +62,7 @@ describe('editing a stored image', () => {
       collection: 'media',
       context,
       data: { alt: 'Edit test' },
-      file: { data, mimetype: 'image/jpeg', name: `edit-test-${run}.jpg`, size: data.length },
+      file: { data, mimetype: 'image/jpeg', name: `edit-test-${run}-photo.jpg`, size: data.length },
     })
     id = doc.id
   })
@@ -97,5 +99,27 @@ describe('editing a stored image', () => {
     })
     expect([updated.width, updated.height]).toEqual([320, 400])
     expect(query.uploadEdits).toBeUndefined()
+  })
+
+  it('saves an edit that arrives with the stored file attached under the next name', async () => {
+    // What attachStoredImageForEdits arranges where Blob is the store: the
+    // current file rides along with the edit, and because its name is taken
+    // Payload writes the result to the next one instead of over the old file.
+    const before = await fileFields()
+    const data = await readFile(path.resolve('public/media', String(before.filename)))
+    const updated = await payload.update({
+      collection: 'media',
+      id,
+      depth: 0,
+      context,
+      data: before,
+      file: { data, mimetype: 'image/jpeg', name: String(before.filename), size: data.length },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      req: { query: { uploadEdits: crop(256, 320) } } as any,
+    })
+    expect([updated.width, updated.height]).toEqual([256, 320])
+    // Payload's own numbering: a taken name gains -1, then -2, and so on.
+    expect(before.filename).toBe(`edit-test-${run}-photo.jpg`)
+    expect(updated.filename).toBe(`edit-test-${run}-photo-1.jpg`)
   })
 })
