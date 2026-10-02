@@ -32,7 +32,18 @@ function vercel(parameters: string[]): string {
     env,
   })
   if (result.status !== 0) {
-    throw new Error(`vercel request failed (exit ${result.status ?? 'timeout'})`)
+    const operation = parameters.includes('api') ? 'api' : parameters[0]
+    // Classify without echoing stderr, bodies or arguments: any of those may
+    // contain authentication material. Scope belongs to metadata, never curl.
+    const hint =
+      result.error && 'code' in result.error && result.error.code === 'ENOENT'
+        ? 'Install the Vercel CLI and ensure it is on PATH.'
+        : result.status === 2 && parameters[0] === 'curl'
+          ? 'Check the Vercel CLI/curl invocation; do not forward --scope to curl.'
+          : result.status === 22
+            ? 'The deployment returned an HTTP error; check the target and CMS access.'
+            : 'Check Vercel login, the linked project and deployment access.'
+    throw new Error(`vercel ${operation} failed (exit ${result.status ?? 'timeout'}). ${hint}`)
   }
   return result.stdout
 }
@@ -45,12 +56,22 @@ function vercel(parameters: string[]): string {
  */
 export function resolveDeployment(hostArg: string): Deployment {
   const url = new URL(`https://${hostArg.replace(/^https?:\/\//, '')}`)
-  if (!url.hostname.endsWith('.vercel.app') || url.pathname !== '/') {
+  if (
+    !url.hostname.endsWith('.vercel.app') ||
+    url.pathname !== '/' ||
+    url.search ||
+    url.hash ||
+    url.port ||
+    url.username ||
+    url.password
+  ) {
     throw new Error('Use an exact Vercel deployment hostname')
   }
   const project = JSON.parse(readFileSync('.vercel/project.json', 'utf8'))
   const meta = JSON.parse(
     vercel([
+      '--scope',
+      project.orgId,
       'api',
       `/v13/deployments/${url.hostname}?teamId=${project.orgId}`,
       '--method',
@@ -107,7 +128,12 @@ export function createCmsClient(hostname: string): CmsClient {
       writeFileSync(body, JSON.stringify(data), { mode: 0o600 })
       extra.push('--data-binary', `@${body}`)
     }
-    return JSON.parse(curl(path, extra))
+    const response = curl(path, extra)
+    try {
+      return JSON.parse(response)
+    } catch {
+      throw new Error('CMS returned an invalid JSON response; response withheld')
+    }
   }
 
   const page: CmsClient['page'] = (path) => {
@@ -117,7 +143,14 @@ export function createCmsClient(hostname: string): CmsClient {
   }
 
   const login: CmsClient['login'] = (email, password) => {
-    const result = api('/api/users/login', 'POST', { email, password })
+    let result
+    try {
+      result = api('/api/users/login', 'POST', { email, password })
+    } catch {
+      throw new Error(
+        'CMS login failed. Check the CMS login for this deployment (local seed accounts do not work on production) and deployment access. No content was written.',
+      )
+    }
     if (!result.token || !result.user) throw new Error('CMS authentication failed')
     writeFileSync(
       configFile,

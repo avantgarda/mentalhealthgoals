@@ -15,8 +15,8 @@ import {
 /**
  * The content patch tool writes to a deployed CMS, so its guard rails are the
  * only thing standing between a reviewed plan and someone's unrelated edit.
- * These cover the matching rules; the driver itself is exercised by hand
- * against a preview.
+ * Matching rules here; contentRunner.spec.ts exercises the write sequence and
+ * contentHandoff.spec.ts exercises the command-line handoff without a live CMS.
  */
 const change: ContentChange = {
   collection: 'workstreams',
@@ -185,6 +185,88 @@ describe('validatePlan', () => {
     expect(() => validatePlan(post({ title: 'Renamed' }))).toThrow(/field/)
     expect(() => validatePlan(post({ slug: 'moved' }))).toThrow(/field/)
     expect(() => validatePlan(post({ populatedAuthors: [] }))).toThrow(/field/)
+  })
+
+  it('supports existing-person name corrections without opening Team creation', () => {
+    const person = {
+      collection: 'people',
+      match: { field: 'name', value: 'Dr Example' },
+      before: { name: 'Dr Example', role: 'Lead' },
+      after: { name: 'Prof. Example', role: 'Co-lead' },
+    }
+    expect(validatePlan({ ...plan, changes: [person] })).toBeTruthy()
+    expect(() => validatePlan({ ...plan, changes: [person], createPeople: [{}] })).toThrow(
+      /Unsupported/,
+    )
+    expect(() =>
+      validatePlan({ ...plan, changes: [{ ...person, after: { name: 'Prof. Example' } }] }),
+    ).toThrow(/field/)
+  })
+
+  it('restricts new partner declarations and reference placement', () => {
+    const reference = '__PARTNER_EXAMPLE__'
+    const partner = {
+      reference,
+      data: {
+        name: 'Example partner',
+        url: 'https://example.org/',
+        role: 'partner',
+        showInFooter: false,
+        usageNote: 'Text only.',
+      },
+    }
+    const relationship = {
+      ...change,
+      before: { partners: [4] },
+      after: { partners: [4, reference] },
+    }
+    const bundle = { ...plan, changes: [relationship], createPartners: [partner] }
+    expect(validatePlan(bundle)).toBeTruthy()
+    expect(() => validatePlan({ ...bundle, createPartners: [partner, partner] })).toThrow(
+      /duplicate/,
+    )
+    expect(() =>
+      validatePlan({
+        ...bundle,
+        createPartners: [{ ...partner, data: { ...partner.data, logo: 5 } }],
+      }),
+    ).toThrow(/creation/)
+    expect(() =>
+      validatePlan({
+        ...bundle,
+        createPartners: [{ ...partner, data: { ...partner.data, showInFooter: true } }],
+      }),
+    ).toThrow(/creation/)
+    expect(() =>
+      validatePlan({
+        ...bundle,
+        changes: [{ ...change, before: { title: 'Old' }, after: { title: reference } }],
+      }),
+    ).toThrow(/reference/)
+    expect(() => validatePlan({ ...bundle, createPartners: [] })).toThrow(/reference/)
+    expect(() => validatePlan({ ...bundle, changes: [change] })).toThrow(/referenced/)
+    expect(() =>
+      validatePlan({
+        ...bundle,
+        changes: [{ ...relationship, before: { partners: [reference] } }],
+      }),
+    ).toThrow(/reference/)
+    expect(() =>
+      validatePlan({ ...plan, changes: [{ ...relationship, after: { partners: [4, 4] } }] }),
+    ).toThrow(/IDs/)
+    const page = {
+      collection: 'pages',
+      match: { field: 'slug', value: 'about' },
+      before: { layout: [{ blockType: 'partnerLogos', partners: [4] }] },
+      after: { layout: [{ blockType: 'partnerLogos', partners: [4, reference] }] },
+    }
+    expect(validatePlan({ ...bundle, changes: [page] })).toBeTruthy()
+    expect(() =>
+      validatePlan({
+        ...bundle,
+        changes: [{ ...page, after: { layout: [{ blockType: 'people', people: [reference] }] } }],
+      }),
+    ).toThrow(/reference/)
   })
 
   it('requires the match value to be the baseline slug, and the new one to be usable', () => {
