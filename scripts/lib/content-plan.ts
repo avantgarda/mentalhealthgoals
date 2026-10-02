@@ -10,6 +10,7 @@
  */
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { randomBytes } from 'node:crypto'
+import { isDeepStrictEqual } from 'node:util'
 import { join } from 'node:path'
 
 import {
@@ -18,6 +19,7 @@ import {
   validatePlan,
   type ContentChange,
   type ContentPlan,
+  type PartnerCreation,
 } from './content-patch-core'
 
 type Collection = ContentChange['collection']
@@ -152,6 +154,7 @@ const PROSE_KEYS = new Set([
   'heading',
   'item',
   'label',
+  'name',
   'point',
   'richText',
   'role',
@@ -217,11 +220,18 @@ export function writePlan(
   name: string,
   changes: ContentChange[],
   status?: string,
+  createPartners?: PartnerCreation[],
 ): ContentPlan {
-  const plan = validatePlan({ version: 1 as const, name, changes })
+  const plan = validatePlan({
+    version: 1 as const,
+    name,
+    changes,
+    ...(createPartners ? { createPartners } : {}),
+  })
   mkdirSync(dir, { recursive: true, mode: 0o700 })
   writeFileSync(join(dir, 'plan.json'), JSON.stringify(plan, null, 2), { mode: 0o600 })
   writeFileSync(join(dir, 'review.md'), renderReview(plan, status), { mode: 0o600 })
+  writeFileSync(join(dir, 'qa.md'), renderChecklist(plan), { mode: 0o600 })
   return plan
 }
 
@@ -274,9 +284,15 @@ export function renderReview(plan: ContentPlan, status?: string): string {
   out += `**Status: ${status ?? 'not yet applied or verified.'}**\n\n`
   out +=
     '## What this plan cannot change\n\n' +
-    'Records are only ever updated — nothing is created or deleted. Publishing status, ' +
-    'media, relationships, people’s names, page URLs and the navigation globals are outside ' +
-    'what the tool can write.\n\n'
+    'Only the listed content fields, partner relationships and existing-person corrections ' +
+    'are updated. New programme partners are created only when listed below. No records are ' +
+    'deleted or Team members added. Publishing status, media uploads, page URLs and navigation globals ' +
+    'are outside what the tool can write.\n\n'
+  for (const partner of plan.createPartners ?? []) {
+    out += `## New programme partner: ${partner.data.name}\n\n`
+    out += `Reference: \`${partner.reference}\`\n\n`
+    out += `\`\`\`json\n${JSON.stringify(partner.data, null, 2)}\n\`\`\`\n\n`
+  }
   for (const c of plan.changes.filter(renamedSlug)) {
     const [base] = recordPaths(c.collection, '')
     out +=
@@ -286,13 +302,62 @@ export function renderReview(plan: ContentPlan, status?: string): string {
   for (const c of plan.changes) {
     out += `## ${c.collection}/${c.match.value}\n\n`
     for (const key of Object.keys(c.after)) {
+      if (key === 'slug' && renamedSlug(c)) continue // already shown as a URL change
       const ops = diff(fieldSegments(c.before[key], key), fieldSegments(c.after[key], key))
-      if (!ops.length) continue
+      const relationships = (value: unknown, path: string, out: Record<string, unknown> = {}) => {
+        if (Array.isArray(value))
+          value.forEach((entry, i) => relationships(entry, `${path}.${i}`, out))
+        else if (value && typeof value === 'object') {
+          for (const [name, entry] of Object.entries(value)) {
+            if (name === 'partners') out[`${path}.${name}`] = entry
+            else relationships(entry, `${path}.${name}`, out)
+          }
+        }
+        return out
+      }
+      const beforeRel =
+        key === 'partners' ? { partners: c.before[key] } : relationships(c.before[key], key)
+      const afterRel =
+        key === 'partners' ? { partners: c.after[key] } : relationships(c.after[key], key)
+      const relPaths = [...new Set([...Object.keys(beforeRel), ...Object.keys(afterRel)])].filter(
+        (path) => !isDeepStrictEqual(beforeRel[path], afterRel[path]),
+      )
+      if (!ops.length && !relPaths.length && isDeepStrictEqual(c.before[key], c.after[key]))
+        continue
       out += Object.keys(c.after).length > 1 ? `### ${key}\n\n` : ''
-      out += `${render(ops)}\n\n`
+      if (ops.length) out += `${render(ops)}\n\n`
+      for (const path of relPaths)
+        out += `Partner relationship \`${path}\`:\n\nBefore: \`${JSON.stringify(beforeRel[path] ?? null)}\`\n\nAfter: \`${JSON.stringify(afterRel[path] ?? null)}\`\n\n`
+      if (!ops.length && !relPaths.length)
+        out += `Structural change:\n\nBefore:\n\n\`\`\`json\n${JSON.stringify(c.before[key], null, 2)}\n\`\`\`\n\nAfter:\n\n\`\`\`json\n${JSON.stringify(c.after[key], null, 2)}\n\`\`\`\n\n`
     }
   }
   return out
+}
+
+/** A durable handoff checklist; automated success never ticks visual review. */
+export function renderChecklist(plan: ContentPlan): string {
+  const paths = [
+    ...new Set(
+      plan.changes.flatMap((change) =>
+        recordPaths(
+          change.collection,
+          String(change.after[change.match.field] ?? change.match.value),
+        ),
+      ),
+    ),
+  ]
+  return (
+    `# ${plan.name} — completion review\n\n` +
+    'Record dated evidence here after the user runs the command. Consult scripts/CONTENT-PATCH.md for the full checklist.\n\n' +
+    '- [ ] Approved scope and any manual CMS/asset steps are listed in RUN.md.\n' +
+    '- [ ] Automated API, content and page checks passed; receipt directory recorded.\n' +
+    paths.map((path) => `- [ ] Live \`${path}\` reviewed on desktop and mobile.\n`).join('') +
+    '- [ ] Other pages displaying the affected person, workstream or partner reviewed.\n' +
+    '- [ ] Relevant names, titles, roles, full biographies and image alt text checked together.\n' +
+    '- [ ] Partner links, correct logo artwork, loading, spacing and optical size checked.\n' +
+    '- [ ] Manual steps completed, or outstanding items clearly reported.\n'
+  )
 }
 
 // --- Verification derived from the plan --------------------------------------
@@ -408,7 +473,7 @@ export function deriveExpectations(plan: ContentPlan): Expectation[] {
     const nowText = new Set(texts(now))
     const wasHref = new Set(hrefs(was))
     const nowHref = new Set(hrefs(now))
-    if (before !== after) {
+    if (c.match.field === 'slug' && before !== after) {
       out.push({
         label: `${c.collection}/${before} (old URL)`,
         paths: [recordPaths(c.collection, before)[0]],
@@ -426,7 +491,13 @@ export function deriveExpectations(plan: ContentPlan): Expectation[] {
       paths: recordPaths(c.collection, after),
       expectStatus: 200,
       expectText: [...nowText].filter((s) => !wasText.has(s)),
-      rejectText: [...wasText].filter((s) => !nowText.has(s) && s.length >= 40),
+      // Rendered text is checked by substring. Wording retained inside an
+      // extended passage cannot also be forbidden (for example, a closing
+      // agenda item with its time range appended). Exact API read-back still
+      // checks the complete fields and row contents.
+      rejectText: [...wasText].filter(
+        (s) => s.length >= 40 && ![...nowText].some((current) => current.includes(s)),
+      ),
       expectHref: [...nowHref].filter((u) => !wasHref.has(u)),
       rejectHref: [...wasHref].filter((u) => !nowHref.has(u)),
       expectHead: nowHead.filter((h) => !has(wasHead, h)),

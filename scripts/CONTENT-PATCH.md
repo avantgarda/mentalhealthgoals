@@ -1,26 +1,168 @@
 # Programmatic content changes
 
-Bulk edits to existing CMS content, reviewed as a document, tested on a preview
-whose database is proven to be its own, then replayed against production. Four
-scripts and a library; every plan and its artefacts stay in the gitignored
-`temp/` directory, because the repository holds the mechanism, never a copy of
-the content.
+For routine CMS updates, prepare a reviewed plan and give Eoin **one command** to
+run with his production CMS login. The repository stores the mechanism; plans,
+copy, source snapshots, assets and receipts stay in gitignored `temp/<change>/`.
+Production is the source of truth. Never upload a local database or put content
+in migrations.
 
-|                               |                                                          |
-| ----------------------------- | -------------------------------------------------------- |
-| `pnpm content:editor`         | temporary editor on a preview DB branch — the canary     |
-| `pnpm content:snapshot`       | baseline of every editable collection, from a deployment |
-| `scripts/lib/content-plan.ts` | what a plan script uses to describe edits                |
-| `pnpm content:patch`          | dry run by default; `--apply`; `--allow-production`      |
-| `pnpm content:verify`         | proves a deployment shows what the plan says             |
+## Default workflow: reviewed plan, user-run command
 
-Credentials always come from `MHG_CMS_EMAIL` / `MHG_CMS_PASSWORD` in the
-process environment, never from arguments. Load a password with `read -s` so it
-touches neither shell history nor a transcript.
+1. **Investigate without writing.** Read the request, current CMS content and
+   authoritative sources. Record approved scope and exclusions. Check related
+   content together: a name/role correction may also affect a bio and photo alt
+   text; a new partner needs links, placements and an asset decision.
 
-## Runbook
+   Read public published content without asking for a CMS login:
 
-Work in a directory per change, e.g. `temp/oct-forum-update/`.
+   ```sh
+   pnpm content:snapshot --deployment mentalhealthgoals.vercel.app --dir temp/<change> --public
+   ```
+
+   This includes partners, but omits private fields such as `usageNote` and
+   unpublished drafts. The user-run patcher authenticates and checks latest
+   drafts before any content write. An authenticated snapshot is available when
+   needed; local seed accounts are not production accounts.
+
+2. **Prepare the complete handoff.** Adapt `scripts/content-plan.template.ts` and
+   use `scripts/lib/content-plan.ts`. It writes `plan.json`, a readable
+   `review.md` and a completion checklist `qa.md`. `review.md` must cover copy,
+   name changes, structural changes, partner relationships and any creations.
+   Resolve existing partner IDs to names in the accompanying explanation.
+   Write `RUN.md` with approved scope, sources, the single command, expected
+   result, recovery guidance and any manual steps in their execution order.
+   State missing artwork/permissions and any unsupported action now, before the
+   user runs the command. Never present a partial script as the complete update.
+
+3. **Validate before handoff.** These commands do not need a CMS login or write
+   content. The second exercises the real Vercel metadata and public CMS
+   transport, so an offline mock cannot hide a broken CLI invocation:
+
+   ```sh
+   pnpm content:run --plan temp/<change>/plan.json --validate
+   pnpm content:run --plan temp/<change>/plan.json --preflight
+   ```
+
+   Complete the copy/action review before production apply. Routine CMS-only
+   changes do not require a Git branch/push, preview deployment, database reset,
+   canary or browser-based admin editing. If there is a concrete reason to use a
+   preview, explain it and follow the separate workflow below.
+
+4. **Give the user one command once the plan is approved:**
+
+   ```sh
+   pnpm content:run --plan temp/<change>/plan.json --apply --allow-production
+   ```
+
+   The runner defaults to the permanent `mentalhealthgoals.vercel.app` alias and
+   validates that it resolves to this project's READY production deployment.
+   It checks transport before prompting, asks for the CMS email and hidden
+   password, checks every target, backs up original target documents, applies
+   the plan, reads each write back, and runs API/page verification. Credentials
+   are not arguments, shell-history entries or a persistent credential file.
+   Private temporary request/config files are removed and the session is logged
+   out at completion. Do not ask for passwords in chat, use a credentials helper
+   that saves them, or try browser login after a CLI authentication failure.
+
+   Without `--apply` it is a dry run. `--verify-only` checks an already-applied
+   plan without content writes. `--deployment <exact-host>.vercel.app` selects
+   another deployment; previews still require the isolation canary. `--reverse`
+   reverses reviewed updates, with the same fences, and leaves created partners
+   in place. Never delete a partner automatically during reversal.
+
+5. **Review the live website after the user runs the command.** Follow the
+   checklist below and record dated evidence in `qa.md`. Browser use is useful
+   here for read-only inspection. The runner reports automated verification and
+   leaves `liveWebsiteReview` pending in `run.json`; it cannot certify layout,
+   optical logo size, factual completeness or manual steps.
+
+Keep the change directory. Each apply/verify run has its own timestamped
+`backups/` directory with the reviewed input, original documents/write receipt,
+`resolved-plan.json`, `verification.json` and `run.json`. The resolved plan
+replaces new-partner references with actual CMS IDs and can be used with the
+low-level verifier/patcher. `review.md` describes the proposal; dated receipts
+and `qa.md` record what actually happened.
+
+## Tools and supported scope
+
+| Tool                          | Purpose                                                                                      |
+| ----------------------------- | -------------------------------------------------------------------------------------------- |
+| `pnpm content:run`            | Prompted user handoff; dry run by default, explicit production apply, automatic verification |
+| `pnpm content:snapshot`       | Published public baseline with `--public`, or authenticated latest drafts                    |
+| `scripts/lib/content-plan.ts` | Build a plan, readable review and completion checklist                                       |
+| `pnpm content:patch`          | Low-level patch; credentials in environment, `--apply`, `--allow-production`, `--backup-dir` |
+| `pnpm content:verify`         | Check rendered pages and exact authenticated fields/version history                          |
+| `pnpm content:editor`         | Temporary editor used only for isolated preview testing                                      |
+
+The maintained runner supports copy fields listed below, **existing-person name
+corrections**, **workstream partner relationships**, page partner blocks through
+`layout`, and **explicit new programme partner declarations**. It does not add
+Team members, delete records, upload media, alter publishing status or edit
+navigation globals. Describe any manual Media/Partners admin steps precisely in
+`RUN.md`, with the file, target record/field and whether to do them before or
+after the command. Do not call them impossible just because this tool lacks the
+operation. Extend the mechanism only when the requested scope actually needs it.
+
+### Declaring a new programme partner
+
+Add optional `createPartners` to the same version-1 plan. Use a unique reference
+as a whole entry in an `after.partners` array: a workstream's `partners` field or
+a `partnerLogos` block's `partners` field. It cannot be used in prose, another
+relationship or `before`. Example using invented content:
+
+```json
+{
+  "reference": "__PARTNER_EXAMPLE__",
+  "data": {
+    "name": "Example programme partner",
+    "url": "https://example.org/",
+    "role": "partner",
+    "showInFooter": false,
+    "usageNote": "Text recognition only; artwork and permission pending.",
+    "order": 40
+  }
+}
+```
+
+`name`, HTTPS `url`, `role: "partner"`, `showInFooter: false` and `usageNote` are
+required; `strapline` and finite `order` are optional. Logos/funder/footer
+changes are outside this creation allowlist. Each declaration must be referenced
+by a reviewed update. Pass declarations as the fifth argument to `writePlan`
+(after optional review status). Every supplied field is checked on an existing
+record with the same name; a mismatch or duplicate stops before writes. A rerun
+reuses an identical existing record. Creation is not transactional across
+records: if another editor races creation, duplicate detection/readback stops
+the run and the receipt needs inspection.
+
+## Completion checklist
+
+- Compare the exact approved fields with authenticated CMS data; check for
+  drafts, correct relationships and version history. Keep the receipt path.
+- Open every affected live URL and every other page that renders the changed
+  person, partner or workstream. Inspect desktop and mobile views, text wrapping,
+  spacing, loading, links and any interactive biography/details panel.
+- Check names, academic titles, roles, **full biographies** and image alt text
+  together against current authoritative sources. A role-only patch does not
+  prove the rest of the profile is current.
+- Check partner identity, placement, website target and actual logo artwork.
+  If a logo is pending, report that clearly before handoff and at completion.
+- For a small logo, inspect transparent padding and rendered width/height caps.
+  Scaling the CMS value may have no effect at a width cap. Use deterministic
+  crop/resize of supplied artwork, preserve the original, verify that a crop
+  preserves artwork pixels, and give one clearly named output. Never use
+  generative recreation, recolouring or redrawing unless explicitly requested.
+- Finish or explicitly report every manual step. Distinguish automated checks,
+  visual/editorial checks and anything not verified. Do not say everything is
+  checked based solely on HTTP 200s or text-presence checks.
+
+## Separate workflow: when a preview is needed
+
+Use an isolated preview when the content depends on undeployed code/schema,
+needs a rendered rehearsal unavailable through existing CMS draft preview, or
+when the user requests one. A code change follows the normal repository review
+and deployment process; a CMS-only update does not inherit that process just
+because these scripts live in Git. Explain the concrete need first. Never
+assume a Vercel `preview` label proves database isolation.
 
 1. **Reset the preview database to production.** The preview branch is a
    copy-on-write child of `main`; resetting it makes the baseline production's
@@ -56,31 +198,26 @@ Work in a directory per change, e.g. `temp/oct-forum-update/`.
    describe the edits, and run it. It writes `plan.json` and a `review.md` that
    shows only what changed, passage by passage, for sign-off.
 
-6. **Dry run, apply, verify** on the preview:
+6. **Dry run, apply, verify** on the preview, using the same runner:
 
    ```sh
-   pnpm content:patch --deployment <preview-host> --plan temp/<plan>/plan.json
-   pnpm content:patch --deployment <preview-host> --plan temp/<plan>/plan.json --apply --backup-dir temp/<plan>/backups
-   pnpm content:verify --deployment <preview-host> --plan temp/<plan>/plan.json
+   pnpm content:run --deployment <preview-host> --plan temp/<plan>/plan.json
+   pnpm content:run --deployment <preview-host> --plan temp/<plan>/plan.json --apply
    ```
 
    Every record must report `ready` (or `already applied`) before anything is
-   written. Look at the pages as well — the verifier proves presence of text,
-   not that it reads well.
+   written. The apply also verifies resolved partner IDs, updated fields and
+   rendered text. Look at the pages as well — automated checks do not establish
+   that the content is complete or the layout looks right.
 
 7. **Remove the canary:** `pnpm content:editor delete --dir temp/<plan>`.
 
-8. **Production**, with your own CMS login in the environment, once the review
-   is approved and any code the change depends on has been merged:
+   The preview editor's generated credentials file is an exception for this
+   disposable canary, not a template for storing production login details.
 
-   ```sh
-   pnpm content:patch --deployment <production-host> --plan temp/<plan>/plan.json
-   pnpm content:patch --deployment <production-host> --plan temp/<plan>/plan.json --apply --allow-production --backup-dir temp/<plan>/backups
-   pnpm content:verify --deployment <production-host> --plan temp/<plan>/plan.json
-   ```
-
-   Merging a code branch never publishes content; only this step does. Keep
-   `temp/<plan>/` afterwards — it holds the only record of what was written.
+After preview validation, remove the canary and hand over the same approved plan
+using the default user-run production command. Merge/deploy any code dependency
+first. A Git merge never publishes CMS copy.
 
 ## Why the canary
 
@@ -107,19 +244,20 @@ wrong. Neither check can be switched off.
   _baseline_ value;
 - `before` and `after` — the same set of fields, from this allowlist:
 
-  | collection    | fields                                                                                                                         |
-  | ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-  | `pages`       | `layout`, `hero`, `meta`                                                                                                       |
-  | `posts`       | `content`                                                                                                                      |
-  | `workstreams` | `slug`, `title`, `summary`, `description`, `boundaryStatement`, `primaryFocus`, `keyQuestions`, `differentiators`, `resources` |
-  | `people`      | `role`, `bio`                                                                                                                  |
+  | collection    | fields                                                                                                                                     |
+  | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+  | `pages`       | `layout`, `hero`, `meta`                                                                                                                   |
+  | `posts`       | `content`                                                                                                                                  |
+  | `workstreams` | `slug`, `title`, `summary`, `description`, `boundaryStatement`, `primaryFocus`, `keyQuestions`, `differentiators`, `resources`, `partners` |
+  | `people`      | `name`, `role`, `bio`                                                                                                                      |
 
 - `generatedIds` — IDs the plan minted for rows that do not exist yet. Payload
   assigns its own on insert; the comparison tolerates exactly that substitution
   and nothing else.
 
-Records are only ever updated: no creates, no deletes, no media, no
-relationships, no publish status, no navigation globals. A page's URL is out of
+Existing records are updated, with only explicitly declared programme partners
+created as described above. No deletes, Media uploads, Team additions, publish
+status changes or navigation globals. A page's URL is out of
 reach because pages carry the navigation and inbound links; a workstream's
 `slug` may move with its title, pre-launch, and the tool then finds the record
 under either name so a re-run or a reversal still works. Nothing redirects an
@@ -153,21 +291,54 @@ without one. Everything else in a record has to match exactly.
   refusing to overwrite later edits. Every editable collection also keeps
   version history, so a single record can be restored in the admin.
 
-Writes are sequential, roughly ten seconds each, and there is no cross-record
+Writes are sequential; timing depends on the deployment, and there is no cross-record
 transaction: the price of never opening a database connection to production.
-For a plan of a few records the mixed state lasts under a minute; a slug change
+Records may briefly be in a mixed state; a slug change
 is the exception, since its old path is dead from the moment that one record is
 written — put the redirect or link fixes in the same plan.
 
 ## When it stops
 
-| Message                                             | Meaning                                                                                                                                                                                        |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Preview runs must log in as the temporary editor…` | Load the canary's credentials from `preview-credentials.json`; create one if missing.                                                                                                          |
-| `CMS authentication failed` on preview              | The canary exists only on the preview branch, so this is the isolation check failing: the deployment is reading some other database. Check the store connection settings before anything else. |
-| `Content differs from reviewed baseline`            | The target has moved since the snapshot (someone edited it, or the snapshot was not taken from this environment's baseline). Re-snapshot from a freshly reset preview and rebuild the plan.    |
-| `Content changed during this run`                   | An edit landed between the pre-check and the write. Rerun; already-applied records are skipped.                                                                                                |
-| `Read-back verification failed`                     | Usually new rows whose IDs were not declared in `generatedIds`. The write landed (the receipt says `written`); fix the plan and rerun — the record will report `already applied`.              |
-| `Expected exactly one …`                            | The match value finds zero or several records. For a renamed slug, both names are tried.                                                                                                       |
-| `vercel request failed (exit 22)`                   | An HTTP error from the deployment; the body is never printed because login responses carry tokens. Exit 1 is the CLI itself — retry once.                                                      |
-| `Resource provisioning timed out` (build)           | Vercel-side; verify Neon is healthy and retry the deploy. Do not delete the Neon branch.                                                                                                       |
+`CMS login failed` on production means check that the user supplied a production
+CMS account, not a local seed account. Keep the prepared plan; do not create a
+credential file or switch to browser authentication. On preview, confirm the
+canary login and database isolation before continuing.
+
+| Message                                             | Meaning                                                                                                                                                                                                                                                              |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Preview runs must log in as the temporary editor…` | Load the canary's credentials from `preview-credentials.json`; create one if missing.                                                                                                                                                                                |
+| `Content differs from reviewed baseline`            | The target has moved since the snapshot (someone edited it, or the snapshot was not taken from this environment's baseline). Re-snapshot the actual target and re-review the changed fields; do not reset a preview unless this change needs one.                    |
+| `Content changed during this run`                   | An edit landed between the pre-check and the write. Rerun; already-applied records are skipped.                                                                                                                                                                      |
+| `Read-back verification failed`                     | Usually new rows whose IDs were not declared in `generatedIds`. The write landed (the receipt says `written`); fix the plan and rerun — the record will report `already applied`.                                                                                    |
+| `Expected exactly one …`                            | The match value finds zero or several records. For a renamed slug, both names are tried.                                                                                                                                                                             |
+| `vercel curl failed (exit 22)`                      | HTTP error; response bodies are withheld. Check deployment/CMS access. Exit 2 can mean a CLI flag was forwarded to curl: never pass `--scope` to `vercel curl`. Scope is supplied only to metadata API calls. Run `--preflight` again before asking for credentials. |
+| `Resource provisioning timed out` (build)           | Vercel-side; verify Neon is healthy and retry the deploy. Do not delete the Neon branch.                                                                                                                                                                             |
+
+## Check that a fresh session follows the workflow
+
+Start a fresh Codex session in this repository and use this read-only trial:
+
+> Read the project instructions. A programme partner needs recognition on the
+> site and an existing person's academic title has changed. Describe your CMS
+> update workflow, deliverables, login handoff, missing-logo handling and
+> completion checks. Do not change files, contact anyone, authenticate to the
+> CMS, create infrastructure or write production content.
+
+It should read this runbook, choose a reviewed plan plus one user-run command,
+preserve the existing safety checks, identify missing/manual steps early and
+include the full bio/alt text and live desktop/mobile review. It should reserve
+branching/deployment/canary work for an actual preview need and preserve supplied
+brand artwork. If it does something else, fix the relevant instruction and
+repeat the read-only trial; do not compensate with an ever-growing transcript.
+
+The development checks for the mechanism are:
+
+```sh
+pnpm exec vitest run --config vitest.config.mts tests/unit/contentPatch.spec.ts tests/unit/contentPlan.spec.ts tests/unit/contentRunner.spec.ts tests/unit/contentHandoff.spec.ts
+pnpm typecheck
+```
+
+Fixtures contain invented data and an offline Vercel/Payload transport; these
+tests cannot write to a live CMS. Run the separate real `--preflight` too before
+a handoff. A fresh-session trial checks instruction following, not permission
+to apply content.

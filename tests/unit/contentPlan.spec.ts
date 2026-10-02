@@ -17,6 +17,7 @@ import {
   relink,
   render,
   renderReview,
+  renderChecklist,
   segments,
   text,
   visibleText,
@@ -91,6 +92,47 @@ describe('diff and review', () => {
     expect(diff(['a', 'b', 'c'], ['a', 'new', 'b', 'c'])).toEqual([['+', 'new']])
     expect(render(diff(['a', 'b'], ['a', 'x']))).toContain('Changed:\n\n> b\n\nto:\n\n> x')
     expect(render([])).toBe('No change.')
+  })
+
+  it('shows partner creation and relationship changes even when copy stays the same', () => {
+    const reference = '__PARTNER_EXAMPLE__'
+    const plan = {
+      version: 1 as const,
+      name: 'Partner update',
+      createPartners: [
+        {
+          reference,
+          data: {
+            name: 'Example',
+            url: 'https://example.org/',
+            role: 'partner' as const,
+            showInFooter: false as const,
+            usageNote: 'Text only.',
+          },
+        },
+      ],
+      changes: [
+        {
+          collection: 'pages' as const,
+          match: { field: 'slug' as const, value: 'about' },
+          before: {
+            layout: [{ blockType: 'partnerLogos', heading: 'Working with', partners: [4] }],
+          },
+          after: {
+            layout: [
+              { blockType: 'partnerLogos', heading: 'Working with', partners: [4, reference] },
+            ],
+          },
+        },
+      ],
+    }
+    const review = renderReview(plan)
+    expect(review).toContain('New programme partner: Example')
+    expect(review).toContain('layout.0.partners')
+    expect(review).toContain('[4,"__PARTNER_EXAMPLE__"]')
+    expect(review).not.toContain('nothing is created')
+    expect(renderChecklist(plan)).toContain('Live `/about` reviewed on desktop and mobile')
+    expect(renderChecklist(plan)).toContain('full biographies and image alt text')
   })
 
   it('writes a review that names a URL change and shows only what moved', () => {
@@ -219,10 +261,61 @@ describe('expectations derived from a plan', () => {
     })
   })
 
+  it('allows retained wording inside an extended passage while still rejecting removed copy', () => {
+    const retained = 'Closing reflections — Dr Example and colleagues'
+    const revised = `${retained} (16:00–16:20).`
+    const removed = 'The obsolete discussion slot with a speaker still to be confirmed.'
+    const [expectation] = deriveExpectations({
+      version: 1,
+      name: 'Expanded timetable',
+      changes: [
+        {
+          collection: 'pages',
+          match: { field: 'slug', value: 'example-event' },
+          before: {
+            layout: [{ agenda: [{ item: retained }, { item: removed }] }],
+          },
+          after: {
+            layout: [{ agenda: [{ item: revised }] }],
+          },
+        },
+      ],
+    })
+    const live = visibleText(`<li>16:00 <span>${revised}</span></li>`)
+    expect(expectation.expectText).toEqual([revised])
+    expect(expectation.rejectText).toEqual([removed])
+    expect(expectation.expectText.every((passage) => live.includes(passage))).toBe(true)
+    expect(expectation.rejectText.some((passage) => live.includes(passage))).toBe(false)
+    expect(expectation.rejectText.some((passage) => `${live} ${removed}`.includes(passage))).toBe(
+      true,
+    )
+  })
+
   it('knows where each collection renders', () => {
     expect(recordPaths('pages', 'home')).toEqual(['/'])
     expect(recordPaths('pages', 'about')).toEqual(['/about'])
     expect(recordPaths('people', 'Anyone')).toEqual(['/people'])
+  })
+
+  it('checks corrected names on /people without treating a name as a moved URL', () => {
+    const out = deriveExpectations({
+      version: 1,
+      name: 'Name correction',
+      changes: [
+        {
+          collection: 'people',
+          match: { field: 'name', value: 'Dr Example' },
+          before: { name: 'Dr Example' },
+          after: { name: 'Prof. Example' },
+        },
+      ],
+    })
+    expect(out).toHaveLength(1)
+    expect(out[0]).toMatchObject({
+      paths: ['/people'],
+      expectStatus: 200,
+      expectText: ['Prof. Example'],
+    })
   })
 
   it('compares against what a reader sees, not the markup', () => {

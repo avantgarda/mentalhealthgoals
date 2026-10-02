@@ -1,10 +1,11 @@
 /**
  * Template for a private plan script. Copy it to `temp/<plan-name>/plan.ts`,
  * change the import below to `../../scripts/lib/content-plan`, describe the
- * edits, and run it with `pnpm exec tsx temp/<plan-name>/plan.ts`.
+ * edits, and run it with `pnpm exec node --import tsx temp/<plan-name>/plan.ts`.
  *
  * It reads the snapshot `content-snapshot` wrote into the same directory and
- * writes `plan.json` and `review.md` beside it. The copy it contains is
+ * writes `plan.json`, `review.md` and `qa.md` beside it. Add RUN.md with the
+ * command and any manual steps; see CONTENT-PATCH.md. The copy it contains is
  * placeholder text: this file exists to show the shapes, not to be run as-is.
  *
  * Rules a plan has to respect, all enforced by `validatePlan`:
@@ -32,15 +33,14 @@ const sources = loadSources(dir)
 const minter = new Minter()
 const changes = []
 
-// A workstream: prose fields, a new bullet, and — pre-launch only — its slug.
+// A workstream: prose fields and a new bullet. Preserve existing URLs.
 const ws = find(sources, 'workstreams', 'example-workstream')
 changes.push(
   change(
     'workstreams',
     ws,
     {
-      slug: 'renamed-workstream',
-      title: 'Renamed Workstream',
+      title: 'Example Workstream',
       summary: 'One line for the cards.',
       primaryFocus: [
         ...(ws.primaryFocus as { id: string; point: string }[]),
@@ -63,12 +63,12 @@ if (!column) throw new Error('Column not found — the page has changed since th
 column.richText.root.children[1] = paragraph('The replacement paragraph.')
 changes.push(change('pages', page, { layout }))
 
-// A post: re-point a link the rename above would break. Prose is left alone.
+// A post: correct one outdated external link. Prose is left alone.
 const post = find(sources, 'posts', 'example-post')
 const content = structuredClone(post.content)
-if (relink(content, '/workstreams/example-workstream', '/workstreams/renamed-workstream') === 0)
+if (relink(content, 'https://old.example.org/', 'https://new.example.org/') === 0)
   throw new Error('Expected link not found')
 changes.push(change('posts', post, { content }))
 
 writePlan(dir, 'Example plan — replace with a name the team will recognise', changes)
-console.log(`Wrote ${dir}/plan.json and review.md (${changes.length} changes)`)
+console.log(`Wrote ${dir}/plan.json, review.md and qa.md (${changes.length} changes)`)

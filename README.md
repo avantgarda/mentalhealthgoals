@@ -61,6 +61,13 @@ keeps serving the ones it read at startup.
 Full detail, including what each script is allowed to touch, is in
 [`scripts/README.md`](scripts/README.md).
 
+For a routine CMS update, follow [`scripts/CONTENT-PATCH.md`](scripts/CONTENT-PATCH.md):
+prepare reviewed copy/actions in `temp/<change>/`, then give the editor one
+`pnpm content:run --plan temp/<change>/plan.json --apply --allow-production` command.
+It prompts locally for the CMS login, backs up and checks the writes, and verifies
+the result. Complete the separate live website review afterwards. CMS-only updates
+do not require a Git branch or a new deployment.
+
 ### Changing the schema
 
 The schema comes from the committed migrations in `src/migrations`, in every environment
@@ -227,6 +234,7 @@ run — and because the deploy is part of that run, it deploys too. To deploy `m
 | `pnpm content:editor create\|delete` | Temporary editor on a preview DB branch — the isolation canary                      |
 | `pnpm content:patch`                 | Apply a reviewed content plan (dry run by default) — see `scripts/CONTENT-PATCH.md` |
 | `pnpm content:verify`                | Prove a deployment shows what the plan says; derived from the plan                  |
+| `pnpm content:run`                   | One-command CMS handoff with local login prompt, backups and verification           |
 | `pnpm generate:types`                | Regenerate `src/payload-types.ts` after schema changes                              |
 | `pnpm generate:email-lockup`         | Photograph the header lockup for email, every variant (needs the site running)      |
 | `pnpm generate:brand`                | Regenerate all logo asset files in `public/brand`                                   |

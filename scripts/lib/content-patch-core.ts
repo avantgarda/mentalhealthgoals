@@ -7,7 +7,25 @@ export type ContentChange = {
   after: Record<string, unknown>
   generatedIds?: string[]
 }
-export type ContentPlan = { version: 1; name: string; changes: ContentChange[] }
+export type PartnerCreation = {
+  /** A placeholder used only in reviewed partner relationship arrays. */
+  reference: string
+  data: {
+    name: string
+    url: string
+    role: 'partner'
+    showInFooter: false
+    usageNote: string
+    strapline?: string
+    order?: number
+  }
+}
+export type ContentPlan = {
+  version: 1
+  name: string
+  changes: ContentChange[]
+  createPartners?: PartnerCreation[]
+}
 
 /** Pages keep their URLs out of reach: they carry the site's navigation and the
  * bulk of inbound links. A workstream's `slug` is editable because its title and
@@ -28,8 +46,9 @@ const allowedFields: Record<ContentChange['collection'], string[]> = {
     'keyQuestions',
     'differentiators',
     'resources',
+    'partners',
   ],
-  people: ['role', 'bio'],
+  people: ['name', 'role', 'bio'],
 }
 
 export const EDITABLE_COLLECTIONS = Object.keys(allowedFields) as ContentChange['collection'][]
@@ -76,6 +95,44 @@ export function validatePlan(value: unknown): ContentPlan {
     throw new Error('Invalid content plan')
   }
   const seen = new Set<string>()
+  if (
+    Object.keys(plan).some((key) => !['version', 'name', 'changes', 'createPartners'].includes(key))
+  )
+    throw new Error('Unsupported content plan option')
+  const references = new Set<string>()
+  const partnerNames = new Set<string>()
+  if (plan.createPartners !== undefined && !Array.isArray(plan.createPartners))
+    throw new Error('Invalid partner creations')
+  for (const partner of plan.createPartners ?? []) {
+    const data = partner?.data
+    if (
+      !/^__PARTNER_[A-Z0-9_]+__$/.test(partner?.reference ?? '') ||
+      references.has(partner.reference) ||
+      Object.keys(partner).some((key) => !['reference', 'data'].includes(key)) ||
+      !data ||
+      typeof data.name !== 'string' ||
+      !data.name.trim() ||
+      typeof data.url !== 'string' ||
+      typeof data.usageNote !== 'string' ||
+      !data.usageNote.trim() ||
+      data.role !== 'partner' ||
+      data.showInFooter !== false ||
+      Object.keys(data).some(
+        (key) =>
+          !['name', 'url', 'role', 'showInFooter', 'usageNote', 'strapline', 'order'].includes(key),
+      ) ||
+      (data.strapline !== undefined && typeof data.strapline !== 'string') ||
+      (data.order !== undefined && !Number.isFinite(data.order)) ||
+      partnerNames.has(data.name)
+    )
+      throw new Error('Invalid or duplicate programme partner creation')
+    const url = new URL(data.url)
+    if (url.protocol !== 'https:' || url.username || url.password)
+      throw new Error('Partner URL must be an HTTPS website without credentials')
+    references.add(partner.reference)
+    partnerNames.add(data.name)
+  }
+  const usedReferences = new Set<string>()
   for (const change of plan.changes) {
     const fields = allowedFields[change.collection]
     if (
@@ -93,6 +150,46 @@ export function validatePlan(value: unknown): ContentPlan {
       keys.some((key) => !fields.includes(key))
     )
       throw new Error('Unapproved content field')
+    // New partner placeholders must be whole array entries in an actual
+    // partner relationship, never a word in copy or a different relationship.
+    const inspect = (item: unknown, side: 'before' | 'after', relationship = false) => {
+      if (typeof item === 'string' && item.startsWith('__PARTNER_')) {
+        if (side !== 'after' || !relationship || !references.has(item))
+          throw new Error('Partner reference must be declared and used only in after.partners')
+        usedReferences.add(item)
+      } else if (Array.isArray(item)) {
+        item.forEach((entry) => inspect(entry, side, relationship))
+      } else if (item && typeof item === 'object') {
+        const obj = item as Record<string, unknown>
+        Object.entries(obj).forEach(([key, entry]) =>
+          inspect(
+            entry,
+            side,
+            key === 'partners' &&
+              Array.isArray(entry) &&
+              (obj.blockType === 'partnerLogos' ||
+                (item === change[side] && change.collection === 'workstreams')),
+          ),
+        )
+      }
+    }
+    inspect(change.before, 'before')
+    inspect(change.after, 'after')
+    if ('partners' in change.after) {
+      for (const side of ['before', 'after'] as const) {
+        const ids = change[side].partners
+        if (
+          !Array.isArray(ids) ||
+          ids.some(
+            (id) =>
+              !(typeof id === 'number' && Number.isSafeInteger(id) && id > 0) &&
+              !(side === 'after' && typeof id === 'string' && references.has(id)),
+          ) ||
+          new Set(ids).size !== ids.length
+        )
+          throw new Error('Invalid partner relationship IDs')
+      }
+    }
     const collectIds = (value: unknown): string[] => {
       if (!value || typeof value !== 'object') return []
       return Object.entries(value).flatMap(([key, item]) =>
@@ -123,7 +220,23 @@ export function validatePlan(value: unknown): ContentPlan {
       seen.add(identity)
     }
   }
+  if ([...references].some((reference) => !usedReferences.has(reference)))
+    throw new Error('Every new partner must be referenced by a reviewed change')
   return plan
+}
+
+/** Resolve only placeholders in after; an absent partner stays symbolic in a
+ * dry run. The baseline is never rewritten. */
+export function resolvePartnerReferences(
+  plan: ContentPlan,
+  ids: Map<string, number | string>,
+): ContentPlan {
+  const out = structuredClone(plan)
+  out.changes = out.changes.map((change) => ({
+    ...change,
+    after: JSON.parse(JSON.stringify(change.after), (_key, value) => ids.get(value) ?? value),
+  }))
+  return out
 }
 
 /** A collection that keeps drafts reports a `_status`; one that does not omits it

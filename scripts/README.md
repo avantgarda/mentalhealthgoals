@@ -5,19 +5,20 @@ production CMS**, so data flows down to laptops, never up from them.
 
 ## What each one can touch
 
-| Script                  | Reads                                     | Writes                                                                                                | Needs a credential?                 |
-| ----------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `pnpm bootstrap`        | `.env.example`, Vercel (if linked)        | `.env.local`, local database                                                                          | No                                  |
-| `pnpm sync:db`          | Production database (read-only role)      | Local database — drops and recreates it                                                               | `SYNC_DATABASE_URL`                 |
-| `pnpm sync:media`       | Local database, public blob URLs          | `public/media`                                                                                        | No                                  |
-| `pnpm blobs:mirror`     | Production blob store                     | Preview blob store                                                                                    | Two blob tokens, owner-only         |
-| `pnpm fixture`          | `tests/fixtures`                          | Local database — wipes every collection                                                               | No                                  |
-| `pnpm check:migrations` | Payload config, `src/migrations`          | Two scratch databases, dropped after                                                                  | No                                  |
-| `pnpm generate:brand`   | `src/brand/*`                             | `public/brand`                                                                                        | No                                  |
-| `pnpm content:snapshot` | Deployed CMS API                          | `temp/<plan>/sources/`                                                                                | Editor login (`MHG_CMS_*`)          |
-| `pnpm content:editor`   | Neon branch list                          | One user row on a preview DB branch                                                                   | `neonctl` login                     |
-| `pnpm content:patch`    | Deployed CMS API, `temp/<plan>/plan.json` | The target deployment’s CMS records — dry run unless `--apply`; production needs `--allow-production` | Editor login; the canary on preview |
-| `pnpm content:verify`   | Deployed pages and CMS API                | `temp/<plan>/verification.json`                                                                       | Editor login, optional              |
+| Script                  | Reads                                        | Writes                                                                                                            | Needs a credential?                 |
+| ----------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `pnpm bootstrap`        | `.env.example`, Vercel (if linked)           | `.env.local`, local database                                                                                      | No                                  |
+| `pnpm sync:db`          | Production database (read-only role)         | Local database — drops and recreates it                                                                           | `SYNC_DATABASE_URL`                 |
+| `pnpm sync:media`       | Local database, public blob URLs             | `public/media`                                                                                                    | No                                  |
+| `pnpm blobs:mirror`     | Production blob store                        | Preview blob store                                                                                                | Two blob tokens, owner-only         |
+| `pnpm fixture`          | `tests/fixtures`                             | Local database — wipes every collection                                                                           | No                                  |
+| `pnpm check:migrations` | Payload config, `src/migrations`             | Two scratch databases, dropped after                                                                              | No                                  |
+| `pnpm generate:brand`   | `src/brand/*`                                | `public/brand`                                                                                                    | No                                  |
+| `pnpm content:snapshot` | Deployed CMS API                             | `temp/<plan>/sources/`                                                                                            | Editor login (`MHG_CMS_*`)          |
+| `pnpm content:editor`   | Neon branch list                             | One user row on a preview DB branch                                                                               | `neonctl` login                     |
+| `pnpm content:patch`    | Deployed CMS API, `temp/<plan>/plan.json`    | The target deployment’s CMS records — dry run unless `--apply`; production needs `--allow-production`             | Editor login; the canary on preview |
+| `pnpm content:verify`   | Deployed pages and CMS API                   | `temp/<plan>/verification.json`                                                                                   | Editor login, optional              |
+| `pnpm content:run`      | Reviewed plan, Vercel metadata, deployed CMS | Reviewed records and declared programme partners; dry run by default, explicit production apply; private receipts | Locally prompted editor login       |
 
 The sync and fixture tools below cannot write to the production database or the production blob store. That is
 structural, not a convention:
@@ -29,10 +30,14 @@ structural, not a convention:
 - `blobs:mirror` refuses production as a destination, and refuses to run at all if it cannot
   positively identify which store each token belongs to.
 
-The `content:*` scripts are the one path that writes to a deployed CMS, and they keep
-the rule: what travels is a reviewed plan of edits, never a database. `content:patch`
-is a dry run unless told otherwise, refuses a preview it cannot prove is isolated from
-production, and needs an explicit flag for production. The runbook is
+The `content:*` scripts are the one path that writes to a deployed CMS: what travels
+is a reviewed plan of edits, never a database. The default is a user-run
+`content:run` handoff with a local login prompt, backups and verification. Validate
+the plan and real read-only transport before handoff; no branch or deployment is
+needed for routine CMS-only edits. Both patch and run are dry runs unless told
+otherwise, require an explicit flag for production writes and require the canary
+for previews. `content:snapshot --public` needs no CMS login and reads only
+published/public data. The authoritative runbook and live review checklist are in
 [CONTENT-PATCH.md](CONTENT-PATCH.md).
 
 ## `pnpm bootstrap`
