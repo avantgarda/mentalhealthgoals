@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Verifies that the committed migrations (src/migrations) produce exactly the
-# same schema as Payload's dev-mode push. If someone changes a collection
+# same schema as Payload's dev-mode push with local or Blob storage. If someone changes a collection
 # without running `pnpm payload migrate:create`, this fails — before the
 # mismatch can break a production deploy.
 #
@@ -14,22 +14,32 @@ BASE_URL="${MIGRATION_CHECK_BASE_URL:-postgresql://localhost:5432}"
 SUFFIX="$(date +%s)_$$"
 DB_MIGRATE="mhg_check_migrate_${SUFFIX}"
 DB_PUSH="mhg_check_push_${SUFFIX}"
+DB_PUSH_BLOB="mhg_check_blob_${SUFFIX}"
 export PAYLOAD_SECRET="${PAYLOAD_SECRET:-migration-check}"
 
 cleanup() {
   psql "${BASE_URL}/postgres" -qc "DROP DATABASE IF EXISTS ${DB_MIGRATE};" || true
   psql "${BASE_URL}/postgres" -qc "DROP DATABASE IF EXISTS ${DB_PUSH};" || true
+  psql "${BASE_URL}/postgres" -qc "DROP DATABASE IF EXISTS ${DB_PUSH_BLOB};" || true
 }
 trap cleanup EXIT
 
 psql "${BASE_URL}/postgres" -qc "CREATE DATABASE ${DB_MIGRATE};"
 psql "${BASE_URL}/postgres" -qc "CREATE DATABASE ${DB_PUSH};"
+psql "${BASE_URL}/postgres" -qc "CREATE DATABASE ${DB_PUSH_BLOB};"
 
 echo "— Running committed migrations against ${DB_MIGRATE}..."
-DATABASE_URL="${BASE_URL}/${DB_MIGRATE}" NODE_ENV=production pnpm payload migrate >/dev/null
+DATABASE_URL="${BASE_URL}/${DB_MIGRATE}" BLOB_READ_WRITE_TOKEN= NODE_ENV=production pnpm payload migrate >/dev/null
 
 echo "— Push-syncing the live Payload config against ${DB_PUSH}..."
-DATABASE_URL="${BASE_URL}/${DB_PUSH}" NODE_ENV=development PAYLOAD_DB_PUSH=1 \
+DATABASE_URL="${BASE_URL}/${DB_PUSH}" BLOB_READ_WRITE_TOKEN= NODE_ENV=development PAYLOAD_DB_PUSH=1 \
+  pnpm exec tsx scripts/push-schema.ts >/dev/null
+
+# A valid-format invented token enables the production adapter's config. This
+# initializes schema only: no file operations or requests to Blob take place.
+echo "— Push-syncing the Blob-enabled Payload config against ${DB_PUSH_BLOB}..."
+DATABASE_URL="${BASE_URL}/${DB_PUSH_BLOB}" NODE_ENV=development PAYLOAD_DB_PUSH=1 \
+  BLOB_READ_WRITE_TOKEN=vercel_blob_rw_cischemastore_offlineonly \
   pnpm exec tsx scripts/push-schema.ts >/dev/null
 
 dump() {
@@ -44,12 +54,14 @@ dump() {
 }
 
 echo "— Comparing schemas..."
-if ! diff <(dump "${BASE_URL}/${DB_MIGRATE}" | sort) <(dump "${BASE_URL}/${DB_PUSH}" | sort); then
-  echo "" >&2
-  echo "✗ Schema drift: the Payload config defines schema that the committed" >&2
-  echo "  migrations do not produce (or vice versa)." >&2
-  echo "  Run 'pnpm payload migrate:create <name>' and commit the result." >&2
-  exit 1
-fi
+for config_database in "$DB_PUSH" "$DB_PUSH_BLOB"; do
+  if ! diff <(dump "${BASE_URL}/${DB_MIGRATE}" | sort) <(dump "${BASE_URL}/${config_database}" | sort); then
+    echo "" >&2
+    echo "✗ Schema drift: the Payload config defines schema that the committed" >&2
+    echo "  migrations do not produce (or vice versa)." >&2
+    echo "  Run 'pnpm payload migrate:create <name>' and commit the result." >&2
+    exit 1
+  fi
+done
 
-echo "✓ Committed migrations match the Payload config schema"
+echo "✓ Committed migrations match both local and Blob-enabled Payload schemas"

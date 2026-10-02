@@ -268,7 +268,9 @@ that is no longer in the database.
 Three layers keep the foundations sound:
 
 1. **pre-commit** (husky + lint-staged): ESLint `--fix` and Prettier run on staged files.
-2. **pre-push**: `pnpm typecheck` and `pnpm check:types-drift` — fast, no database needed.
+2. **pre-push**: `pnpm typecheck`, `pnpm check:types-drift` and `pnpm check:migrations`.
+   Migration parity uses disposable local databases and checks both local-file and Blob-enabled
+   schemas. An invented Blob token enables the config check; no files are uploaded.
 3. **CI** (GitHub Actions, on every PR and push to main): lint + format check, typecheck,
    types drift, integration tests, **migration parity** (committed migrations must reproduce
    the exact schema the Payload config defines), a full production build mirroring Vercel's

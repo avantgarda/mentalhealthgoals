@@ -110,6 +110,9 @@ export const plugins: Plugin[] = [
   }),
   // Media uploads go to Vercel Blob in production; local filesystem in dev
   vercelBlobStorage({
+    // Keep the database schema identical when dev/CI uses local file storage.
+    // Blob's hidden fields still need migrations before a production build.
+    alwaysInsertFields: true,
     enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
     collections: {
       media: true,
