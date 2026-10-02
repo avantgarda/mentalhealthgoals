@@ -7,8 +7,8 @@
   "scripts": {
     "bootstrap": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/bootstrap.ts",
     "blobs:mirror": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/blob-mirror.ts",
-    "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
-    "build:deploy": "cross-env NODE_OPTIONS=--no-deprecation payload migrate && pnpm build",
+    "build": "pnpm check:runtime && cross-env NODE_OPTIONS=--no-deprecation next build",
+    "build:deploy": "pnpm check:runtime && cross-env NODE_OPTIONS=--no-deprecation payload migrate && pnpm build",
     "postbuild": "next-sitemap --config next-sitemap.config.cjs",
     "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
     "dev:prod": "cross-env NODE_OPTIONS=--no-deprecation rm -rf .next && pnpm build && pnpm start",
@@ -23,6 +23,7 @@
     "fixture": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env.local tests/fixtures/load.ts",
     "check:types-drift": "./scripts/check-types-drift.sh",
     "check:migrations": "./scripts/check-migrations.sh",
+    "check:runtime": "node scripts/check-runtime.mjs",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
@@ -115,7 +116,7 @@
     "vitest": "5.0.1"
   },
   "engines": {
-    "node": "24.x",
+    "node": "^24.21.0",
     "pnpm": "^9 || ^10 || ^11"
   },
   "pnpm": {
@@ -127,7 +128,9 @@
     "overrides": {
       "dompurify": "^3.4.13",
       "@esbuild-kit/core-utils>esbuild": "^0.25.0",
-      "fast-uri": "^3.1.6"
+      "fast-uri": "^3.1.6",
+      "payload>undici@7.29.0": "7.29.1",
+      "brace-expansion@>=1.0.0 <1.1.21": "1.1.21"
     }
   }
 }
