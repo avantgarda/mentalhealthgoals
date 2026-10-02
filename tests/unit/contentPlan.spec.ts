@@ -261,6 +261,36 @@ describe('expectations derived from a plan', () => {
     })
   })
 
+  it('allows retained wording inside an extended passage while still rejecting removed copy', () => {
+    const retained = 'Closing reflections — Dr Example and colleagues'
+    const revised = `${retained} (16:00–16:20).`
+    const removed = 'The obsolete discussion slot with a speaker still to be confirmed.'
+    const [expectation] = deriveExpectations({
+      version: 1,
+      name: 'Expanded timetable',
+      changes: [
+        {
+          collection: 'pages',
+          match: { field: 'slug', value: 'example-event' },
+          before: {
+            layout: [{ agenda: [{ item: retained }, { item: removed }] }],
+          },
+          after: {
+            layout: [{ agenda: [{ item: revised }] }],
+          },
+        },
+      ],
+    })
+    const live = visibleText(`<li>16:00 <span>${revised}</span></li>`)
+    expect(expectation.expectText).toEqual([revised])
+    expect(expectation.rejectText).toEqual([removed])
+    expect(expectation.expectText.every((passage) => live.includes(passage))).toBe(true)
+    expect(expectation.rejectText.some((passage) => live.includes(passage))).toBe(false)
+    expect(expectation.rejectText.some((passage) => `${live} ${removed}`.includes(passage))).toBe(
+      true,
+    )
+  })
+
   it('knows where each collection renders', () => {
     expect(recordPaths('pages', 'home')).toEqual(['/'])
     expect(recordPaths('pages', 'about')).toEqual(['/about'])

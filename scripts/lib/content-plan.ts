@@ -491,7 +491,13 @@ export function deriveExpectations(plan: ContentPlan): Expectation[] {
       paths: recordPaths(c.collection, after),
       expectStatus: 200,
       expectText: [...nowText].filter((s) => !wasText.has(s)),
-      rejectText: [...wasText].filter((s) => !nowText.has(s) && s.length >= 40),
+      // Rendered text is checked by substring. Wording retained inside an
+      // extended passage cannot also be forbidden (for example, a closing
+      // agenda item with its time range appended). Exact API read-back still
+      // checks the complete fields and row contents.
+      rejectText: [...wasText].filter(
+        (s) => s.length >= 40 && ![...nowText].some((current) => current.includes(s)),
+      ),
       expectHref: [...nowHref].filter((u) => !wasHref.has(u)),
       rejectHref: [...wasHref].filter((u) => !nowHref.has(u)),
       expectHead: nowHead.filter((h) => !has(wasHead, h)),
