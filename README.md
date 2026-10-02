@@ -61,6 +61,13 @@ keeps serving the ones it read at startup.
 Full detail, including what each script is allowed to touch, is in
 [`scripts/README.md`](scripts/README.md).
 
+For a routine CMS update, follow [`scripts/CONTENT-PATCH.md`](scripts/CONTENT-PATCH.md):
+prepare reviewed copy/actions in `temp/<change>/`, then give the editor one
+`pnpm content:run --plan temp/<change>/plan.json --apply --allow-production` command.
+It prompts locally for the CMS login, backs up and checks the writes, and verifies
+the result. Complete the separate live website review afterwards. CMS-only updates
+do not require a Git branch or a new deployment.
+
 ### Changing the schema
 
 The schema comes from the committed migrations in `src/migrations`, in every environment
@@ -121,8 +128,8 @@ Pages/Posts, and create the migration it asks for.
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Pages**           | Layout-builder pages (hero + blocks). Home, About, Workstreams, DIGIT, For industry, Patients & public, People, Industry Engagement Forum, Contact, Accessibility statement, Privacy notice |
 | **Posts**           | News & events, listed at `/posts`                                                                                                                                                           |
-| **Workstreams**     | The six national workstreams — edit these and the workstream grids update everywhere                                                                                                        |
-| **People**          | Leadership team cards, ordered by the `order` field                                                                                                                                         |
+| **Workstreams**     | The six national workstreams — edit these and the workstream grids update everywhere. Each names its own **Leads**, the only people listed on its page                                      |
+| **People**          | Team cards in three sections, shown by workstream and then surname (`order` sorts the admin list only)                                                                                      |
 | **Media**           | Uploads (local `public/media` in dev, Vercel Blob in production)                                                                                                                            |
 | **Header / Footer** | Navigation globals                                                                                                                                                                          |
 | **Brand & Logo**    | Global controlling which logo mark the whole site uses                                                                                                                                      |
@@ -227,6 +234,7 @@ run — and because the deploy is part of that run, it deploys too. To deploy `m
 | `pnpm content:editor create\|delete` | Temporary editor on a preview DB branch — the isolation canary                      |
 | `pnpm content:patch`                 | Apply a reviewed content plan (dry run by default) — see `scripts/CONTENT-PATCH.md` |
 | `pnpm content:verify`                | Prove a deployment shows what the plan says; derived from the plan                  |
+| `pnpm content:run`                   | One-command CMS handoff with local login prompt, backups and verification           |
 | `pnpm generate:types`                | Regenerate `src/payload-types.ts` after schema changes                              |
 | `pnpm generate:email-lockup`         | Photograph the header lockup for email, every variant (needs the site running)      |
 | `pnpm generate:brand`                | Regenerate all logo asset files in `public/brand`                                   |
@@ -285,6 +293,12 @@ If you change collections or fields: run `pnpm payload migrate:create <name>` an
   derivatives — `og` (the social-sharing card) and `thumbnail` (the admin preview). Don't judge
   image quality by opening a `/api/media/file/…` derivative directly; the original is what
   visitors see.
+- **Editing an image in the library saves a new file.** A crop or a moved focal point on an image
+  that is already uploaded is stored under the next name (`photo-1.jpg` → `photo-2.jpg`) and the
+  old files are removed; pages follow the record, so nothing needs re-linking. It is done this
+  way because a file overwritten in place stays cached under its old address — by the CDN for up
+  to a year — and the next edit would be made from that stale copy
+  (`src/hooks/attachStoredImageForEdits.ts`, payloadcms/payload#15267).
 - A **Content-Security-Policy runs in report-only mode** (production builds only): nothing is
   blocked, violations are POSTed to `/csp-report` and appear in the Vercel function logs (search
   for `csp-report`). Once the logs stay quiet across real editing sessions, rename the header in

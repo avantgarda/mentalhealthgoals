@@ -140,6 +140,7 @@ async function load(): Promise<void> {
     payload
       .create({
         collection: 'media',
+        ...noRevalidate,
         data: { alt: 'A flat teal rectangle standing in for the hero image' },
         file: await swatch('fixture-hero.png', [12, 60, 70], 960),
       })
@@ -147,6 +148,7 @@ async function load(): Promise<void> {
     payload
       .create({
         collection: 'media',
+        ...noRevalidate,
         data: { alt: 'A flat amber rectangle standing in for a card image' },
         file: await swatch('fixture-card.png', [176, 118, 40], 640),
       })
@@ -154,6 +156,7 @@ async function load(): Promise<void> {
     payload
       .create({
         collection: 'media',
+        ...noRevalidate,
         data: { alt: 'A flat grey rectangle standing in for a portrait' },
         file: await swatch('fixture-portrait.png', [110, 110, 116], 400),
       })
@@ -161,6 +164,7 @@ async function load(): Promise<void> {
     payload
       .create({
         collection: 'media',
+        ...noRevalidate,
         data: { alt: 'A flat blue rectangle standing in for a partner logo' },
         file: await swatch('fixture-logo.png', [40, 70, 140], 300),
       })
@@ -245,8 +249,9 @@ async function load(): Promise<void> {
   }
 
   payload.logger.info('— People...')
+  const personId: Record<string, number> = {}
   for (const person of people) {
-    await payload.create({
+    const doc = await payload.create({
       collection: 'people',
       depth: 0,
       ...noRevalidate,
@@ -260,6 +265,20 @@ async function load(): Promise<void> {
         workstreams: person.workstreams.map((slug) => workstreamId[slug]),
         ...(person.withPhoto ? { photo: portrait } : {}),
       },
+    })
+    personId[person.name] = doc.id
+  }
+
+  // Leads point at people, and people point at workstreams, so they can only
+  // be named once both exist.
+  for (const ws of workstreams) {
+    if (!ws.leads?.length) continue
+    await payload.update({
+      collection: 'workstreams',
+      id: workstreamId[ws.slug],
+      depth: 0,
+      ...noRevalidate,
+      data: { leads: ws.leads.map((name) => personId[name]) },
     })
   }
 

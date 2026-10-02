@@ -39,6 +39,11 @@ export type FixtureWorkstream = {
   description: string
   deliveredBy: string
   group?: 'digit'
+  /**
+   * Names of the people the workstream's own record lists as its leads. Each
+   * must also be linked to the workstream from their own record.
+   */
+  leads?: string[]
 }
 
 export type FixturePartner = {
@@ -68,6 +73,9 @@ export const workstreams: FixtureWorkstream[] = [
     description:
       'A fuller account of the cohort workstream, longer than the summary so the two can be told apart on the page that shows each of them.',
     deliveredBy: 'Northgate University',
+    // Dr Ada Fenwick is linked to this workstream too but is not one of its
+    // leads, so its page must leave her out.
+    leads: ['Dr Cora Bramley', 'Dr Aled Wray'],
   },
   {
     number: 2,
@@ -381,6 +389,11 @@ export const FIXTURE = {
     grouped: workstreams[4],
     /** Deliberately short, for the column-width measurement. */
     shortTitle: workstreams[5],
+    /**
+     * Names no leads of its own, though Dr Aled Wray — a lead of the first —
+     * is linked to it: leading one workstream is not leading another.
+     */
+    withoutLeads: workstreams[4],
   },
 
   /**

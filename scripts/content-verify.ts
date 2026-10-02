@@ -21,18 +21,29 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 import { argument, createCmsClient, resolveDeployment } from './lib/cms-client'
-import { checkCanary, matchValues, validatePlan } from './lib/content-patch-core'
+import {
+  assessChange,
+  checkCanary,
+  isUnpublishedDraft,
+  matchValues,
+  validatePlan,
+} from './lib/content-patch-core'
 import { deriveExpectations, headText, visibleText, type HeadPassage } from './lib/content-plan'
 
 const args = process.argv.slice(2)
 const deployment = resolveDeployment(argument(args, '--deployment'))
 const planFile = argument(args, '--plan')
 const plan = validatePlan(JSON.parse(readFileSync(planFile, 'utf8')))
+if (plan.createPartners?.length)
+  throw new Error(
+    'Verify the resolved-plan.json produced by content:run for plans creating partners',
+  )
 const { MHG_CMS_EMAIL: email, MHG_CMS_PASSWORD: password } = process.env
 
 const client = createCmsClient(deployment.hostname)
 const results: Record<string, unknown>[] = []
 let failed = 0
+let completed = false
 const report = (ok: boolean, line: string) => {
   if (!ok) failed++
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${line}`)
@@ -109,14 +120,19 @@ try {
     client.login(email, password)
     for (const c of plan.changes) {
       const names = matchValues(c)
-      const query = new URLSearchParams({ depth: '0', limit: '2' })
+      const query = new URLSearchParams({ depth: '0', limit: '2', draft: 'true' })
       names.forEach((n, i) => query.set(`where[or][${i}][${c.match.field}][equals]`, n))
       const found = client.api(`/api/${c.collection}?${query}`)
       const doc = found.docs?.[0]
       const versions = doc
         ? client.api(`/api/${c.collection}/versions?where[parent][equals]=${doc.id}&limit=1`)
         : { totalDocs: 0 }
-      const ok = found.totalDocs === 1 && versions.totalDocs >= 1
+      const ok =
+        found.totalDocs === 1 &&
+        versions.totalDocs >= 1 &&
+        doc &&
+        !isUnpublishedDraft(doc) &&
+        assessChange(doc, c) === 'already applied'
       results.push({
         api: `${c.collection}/${c.match.value}`,
         ok,
@@ -132,13 +148,22 @@ try {
   } else {
     console.log('(no MHG_CMS_EMAIL/PASSWORD — page checks only, API and version checks skipped)')
   }
+  completed = true
 } finally {
+  if (!completed) failed++
   client.dispose()
   const out = join(dirname(planFile), 'verification.json')
   writeFileSync(
     out,
     JSON.stringify(
-      { ...deployment, plan: plan.name, checkedAt: new Date().toISOString(), failed, results },
+      {
+        ...deployment,
+        plan: plan.name,
+        checkedAt: new Date().toISOString(),
+        completed,
+        failed,
+        results,
+      },
       null,
       2,
     ),

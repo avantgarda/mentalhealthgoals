@@ -21,6 +21,7 @@ import * as migration_20260907_120000_drop_media_folders from './20260907_120000
 import * as migration_20260907_233000_add_water_logo_variants from './20260907_233000_add_water_logo_variants';
 import * as migration_20260909_121500_add_versions_to_remaining_collections from './20260909_121500_add_versions_to_remaining_collections';
 import * as migration_20260915_113000_programme_details_national_default from './20260915_113000_programme_details_national_default';
+import * as migration_20260929_120000_add_workstream_leads from './20260929_120000_add_workstream_leads';
 
 export const migrations = [
   {
@@ -137,5 +138,10 @@ export const migrations = [
     up: migration_20260915_113000_programme_details_national_default.up,
     down: migration_20260915_113000_programme_details_national_default.down,
     name: '20260915_113000_programme_details_national_default',
+  },
+  {
+    up: migration_20260929_120000_add_workstream_leads.up,
+    down: migration_20260929_120000_add_workstream_leads.down,
+    name: '20260929_120000_add_workstream_leads',
   },
 ];

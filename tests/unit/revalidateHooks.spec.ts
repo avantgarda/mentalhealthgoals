@@ -13,6 +13,7 @@ vi.mock('next/cache', () => ({
 import { revalidatePath } from 'next/cache'
 import { revalidatePage } from '@/collections/Pages/hooks/revalidatePage'
 import { revalidatePost } from '@/collections/Posts/hooks/revalidatePost'
+import { revalidateMedia } from '@/hooks/revalidateMedia'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const makeArgs = (doc: any, previousDoc: any, context: any = {}): any => ({
@@ -81,6 +82,20 @@ describe('revalidatePost', () => {
     revalidatePost(
       makeArgs({ _status: 'published', slug: 'news-one' }, undefined, { disableRevalidate: true }),
     )
+    expect(revalidatePath).not.toHaveBeenCalled()
+  })
+})
+
+describe('revalidateMedia', () => {
+  // A replaced image's old file is deleted, so a page still pointing at it
+  // shows the old picture from a cache at best and a broken one at worst.
+  it('rebuilds every page when an image changes', () => {
+    revalidateMedia(makeArgs({ filename: 'portrait-2.jpg' }, { filename: 'portrait-1.jpg' }))
+    expect(revalidatePath).toHaveBeenCalledWith('/', 'layout')
+  })
+
+  it('does nothing when revalidation is disabled (fixture and other bulk loads)', () => {
+    revalidateMedia(makeArgs({ filename: 'portrait.jpg' }, undefined, { disableRevalidate: true }))
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 })
