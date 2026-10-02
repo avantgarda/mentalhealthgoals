@@ -14,13 +14,14 @@ designed for deployment on Vercel.
 
 ## Local development
 
-Requirements: **Node 24** (see `.nvmrc`), pnpm, a local **PostgreSQL 17** server, and the Vercel
+Requirements: **Node 24.21.0 or later in the Node 24 line** (see `.nvmrc`), pnpm, a local **PostgreSQL 17** server, and the Vercel
 CLI.
 
 **First time on this project?** [ONBOARDING.md](ONBOARDING.md) covers access, credentials and the
 one-time setup. Once that is done:
 
 ```bash
+nvm install
 nvm use
 pnpm install
 pnpm bootstrap
@@ -264,6 +265,11 @@ global queries on disk, and a stale cache makes the suite fail against content
 that is no longer in the database.
 
 ## Quality gates
+
+Builds check the Node runtime before compiling; deployment builds also check it before
+migrations. Node's built-in Undici needs its own security update independently of npm packages.
+See [`scripts/DEPENDENCY-SECURITY.md`](scripts/DEPENDENCY-SECURITY.md) for the reviewed dependency
+overrides, advisory assessment and the process for future security alerts.
 
 Three layers keep the foundations sound:
 
