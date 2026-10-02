@@ -81,6 +81,9 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
+    // Payload 3.90 requires an explicit allowlist for SVG logos. Keep its
+    // content inspection enabled so SVG scripts and external references fail.
+    mimeTypes: ['image/*', 'application/pdf'],
     // Upload to the public/media directory in Next.js making them publicly accessible even outside of Payload
     staticDir: path.resolve(dirname, '../../public/media'),
     // sharp derives no sizes from SVG, so a vector logo would otherwise show

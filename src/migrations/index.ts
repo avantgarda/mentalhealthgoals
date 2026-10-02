@@ -23,6 +23,8 @@ import * as migration_20260909_121500_add_versions_to_remaining_collections from
 import * as migration_20260915_113000_programme_details_national_default from './20260915_113000_programme_details_national_default';
 import * as migration_20260929_120000_add_workstream_leads from './20260929_120000_add_workstream_leads';
 
+import * as migration_20261002_132500_add_reset_password_requested_at from './20261002_132500_add_reset_password_requested_at';
+
 export const migrations = [
   {
     up: migration_20260810_154228_initial.up,
@@ -143,5 +145,10 @@ export const migrations = [
     up: migration_20260929_120000_add_workstream_leads.up,
     down: migration_20260929_120000_add_workstream_leads.down,
     name: '20260929_120000_add_workstream_leads',
+  },
+  {
+    up: migration_20261002_132500_add_reset_password_requested_at.up,
+    down: migration_20261002_132500_add_reset_password_requested_at.down,
+    name: '20261002_132500_add_reset_password_requested_at',
   },
 ];
