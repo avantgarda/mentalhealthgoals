@@ -25,6 +25,8 @@ import * as migration_20260929_120000_add_workstream_leads from './20260929_1200
 
 import * as migration_20261002_132500_add_reset_password_requested_at from './20261002_132500_add_reset_password_requested_at';
 
+import * as migration_20261002_134700_add_media_storage_fields from './20261002_134700_add_media_storage_fields';
+
 export const migrations = [
   {
     up: migration_20260810_154228_initial.up,
@@ -150,5 +152,10 @@ export const migrations = [
     up: migration_20261002_132500_add_reset_password_requested_at.up,
     down: migration_20261002_132500_add_reset_password_requested_at.down,
     name: '20261002_132500_add_reset_password_requested_at',
+  },
+  {
+    up: migration_20261002_134700_add_media_storage_fields.up,
+    down: migration_20261002_134700_add_media_storage_fields.down,
+    name: '20261002_134700_add_media_storage_fields',
   },
 ];
