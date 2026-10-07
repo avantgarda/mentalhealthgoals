@@ -17,8 +17,8 @@ const GROUPS = [
   },
   {
     value: 'workstream-leads',
-    heading: 'Workstream leads',
-    intro: 'The leads of the six workstreams, from partner institutions across the UK.',
+    heading: 'Workstream and strand leads',
+    intro: 'The leads of the workstreams and strands, from partner institutions across the UK.',
   },
   {
     value: 'delivery',

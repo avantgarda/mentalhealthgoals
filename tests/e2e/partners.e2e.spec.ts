@@ -48,7 +48,9 @@ test.describe('Partner logos', () => {
     // The workstreams index links the umbrella team to our own page — a new
     // tab would be wrong. Its label comes from the code, not the CMS.
     await page.goto('/workstreams')
-    const umbrella = page.getByRole('link', { name: /About DIGIT/ })
+    const umbrella = page.getByRole('link', {
+      name: /DIGIT — Data and Digital Industry Alliance Team/,
+    })
     await expect(umbrella).toHaveAttribute('href', '/digit')
     await expect(umbrella).not.toHaveAttribute('target', '_blank')
   })

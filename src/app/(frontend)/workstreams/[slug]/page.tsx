@@ -17,6 +17,7 @@ import { personAnchor } from '@/utilities/personAnchor'
 import { sortPeople } from '@/utilities/people'
 import { readingColumn } from '@/utilities/readingColumn'
 import { cn } from '@/utilities/ui'
+import { DIGIT, workstreamNavigation } from '@/utilities/workstreamHierarchy'
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -73,11 +74,11 @@ const queryAllWorkstreams = cache(async () => {
   const result = await payload.find({
     collection: 'workstreams',
     depth: 0,
-    limit: 12,
+    limit: 100,
     pagination: false,
     overrideAccess: false,
     sort: 'number',
-    select: { slug: true, title: true, number: true },
+    select: { slug: true, title: true, number: true, group: true },
   })
   return result.docs
 })
@@ -133,16 +134,8 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
 
   if (!workstream) notFound()
 
-  const {
-    number,
-    title,
-    summary,
-    description,
-    deliveredBy,
-    boundaryStatement,
-    partners,
-    resources,
-  } = workstream
+  const { title, summary, description, deliveredBy, boundaryStatement, partners, resources } =
+    workstream
   // The workstream query runs at depth 0, so `partners` arrives as IDs — and
   // raising the depth far enough to reach each partner's logo would pull the
   // whole graph for every workstream page. Resolve them from the cached
@@ -159,8 +152,11 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
     id: workstream.id,
     leadIds: (workstream.leads ?? []).map((p) => (typeof p === 'object' && p !== null ? p.id : p)),
   })
-  const index = all.findIndex((w) => w.slug === workstream.slug)
-  const next = index >= 0 ? all[(index + 1) % all.length] : null
+  const navigation = workstreamNavigation(all)
+  const index = navigation.findIndex((entry) => entry.doc?.slug === workstream.slug)
+  const current = navigation[index]
+  const next = index >= 0 ? navigation[(index + 1) % navigation.length] : null
+  const isStrand = workstream.group === 'digit'
   // No sections means no "on this page" nav, which means no gutter for the
   // body to step around — see `readingColumn`.
   const sections = SECTIONS.filter((s) => (workstream[s.key]?.length ?? 0) > 0)
@@ -175,8 +171,13 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
             <Link className="eyebrow link-line w-fit hover:text-foreground" href="/workstreams">
               <span aria-hidden="true">← </span>All workstreams
             </Link>
+            {isStrand && (
+              <Link className="eyebrow link-line w-fit" href={DIGIT.href}>
+                DIGIT strand · About DIGIT
+              </Link>
+            )}
             <span aria-hidden="true" className="numeral text-[3.5rem] text-brand-accent-text">
-              {String(number).padStart(2, '0')}
+              {current?.label}
             </span>
             <div className="flex flex-col gap-1.5">
               <span className="eyebrow">Delivered by</span>
@@ -287,7 +288,9 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
 
             {team.length > 0 && (
               <section className="scroll-mt-8 border-t-2 border-foreground pt-5" id="team">
-                <h2 className="display-2 mb-6">Who leads this workstream</h2>
+                <h2 className="display-2 mb-6">
+                  Who leads this {isStrand ? 'strand' : 'workstream'}
+                </h2>
                 <ul className="border-t border-border">
                   {team.map((person) => (
                     <li
@@ -318,19 +321,21 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
               </section>
             )}
 
-            {next && next.slug !== workstream.slug && (
+            {next && next.href !== current?.href && (
               <div className="border-t border-border pt-8" data-reveal>
-                <p className="eyebrow mb-3">Next workstream</p>
+                <p className="eyebrow mb-3">
+                  Next {next.kind === 'strand' ? 'DIGIT strand' : 'workstream'}
+                </p>
                 <Link
                   className="group flex items-baseline justify-between gap-4 pr-1 font-display text-[1.5rem] leading-tight lg:pr-4"
-                  href={`/workstreams/${next.slug}`}
+                  href={next.href}
                 >
                   <span>
                     <span
                       aria-hidden="true"
                       className="mr-3 font-mono text-xs text-muted-foreground"
                     >
-                      {String(next.number).padStart(2, '0')}
+                      {next.label}
                     </span>
                     {next.title}
                   </span>

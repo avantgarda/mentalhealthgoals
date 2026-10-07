@@ -71,6 +71,20 @@ export default async function Page({ searchParams: searchParamsPromise }: Args) 
       })
     : null
 
+  const strands = query
+    ? await payload.find({
+        collection: 'workstreams',
+        depth: 0,
+        limit: 100,
+        pagination: false,
+        overrideAccess: false,
+        where: { group: { equals: 'digit' } },
+        select: { slug: true },
+      })
+    : null
+  const strandPaths = (strands?.docs ?? []).flatMap((doc) =>
+    doc.slug ? [`/workstreams/${doc.slug}`] : [],
+  )
   const total = results?.totalDocs ?? 0
   // `sort` has already broken ties by priority, so a stable sort on relevance
   // alone preserves that ordering within each band.
@@ -87,7 +101,7 @@ export default async function Page({ searchParams: searchParamsPromise }: Args) 
         <div className="grid grid-cols-1 gap-6 border-b-2 border-foreground pb-10 lg:grid-cols-12 lg:gap-x-10 lg:pb-14">
           <h1 className="display-1 lg:col-span-7">Search</h1>
           <p className="lede lg:col-span-5 lg:self-end">
-            Pages, workstreams, news and the people behind the programme.
+            Pages, workstreams and strands, news and the people behind the programme.
           </p>
         </div>
       </div>
@@ -108,12 +122,12 @@ export default async function Page({ searchParams: searchParamsPromise }: Args) 
 
           {total > 0 ? (
             <div className="mt-4">
-              <SearchResults docs={docs} />
+              <SearchResults docs={docs} strandPaths={strandPaths} />
             </div>
           ) : (
             <div className="container mt-4 max-w-[44rem]">
               <p className="text-[0.98rem] leading-relaxed text-muted-foreground">
-                Try a shorter phrase, or a single word — the programme’s six{' '}
+                Try a shorter phrase, or a single word — the programme’s four{' '}
                 <Link className="link-line" href="/workstreams">
                   workstreams
                 </Link>

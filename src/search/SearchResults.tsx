@@ -10,13 +10,22 @@ import { resultLabel } from './resultTypes'
  * the kind of result in place of the category, and the path resolved at index
  * time so this does not have to know one collection from another.
  */
-export const SearchResults: React.FC<{ docs: Search[] }> = ({ docs }) => (
+export const SearchResults: React.FC<{ docs: Search[]; strandPaths?: string[] }> = ({
+  docs,
+  strandPaths = [],
+}) => (
   <div className="container">
     <div className="border-t-2 border-foreground">
       {docs.map((doc) => (
         <Card
           doc={doc as unknown as CardPostData}
-          eyebrow={resultLabel(doc.type)}
+          eyebrow={
+            doc.path === '/digit'
+              ? 'Workstream'
+              : strandPaths.includes(doc.path || '')
+                ? 'DIGIT strand'
+                : resultLabel(doc.type)
+          }
           href={doc.path || '/'}
           key={doc.id}
           title={doc.title ?? undefined}

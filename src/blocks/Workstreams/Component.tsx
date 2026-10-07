@@ -5,134 +5,101 @@ import Link from 'next/link'
 
 import type { Workstream, WorkstreamsBlockType } from '@/payload-types'
 import { SectionHead } from '@/components/SectionHead'
-import { DigitMark } from '@/components/DigitMark'
+import { DIGIT, workstreamHierarchy, type WorkstreamEntry } from '@/utilities/workstreamHierarchy'
 
-/** Umbrella teams that bracket a run of workstreams in the index. */
-const UMBRELLAS: Record<string, { name: string; expansion: string; note: string; href: string }> = {
-  digit: {
-    name: 'DIGIT',
-    expansion: 'Data and Digital Industry Alliance Team',
-    note: 'One funded project delivering workstreams 01–03.',
-    href: '/digit',
-  },
-}
-
-/**
- * The six workstreams as a numbered index — ruled rows, no enclosure.
- * Workstreams sharing an umbrella team (DIGIT) run under a labelled band, so
- * the structure of the programme is visible without changing the numbering.
- */
 export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async ({
   heading,
   intro,
   style,
 }) => {
   const payload = await getPayload({ config: configPromise })
-
-  const workstreams = await payload.find({
+  const { docs } = await payload.find({
     collection: 'workstreams',
     depth: 0,
-    limit: 12,
+    limit: 100,
     pagination: false,
     sort: 'number',
     overrideAccess: false,
   })
+  const groups = workstreamHierarchy(docs)
+  if (!groups.length) return null
 
-  const docs = workstreams.docs
-
-  if (docs.length === 0) return null
-
-  // Keep heading levels sequential: with a block heading (h2) the rows sit at
-  // h3; without one (e.g. the workstreams listing page, under its h1) at h2.
-  const RowHeading: 'h2' | 'h3' = heading ? 'h3' : 'h2'
+  const RowHeading = heading ? 'h3' : 'h2'
+  const StrandHeading = heading ? 'h4' : 'h3'
   const detailed = style === 'detailed'
 
-  // Group consecutive workstreams that share an umbrella team.
-  const runs: { umbrella: string | null; items: Workstream[] }[] = []
-  for (const ws of docs) {
-    const umbrella = ws.group ?? null
-    const last = runs[runs.length - 1]
-    if (last && last.umbrella === umbrella) last.items.push(ws)
-    else runs.push({ umbrella, items: [ws] })
-  }
-
-  const row = (ws: Workstream, i: number) => (
-    <li data-reveal key={ws.id} style={{ transitionDelay: `${Math.min(i, 6) * 50}ms` }}>
-      <Link
-        className="group grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-4 gap-y-2 border-b border-border px-4 py-6 transition-colors duration-[var(--dur-ui)] hover:bg-foreground/[0.03] lg:grid-cols-12 lg:gap-x-8 lg:px-6 lg:py-7"
-        href={`/workstreams/${ws.slug}`}
-      >
-        <span
-          aria-hidden="true"
-          className="pt-1.5 font-mono text-xs tabular-nums text-muted-foreground transition-colors duration-[var(--dur-ui)] group-hover:text-brand-accent-text lg:col-span-1"
+  const row = (entry: WorkstreamEntry<Workstream>) => {
+    const ws = entry.doc!
+    const Heading = entry.kind === 'strand' ? StrandHeading : RowHeading
+    return (
+      <li key={entry.href}>
+        <Link
+          className="group grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-4 gap-y-2 border-b border-border px-4 py-6 transition-colors duration-[var(--dur-ui)] hover:bg-foreground/[0.03] lg:grid-cols-12 lg:gap-x-8 lg:px-6 lg:py-7"
+          href={entry.href}
         >
-          {String(ws.number).padStart(2, '0')}
-        </span>
-        <div className="lg:col-span-4">
-          <RowHeading className="display-3 group-hover:underline group-hover:decoration-1 group-hover:underline-offset-4">
-            {ws.title}
-          </RowHeading>
-        </div>
-        <p className="col-start-2 text-[1rem] leading-relaxed text-muted-foreground lg:col-span-4 lg:col-start-6">
-          {detailed ? ws.description || ws.summary : ws.summary}
-        </p>
-        <div className="col-start-2 flex flex-col gap-1 lg:col-span-3 lg:col-start-10 lg:items-end lg:text-right">
-          <span className="eyebrow">Delivered by</span>
-          <span className="text-[0.95rem] leading-snug">{ws.deliveredBy}</span>
-          <span aria-hidden="true" className="arrow mt-1 text-muted-foreground">
-            →
+          <span
+            aria-hidden="true"
+            className="pt-1.5 font-mono text-xs tabular-nums text-brand-accent-text lg:col-span-1"
+          >
+            {entry.label}
           </span>
-        </div>
-      </Link>
-    </li>
-  )
+          <div className="lg:col-span-4">
+            <Heading className="display-3 group-hover:underline group-hover:decoration-1 group-hover:underline-offset-4">
+              {ws.title}
+            </Heading>
+          </div>
+          <p className="col-start-2 text-[1rem] leading-relaxed text-muted-foreground lg:col-span-4 lg:col-start-6">
+            {detailed ? ws.description || ws.summary : ws.summary}
+          </p>
+          <div className="col-start-2 flex flex-col gap-1 lg:col-span-3 lg:col-start-10 lg:items-end lg:text-right">
+            <span className="eyebrow">Delivered by</span>
+            <span className="text-[0.95rem] leading-snug">{ws.deliveredBy}</span>
+            <span aria-hidden="true" className="arrow mt-1 text-muted-foreground">
+              →
+            </span>
+          </div>
+        </Link>
+      </li>
+    )
+  }
 
   return (
     <div className="container">
       <SectionHead heading={heading} intro={intro} />
-
-      <div className="border-t border-border">
-        {runs.map((run, runIndex) => {
-          const umbrella = run.umbrella ? UMBRELLAS[run.umbrella] : null
-
-          // Both runs get the same ground and the same muted label. A reader
-          // should learn that 01–03 are delivered together without that reading
-          // as precedence over 04–06 — an accent colour and a tinted band said
-          // the opposite. Since both runs are treated alike, the vertical rule
-          // that used to bracket them distinguished nothing; all it did was
-          // give the index a left edge and a top edge with no right or bottom,
-          // so the whole thing read as a box someone had forgotten to close.
-          // The labelled band above each run is what marks the grouping.
-          return (
-            <section key={runIndex}>
-              <div className="flex items-start gap-4 px-4 py-4 lg:px-6" data-reveal>
-                {umbrella ? (
-                  <>
-                    <DigitMark className="mt-0.5 h-6 w-6 text-muted-foreground" />
-                    <div className="flex flex-col gap-1">
-                      <p className="eyebrow">
-                        {umbrella.name} — {umbrella.expansion}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {umbrella.note}{' '}
-                        <Link className="link-line whitespace-nowrap" href={umbrella.href}>
-                          About {umbrella.name}
-                          <span aria-hidden="true"> →</span>
-                        </Link>
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Delivered with programme partners across the UK.
+      <ol className="border-t border-foreground" aria-label="National workstreams">
+        {groups.map((entry) =>
+          entry.doc ? (
+            row(entry)
+          ) : (
+            <li key={entry.href} className="border-b border-foreground pb-2">
+              <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-4 px-4 py-6 lg:grid-cols-12 lg:gap-x-8 lg:px-6 lg:py-7">
+                <span
+                  aria-hidden="true"
+                  className="pt-1.5 font-mono text-xs tabular-nums text-brand-accent-text lg:col-span-1"
+                >
+                  {entry.label}
+                </span>
+                <div className="lg:col-span-11">
+                  <RowHeading className="display-3">
+                    <Link className="link-line" href={entry.href}>
+                      {entry.title}
+                    </Link>
+                  </RowHeading>
+                  <p className="mt-2 text-[1rem] leading-relaxed text-muted-foreground">
+                    {DIGIT.note}
                   </p>
-                )}
+                </div>
               </div>
-              <ol>{run.items.map((ws, i) => row(ws, i))}</ol>
-            </section>
-          )
-        })}
-      </div>
+              <ol
+                className="ml-4 border-l-2 border-brand-accent sm:ml-12 lg:ml-24 [&>li:last-child>a]:border-b-0"
+                aria-label="DIGIT strands"
+              >
+                {entry.children.map(row)}
+              </ol>
+            </li>
+          ),
+        )}
+      </ol>
     </div>
   )
 }
