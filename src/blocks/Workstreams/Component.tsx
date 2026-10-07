@@ -71,7 +71,7 @@ export const WorkstreamsBlockComponent: React.FC<WorkstreamsBlockType> = async (
           entry.doc ? (
             row(entry)
           ) : (
-            <li key={entry.href} className="border-b border-foreground pb-2">
+            <li key={entry.href} className="border-b border-foreground pb-6 lg:pb-7">
               <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-4 px-4 py-6 lg:grid-cols-12 lg:gap-x-8 lg:px-6 lg:py-7">
                 <span
                   aria-hidden="true"
