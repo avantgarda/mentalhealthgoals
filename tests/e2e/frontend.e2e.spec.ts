@@ -75,9 +75,11 @@ test.describe('Frontend', () => {
     }
   })
 
-  test('the workstreams index explains its umbrella team without logos', async ({ page }) => {
+  test('the workstreams index links the DIGIT parent without logos', async ({ page }) => {
     await page.goto('/workstreams')
-    await page.getByRole('link', { name: /About DIGIT/ }).click()
+    await page
+      .getByRole('link', { name: /DIGIT — Data and Digital Industry Alliance Team/ })
+      .click()
     await page.waitForURL(/\/digit$/)
     await expect(page.getByRole('heading', { level: 1 })).toContainText(FIXTURE.umbrella.pageTitle)
     // Typographic by design: a page about one team inside the programme does
@@ -413,24 +415,28 @@ test.describe('Frontend', () => {
     expect(columns).toBe(2)
   })
 
-  test('the workstreams index is ruled, not boxed', async ({ page }) => {
-    // A vertical rule down the left of each run gave the index a left edge and
-    // a top edge with no right or bottom — a box someone had forgotten to
-    // close. The labelled band marks each run; the rules stay horizontal.
+  test('the workstreams index nests DIGIT strands under one national workstream', async ({
+    page,
+  }) => {
     await page.goto('/workstreams')
-
-    const sides = await page.evaluate(() =>
-      [...document.querySelectorAll('.border-t.border-border > section')].map((s) => {
-        const style = getComputedStyle(s)
-        return [style.borderLeftWidth, style.borderRightWidth]
-      }),
+    const national = page.getByRole('list', { name: 'National workstreams', exact: true })
+    const strands = national.getByRole('list', { name: 'DIGIT strands', exact: true })
+    const grouped = FIXTURE.workstreams.filter((ws) => ws.group === 'digit')
+    await expect(strands.locator(':scope > li')).toHaveCount(grouped.length)
+    await expect(national.locator(':scope > li')).toHaveCount(
+      FIXTURE.workstreams.length - grouped.length + 1,
     )
-
-    expect(sides.length).toBeGreaterThan(0)
-    for (const [left, right] of sides) {
-      expect(left).toBe('0px')
-      expect(right).toBe('0px')
+    for (const ws of grouped) {
+      await expect(strands.getByRole('link', { name: new RegExp(ws.title) })).toHaveAttribute(
+        'href',
+        `/workstreams/${ws.slug}`,
+      )
     }
+    const borders = await strands.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return [style.borderLeftWidth, style.borderRightWidth]
+    })
+    expect(borders).toEqual(['2px', '0px'])
   })
 
   test('a workstream title uses the width its column actually has', async ({ page }) => {
@@ -456,7 +462,7 @@ test.describe('Frontend', () => {
   test('the team is ordered by workstream and then surname, never by hand', async ({ page }) => {
     await page.goto('/people')
     const leads = page.locator('section', {
-      has: page.getByRole('heading', { name: 'Workstream leads' }),
+      has: page.getByRole('heading', { name: 'Workstream and strand leads' }),
     })
     const names = await leads.locator('[data-person-name]').allTextContents()
     // Lowest workstream number first, then surname. One of these people is on

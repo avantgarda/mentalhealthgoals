@@ -125,15 +125,15 @@ Pages/Posts, and create the migration it asks for.
 
 ## Content model
 
-| Type                | What it's for                                                                                                                                                                               |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Pages**           | Layout-builder pages (hero + blocks). Home, About, Workstreams, DIGIT, For industry, Patients & public, People, Industry Engagement Forum, Contact, Accessibility statement, Privacy notice |
-| **Posts**           | News & events, listed at `/posts`                                                                                                                                                           |
-| **Workstreams**     | The six national workstreams — edit these and the workstream grids update everywhere. Each names its own **Leads**, the only people listed on its page                                      |
-| **People**          | Team cards in three sections, shown by workstream and then surname (`order` sorts the admin list only)                                                                                      |
-| **Media**           | Uploads (local `public/media` in dev, Vercel Blob in production)                                                                                                                            |
-| **Header / Footer** | Navigation globals                                                                                                                                                                          |
-| **Brand & Logo**    | Global controlling which logo mark the whole site uses                                                                                                                                      |
+| Type                | What it's for                                                                                                                                                                                                                                  |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pages**           | Layout-builder pages (hero + blocks). Home, About, Workstreams, DIGIT, For industry, Patients & public, People, Industry Engagement Forum, Contact, Accessibility statement, Privacy notice                                                    |
+| **Posts**           | News & events, listed at `/posts`                                                                                                                                                                                                              |
+| **Workstreams**     | Records for the three DIGIT strands and the other three national workstreams. The index groups these into four national workstreams, with DIGIT linking to its existing Page. Each names its own **Leads**, the only people listed on its page |
+| **People**          | Team cards in three sections, shown by workstream and then surname (`order` sorts the admin list only)                                                                                                                                         |
+| **Media**           | Uploads (local `public/media` in dev, Vercel Blob in production)                                                                                                                                                                               |
+| **Header / Footer** | Navigation globals                                                                                                                                                                                                                             |
+| **Brand & Logo**    | Global controlling which logo mark the whole site uses                                                                                                                                                                                         |
 
 Custom blocks available in the page layout builder: **Stats** (big-number tiles),
 **Workstreams** (cards or detailed list), **People** (team grid), **Event Details**
