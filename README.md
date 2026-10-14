@@ -112,10 +112,10 @@ message uses `{{*:table}}`, the table is rebuilt from the form itself: its field
 a person chose rather than its stored value, Yes or No for a box, and a link to the record in the
 CMS
 (`src/utilities/emailTemplate.ts`, applied through the form builder's `beforeEmail` hook in
-`src/utilities/formEmails.ts`). The lockup image is fetched from the permanent
-`mentalhealthgoals.vercel.app` alias rather than the site's own URL — an email is opened long
-after it is sent, the custom domain is parked until launch, and deployment URLs sit behind
-SSO. Editors need do nothing. If the frame ever fails to build, the message goes out plain
+`src/utilities/formEmails.ts`). The lockup image is always fetched from
+`www.mentalhealthgoals.co.uk`, whichever environment sent the email — an email is opened long
+after it is sent, a local build's URL is localhost, and deployment URLs sit behind SSO.
+Editors need do nothing. If the frame ever fails to build, the message goes out plain
 rather than not at all.
 
 Scheduled publishing is disabled: on Vercel nothing runs Payload's jobs queue, so scheduled

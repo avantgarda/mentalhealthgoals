@@ -11,6 +11,7 @@ import type { BeforeEmail, FormattedEmail } from '@payloadcms/plugin-form-builde
 import type { SendEmailOptions } from 'payload'
 
 import { DEFAULT_LOGO_VARIANT } from '@/brand/marks'
+import { BRAND_DOMAIN } from '@/brand/tokens'
 import type { Form } from '@/payload-types'
 
 import { AUDIENCE_HEADER } from './emailConfig'
@@ -18,13 +19,14 @@ import { brandedEmailHtml, emailText, escapeHtml, type EmailAudience } from './e
 import { getServerSideURL } from './getURL'
 
 /**
- * Where the lockup image is fetched from — deliberately not the site's own URL.
- * An email is opened long after it is sent, from any client, so its images need
- * a host that is public today and stays so: the custom domain is parked until
- * launch, and per-deployment URLs sit behind SSO. The project's `vercel.app`
- * alias is public, permanent, and serves the same `public/brand` files.
+ * Where the lockup image is fetched from — always production's canonical host,
+ * whichever environment sends the email. An email is opened long after it is
+ * sent, from any client, so its images need a host that is public and stays
+ * so: a local build's URL is localhost, and per-deployment URLs sit behind SSO.
+ * The site's own domain also matches the sender's, which mail filters trust
+ * more than a shared `vercel.app` host.
  */
-export const EMAIL_ASSET_ORIGIN = 'https://mentalhealthgoals.vercel.app'
+export const EMAIL_ASSET_ORIGIN = `https://${BRAND_DOMAIN}`
 
 /**
  * What the hook hands back: the plugin's shape plus two parts of Payload's
