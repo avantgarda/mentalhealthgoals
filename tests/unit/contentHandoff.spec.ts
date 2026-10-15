@@ -342,17 +342,26 @@ describe('single-command CMS handoff', () => {
   const login = 'editor@example.org\noffline-password\n'
 
   it('says why Media refused an upload, and writes nothing else', () => {
+    // Payload 3.90.2's refusal of a file that is not a PDF.
     const f = fixture({
       uploadRefusal: {
         status: 400,
-        body: { errors: [{ message: 'The file you uploaded was not a valid PDF.' }] },
+        body: {
+          errors: [
+            {
+              name: 'ValidationError',
+              message: 'The following field is invalid: file',
+              data: { errors: [{ message: 'Invalid PDF file.', path: 'file' }] },
+            },
+          ],
+        },
       },
     })
     declareSlides(f)
     const result = f.run(['--apply', '--allow-production'], login)
     expect(result.status).not.toBe(0)
     expect(result.stderr).toContain(
-      'Media refused the upload (HTTP 400): The file you uploaded was not a valid PDF.',
+      'Media refused the upload (HTTP 400): The following field is invalid: file (file: Invalid PDF file.)',
     )
     expect(f.state().collections.media).toHaveLength(1)
     expect(f.state().collections.pages[0].layout).toEqual([])

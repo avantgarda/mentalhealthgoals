@@ -198,13 +198,28 @@ export function createCmsClient(hostname: string): CmsClient {
       if (!(status >= 200 && status < 300)) {
         // Unlike a login's, an upload's refusal holds nothing secret, and it is
         // the only clue to why: 413 is the size limit, 401 or 403 the session,
-        // and Payload's messages name a file it will not take.
+        // and Payload's messages name a file it will not take. A ValidationError
+        // names the field; what is wrong with it is in `data.errors`.
+        const reason = (e: unknown): string => {
+          if (!e || typeof e !== 'object') return ''
+          const { message, path, data } = e as {
+            message?: unknown
+            path?: unknown
+            data?: { errors?: unknown }
+          }
+          const own =
+            typeof message !== 'string'
+              ? ''
+              : typeof path === 'string' && path
+                ? `${path}: ${message}`
+                : message
+          const nested = Array.isArray(data?.errors)
+            ? data.errors.map(reason).filter(Boolean).join('; ')
+            : ''
+          return own && nested ? `${own} (${nested})` : own || nested
+        }
         const errors: unknown[] = Array.isArray(body?.errors) ? body.errors : []
-        const reasons = errors
-          .map((e) => (e && typeof e === 'object' ? (e as { message?: unknown }).message : ''))
-          .filter((m): m is string => typeof m === 'string' && m.length > 0)
-          .join('; ')
-          .slice(0, 300)
+        const reasons = errors.map(reason).filter(Boolean).join('; ').slice(0, 300)
         throw new Error(
           `Media refused the upload (HTTP ${status || 'none'})${reasons ? `: ${reasons}` : ''}`,
         )

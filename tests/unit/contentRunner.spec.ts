@@ -5,8 +5,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CmsClient, Deployment } from '../../scripts/lib/cms-client'
-import { validatePlan, type ContentPlan } from '../../scripts/lib/content-patch-core'
-import { runContentPatch } from '../../scripts/lib/content-patch-runner'
+import { assessChange, validatePlan, type ContentPlan } from '../../scripts/lib/content-patch-core'
+import { readChange, runContentPatch, settled } from '../../scripts/lib/content-patch-runner'
 
 type Doc = Record<string, unknown> & { id: number; updatedAt: string }
 const deployment: Deployment = { hostname: 'example.vercel.app', environment: 'production' }
@@ -391,6 +391,24 @@ describe('rows a plan adds', () => {
     // What content:verify is then given must pass its own validation.
     expect(validatePlan(reversed).changes[0].generatedIds).toBeUndefined()
   })
+
+  it('dry runs a reversal as checked, before and after it is applied', () => {
+    const f = fixture()
+    f.reissueNewRowIds()
+    runContentPatch(f.client, deployment, adding, options())
+    const dryRun = () =>
+      runContentPatch(f.client, deployment, adding, { apply: false, reverse: true, log: vi.fn() })
+    // As `content:run --verify-only --reverse` checks it: the added row, under
+    // its new ID, is a reversal not yet applied, not a differing baseline.
+    const [pending] = dryRun().changes
+    expect(assessChange(readChange(f.client, pending), pending)).toBe('ready')
+    runContentPatch(f.client, deployment, adding, { ...options(), reverse: true })
+    const reversed = dryRun()
+    expect(assessChange(readChange(f.client, reversed.changes[0]), reversed.changes[0])).toBe(
+      'already applied',
+    )
+    expect(validatePlan(settled(reversed)).changes[0].generatedIds).toBeUndefined()
+  })
 })
 
 describe('rows a plan removes', () => {
@@ -543,6 +561,32 @@ describe('files a plan uploads', () => {
       expect(f.state).toEqual(before)
     },
   )
+
+  it('stops on another file served whole under the name, saying to use a new filename', () => {
+    // An earlier file of that name, still cached by Vercel's CDN: a whole
+    // download of another size, not one cut short.
+    const stale = Buffer.from('%PDF-1.4\nan earlier, longer invented file\nxref\n%%EOF\n')
+    const listed = fixture()
+    listed.state.media.push({
+      id: 8,
+      updatedAt: 'baseline',
+      filename: upload.filename,
+      mimeType: 'application/pdf',
+      filesize: upload.filesize,
+    })
+    listed.files.set(upload.filename, stale)
+    expect(() => runContentPatch(listed.client, deployment, uploading, uploadOptions())).toThrow(
+      /at the reviewed size, but its address serves a different file \(\d+ bytes, where the record says \d+\).* Nothing was written\. Upload it under a new filename\.$/,
+    )
+    expect(listed.writes).toEqual([])
+
+    const uploaded = fixture()
+    vi.mocked(uploaded.client.download).mockReturnValue(stale)
+    expect(() => runContentPatch(uploaded.client, deployment, uploading, uploadOptions())).toThrow(
+      /^Upload read-back failed: .* serves a different file .* Upload it under a new filename\.$/,
+    )
+    expect(uploaded.writes).toEqual(['upload media'])
+  })
 
   it('refuses a local file changed since review before any write', () => {
     const f = fixture()

@@ -98,8 +98,9 @@ function rowIds(value: unknown): string[] {
  * A reversal tolerates new IDs on both sides while it runs: the rows the
  * forward plan added (gone once it is written) and the rows it restores. Only
  * the restored rows remain, so the checks get only their IDs; the others sit
- * in `before`, where validatePlan rightly refuses generated IDs. */
-function settled(plan: ContentPlan): ContentPlan {
+ * in `before`, where validatePlan rightly refuses generated IDs. Only for a
+ * plan written for content:verify: a dry run's plan keeps the full tolerance. */
+export function settled(plan: ContentPlan): ContentPlan {
   return {
     ...plan,
     changes: plan.changes.map(({ generatedIds, ...change }) => {
@@ -126,14 +127,18 @@ function readMediaByFilename(client: CmsClient, filename: string): MediaFile | u
 
 /** A file in Media is the reviewed upload only if it is the same bytes. The
  * record's type and size are checked first; the bytes are then downloaded and
- * hashed. A record of the reviewed size whose bytes do not arrive in full is
- * `unserved` — not yet served, or a storage fault — never a different file:
- * that would send the editor to upload a second copy under another name. */
+ * hashed. A record of the reviewed size whose download fails — a 204, an HTTP
+ * error, or a body cut short (curl exits 18) — is `unserved`: not yet served,
+ * or a storage fault, never a different file, which would send the editor to
+ * upload a second copy under another name. A download that arrives in full at
+ * another size than the record's is a different file at that address — most
+ * often a stale cached copy of an earlier file of the same name — and is
+ * reported as `served`. */
 function compareFile(
   client: CmsClient,
   file: MediaFile,
   upload: MediaUpload,
-): { same: boolean; unserved?: string } {
+): { same: boolean; unserved?: string; served?: string } {
   if (file.mimeType !== upload.mimeType || file.filesize !== upload.filesize) return { same: false }
   let bytes: Buffer
   try {
@@ -141,8 +146,8 @@ function compareFile(
   } catch (error) {
     return { same: false, unserved: (error as Error).message }
   }
-  if (bytes.length !== upload.filesize)
-    return { same: false, unserved: `served ${bytes.length} of ${upload.filesize} bytes` }
+  if (bytes.length !== file.filesize)
+    return { same: false, served: `${bytes.length} bytes, where the record says ${file.filesize}` }
   return { same: sha256(bytes) === upload.sha256 }
 }
 
@@ -179,6 +184,12 @@ export function assessUploads(
           `Media lists ${upload.filename} (#${doc.id}) at the reviewed size but did not serve ` +
             `it in full (${check.unserved}). Nothing was written. Run the same command again ` +
             'in a minute; do not upload it under another name.',
+        )
+      if (check.served)
+        throw new Error(
+          `Media lists ${upload.filename} (#${doc.id}) at the reviewed size, but its address ` +
+            `serves a different file (${check.served}): most likely a stale cached copy of an ` +
+            'earlier file of that name. Nothing was written. Upload it under a new filename.',
         )
       if (!check.same)
         throw new Error(
@@ -220,7 +231,9 @@ function checkLinkedMedia(client: CmsClient, plan: ContentPlan, log: (message: s
 }
 
 /** Check all targets before the first content write. Return the numeric,
- * resolved plan for verification, including corrected names on reruns. */
+ * resolved plan, including corrected names on reruns. After an apply it is
+ * `settled`, for verification; a dry run returns it as it was checked, so the
+ * caller can still tell a change not yet applied from a differing baseline. */
 export function runContentPatch(
   client: CmsClient,
   deployment: Deployment,
@@ -283,7 +296,7 @@ export function runContentPatch(
     )
     return { change, doc, state }
   })
-  if (!options.apply) return settled(plan)
+  if (!options.apply) return plan
 
   const directory = resolve(options.backupDir!)
   mkdirSync(directory, { recursive: true, mode: 0o700 })
@@ -346,6 +359,12 @@ export function runContentPatch(
           `Upload read-back failed: ${upload.filename} is in Media (#${write.id}) but was not ` +
             `served in full yet (${check.unserved}). Nothing links to it. Run the same command ` +
             'again in a minute: it reuses the file once Media serves it.',
+        )
+      if (check.served)
+        throw new Error(
+          `Upload read-back failed: ${upload.filename} is in Media (#${write.id}) but its ` +
+            `address serves a different file (${check.served}): most likely a stale cached ` +
+            'copy of an earlier file of that name. Nothing links to it. Upload it under a new filename.',
         )
       if (!saved || !check.same)
         throw new Error(
