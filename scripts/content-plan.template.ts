@@ -15,17 +15,22 @@
  * - every ID minted for a NEW row goes through the Minter, so Payload's own
  *   replacement ID is tolerated on read-back;
  * - when rewriting rich text or a layout, edit a clone and put back the whole
- *   field — existing node IDs, links and untouched paragraphs must survive.
+ *   field — existing node IDs, links and untouched paragraphs must survive;
+ * - a PDF not yet in Media is declared with `declareUpload` (file in this
+ *   directory, at most 4 MB) and linked only through `withUploads`, and every
+ *   declared file must be linked.
  */
 import {
   Minter,
   change,
+  declareUpload,
   find,
   loadSources,
   paragraph,
   relink,
   relinkToMedia,
   text,
+  withUploads,
   writePlan,
 } from './lib/content-plan'
 
@@ -71,13 +76,24 @@ if (relink(content, 'https://old.example.org/', 'https://new.example.org/') === 
   throw new Error('Expected link not found')
 changes.push(change('posts', post, { content }))
 
-// A page: point typed links to uploaded PDFs at the files in Media. The site
-// adds each file's type and size, so a size typed into the words is removed.
+// A page: point typed links to PDFs at the files in Media. A file not in
+// Media yet is declared here and uploaded by the same command, before any
+// record changes. The site adds each file's type and size, so a size typed
+// into the words is removed.
+const lateSlides = declareUpload(dir, {
+  reference: '__MEDIA_EXAMPLE_LATE_SLIDES__',
+  file: 'files/Example late slides v2.pdf',
+  filename: 'example-late-slides.pdf',
+  alt: 'Example late slides',
+})
 const forum = find(sources, 'pages', 'example-forum')
 const forumLayout = structuredClone(forum.layout)
-const files = relinkToMedia(forumLayout, sources)
-if (files.join() !== 'example-slides.pdf') throw new Error(`Unexpected file links: ${files}`)
+const files = relinkToMedia(forumLayout, withUploads(sources, [lateSlides]))
+if (files.join() !== 'example-slides.pdf,example-late-slides.pdf')
+  throw new Error(`Unexpected file links: ${files}`)
 changes.push(change('pages', forum, { layout: forumLayout }))
 
-writePlan(dir, 'Example plan — replace with a name the team will recognise', changes)
+writePlan(dir, 'Example plan — replace with a name the team will recognise', changes, undefined, {
+  uploadMedia: [lateSlides],
+})
 console.log(`Wrote ${dir}/plan.json, review.md and qa.md (${changes.length} changes)`)
