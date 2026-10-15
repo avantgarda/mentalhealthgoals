@@ -68,7 +68,8 @@ in migrations.
    plan without content writes. `--deployment <exact-host>.vercel.app` selects
    another deployment; previews still require the isolation canary. `--reverse`
    reverses reviewed updates, with the same fences, and leaves created partners
-   in place. Never delete a partner automatically during reversal.
+   and uploaded files in place. Never delete a partner or file automatically
+   during reversal.
 
 5. **Review the live website after the user runs the command.** Follow the
    checklist below and record dated evidence in `qa.md`. Browser use is useful
@@ -79,8 +80,8 @@ in migrations.
 Keep the change directory. Each apply/verify run has its own timestamped
 `backups/` directory with the reviewed input, original documents/write receipt,
 `resolved-plan.json`, `verification.json` and `run.json`. The resolved plan
-replaces new-partner references with actual CMS IDs and can be used with the
-low-level verifier/patcher. `review.md` describes the proposal; dated receipts
+replaces new-partner and new-file references with actual CMS IDs and can be
+used with the low-level verifier/patcher. `review.md` describes the proposal; dated receipts
 and `qa.md` record what actually happened.
 
 ## Tools and supported scope
@@ -96,9 +97,11 @@ and `qa.md` record what actually happened.
 
 The maintained runner supports copy fields listed below, **existing-person name
 corrections**, **workstream partner relationships**, page partner blocks through
-`layout`, **explicit new programme partner declarations** and **links to PDFs
-already in Media**. It does not add Team members, delete records, upload media,
-alter publishing status or edit navigation globals. Describe any manual Media/Partners admin steps precisely in
+`layout`, **explicit new programme partner declarations**, **links to PDFs in
+Media** and **declared PDF uploads to Media** (up to 4 MB each). It does not add
+Team members, delete or replace records or files, upload images or other file
+types, edit a file's details in Media, alter publishing status or edit
+navigation globals. Describe any manual Media/Partners admin steps precisely in
 `RUN.md`, with the file, target record/field and whether to do them before or
 after the command. Do not call them impossible just because this tool lacks the
 operation. Extend the mechanism only when the requested scope actually needs it.
@@ -144,8 +147,8 @@ by filename in the snapshot's `sources/media.json`. It removes a type and size
 typed at the end of the link's words, which would otherwise show twice, and
 returns the filenames it converted: check them against the files you expect. It
 stops when a file is missing from Media or is not a PDF, when a size follows
-the link outside its words, or when the snapshot has no Media. Upload missing
-files first (a manual step in `RUN.md`), then snapshot again.
+the link outside its words, or when the snapshot has no Media. A file not yet
+in Media can be uploaded by the same command: see below.
 
 `review.md` shows what an internal link picks: `[Slides](media:slides.pdf)`,
 `[About](page:/about)`, `[Launch](post:/posts/launch)`. `writePlan` names them
@@ -153,6 +156,85 @@ from the snapshot beside the plan; anything it cannot name shows by ID
 (`media#42`). Before any write the runner checks that each linked file is still
 in Media and is a PDF, and page verification expects the type and size the
 site adds, from the deployment's own Media records.
+
+### Uploading a PDF to Media and linking to it
+
+For a file that is not in Media yet — late slides, a report — put the PDF in
+the change directory (for example `temp/<change>/files/`) and declare it in the
+plan script. The command then uploads it before changing any record, and the
+links point at it:
+
+```ts
+const slides = declareUpload(dir, {
+  reference: '__MEDIA_EXAMPLE_SLIDES__',
+  file: 'files/Example slides v3.pdf',
+  filename: 'example-slides.pdf',
+  alt: 'Example slides',
+})
+const planned = withUploads(sources, [slides])
+relinkToMedia(layout, planned) // a typed /api/media/file/example-slides.pdf link
+writePlan(dir, name, changes, undefined, { uploadMedia: [slides] })
+```
+
+- **Only PDFs, at most 4 MB.** Uploads go through a Vercel function with a
+  4.5 MB request limit; compress a larger file, or link to it elsewhere.
+- **`filename`** is what the site serves, `/api/media/file/<filename>`:
+  lowercase words joined by hyphens, ending `.pdf`. It must not be in Media
+  already; `withUploads` refuses one the snapshot has. Link to that file
+  instead, or choose another name.
+- **`alt`** is required, as in the admin. `mimeType` is `application/pdf`.
+- **`file`** is relative to the plan's directory and stays inside it.
+  `declareUpload` records the file's size and SHA-256 in `plan.json`: the
+  run refuses a file that has changed since the review.
+- **`reference`** (`__MEDIA_…__`) may appear only as the file an internal link
+  picks — `fields.doc.value` with `relationTo: 'media'` — in `after`, and every
+  declared upload must be linked from a reviewed change. `relinkToMedia` with
+  `withUploads` writes exactly that from a typed address.
+
+`review.md` lists each file — name, size, alt text, hash — and shows links to
+it as `media:<filename>`. `--validate` checks the local files; `--preflight` and
+the dry run report each as `ready to upload` or `already in Media`. Media is
+public, so a clash stops at preflight, before the login prompt.
+
+The run looks Media up by filename. If a file with that name is there and is
+the same bytes (same size, then downloaded and hashed), it is reused: a rerun
+after a lost response uploads nothing twice. A reused file keeps the alt text
+it has in Media; the run notes when that differs from the plan's. A different file under the name
+stops the run before anything is written. Otherwise the file is uploaded with
+the run's session (`POST /api/media`, multipart `file` and `_payload` with the
+alt text), read back by name and hashed again, and only then are the records
+changed. The receipt steps each upload `in flight → uploaded → verified`.
+`--reverse` restores the links' previous state and never deletes a file;
+remove one by hand in the admin only when nothing links to it. Verification
+checks each uploaded file's Media record, and fetches its first byte (the file
+route does not answer `HEAD`) for status, `application/pdf` and the full size.
+
+A file is public, and listed in Media, the moment it is uploaded — before
+anything links to it. Vercel's CDN keeps `/api/media/file/<name>` for up to a
+year, and the run's own checks fill that cache. So:
+
+- **A corrected file goes up under a new filename** (`…-v2.pdf`), and the
+  links move to it. Re-uploaded under the old name, it would still be served
+  as the old file, and the comparison would refuse it.
+- **Withdrawing a file** (a speaker asks for their slides back) takes three
+  steps: a reviewed plan that unlinks it, deleting it in the admin, then a
+  purge of Vercel's CDN cache. Deleting it alone leaves it online. The purge is
+  a production setting: ask before touching Vercel.
+- **If a run stops** after uploading some files (Ctrl-C, a fence, a failed
+  check), run the same command again: it reuses them by hash and carries on.
+  Ctrl-C ends the run at once; the receipt shows how far it got, and the
+  session expires on its own within two hours. Do not re-snapshot and rebuild in
+  between: `withUploads` refuses a name already in Media. If the plan must
+  change, drop those files' `declareUpload` — the snapshot now has them, so
+  `relinkToMedia` picks them like any other file.
+- **`--reverse` needs every declared file** still in Media, unchanged, though
+  it writes no file. If one has been replaced or deleted since, restore the
+  records from their version history in the admin instead.
+- **After a reversal, the same plan is refused** (`Content differs from
+reviewed baseline`): rows it had removed come back under new IDs. Re-snapshot
+  and rebuild before applying it again.
+- **Previews and local copies** have their own Blob store: run
+  `pnpm blobs:mirror` after the first production upload, or their links fail.
 
 ## Completion checklist
 
@@ -164,6 +246,8 @@ site adds, from the deployment's own Media records.
 - Check names, academic titles, roles, **full biographies** and image alt text
   together against current authoritative sources. A role-only patch does not
   prove the rest of the profile is current.
+- Open each uploaded file from its live link and check it is the reviewed
+  document, with the right alt text in Media.
 - Check partner identity, placement, website target and actual logo artwork.
   If a logo is pending, report that clearly before handoff and at completion.
 - For a small logo, inspect transparent padding and rendered width/height caps.
@@ -275,9 +359,12 @@ wrong. Neither check can be switched off.
   assigns its own on insert; the comparison tolerates exactly that substitution
   and nothing else.
 
+- `uploadMedia` and `createPartners` — optional declared creations, as above.
+  A resolved plan carries each upload's Media `id`.
+
 Existing records are updated, with only explicitly declared programme partners
-created as described above. No deletes, Media uploads, Team additions, publish
-status changes or navigation globals. A page's URL is out of
+created and declared PDFs uploaded, as described above. No deletes or
+replacements, Team additions, publish status changes or navigation globals. A page's URL is out of
 reach because pages carry the navigation and inbound links; a workstream's
 `slug` may move with its title, pre-launch, and the tool then finds the record
 under either name so a re-run or a reversal still works. Nothing redirects an
@@ -302,14 +389,18 @@ without one. Everything else in a record has to match exactly.
   is inert for what landed and completes what did not.
 - **Each write is fenced by `updatedAt`** at the API and read back and compared
   before the next begins.
+- **Declared files are uploaded first**, and each is read back and hashed
+  before any record links to it. A file already in Media under the same name
+  is reused only if it is the same bytes; anything else stops the run.
 - **The receipt in `--backup-dir` records every write before its request is
-  sent**, stepping `in flight → written → verified`, with the original documents
-  alongside. Anything other than `verified` on a finished run means look at that
+  sent**, stepping `in flight → written → verified` (uploads:
+  `in flight → uploaded → verified`), with the original documents alongside. Anything other than `verified` on a finished run means look at that
   record before rerunning or reversing. (This exists because a read-back failure
   once produced a receipt claiming nothing had changed.)
 - **Reversal:** `--reverse` swaps `before` and `after` and runs the same checks,
-  refusing to overwrite later edits. Every editable collection also keeps
-  version history, so a single record can be restored in the admin.
+  refusing to overwrite later edits. It never deletes a created partner or an
+  uploaded file. Every editable collection also keeps version history, so a
+  single record can be restored in the admin.
 
 Writes are sequential; timing depends on the deployment, and there is no cross-record
 transaction: the price of never opening a database connection to production.
@@ -331,6 +422,13 @@ canary login and database isolation before continuing.
 | `Content changed during this run`                   | An edit landed between the pre-check and the write. Rerun; already-applied records are skipped.                                                                                                                                                                      |
 | `Read-back verification failed`                     | Usually new rows whose IDs were not declared in `generatedIds`. The write landed (the receipt says `written`); fix the plan and rerun — the record will report `already applied`.                                                                                    |
 | `Expected exactly one …`                            | The match value finds zero or several records. For a renamed slug, both names are tried.                                                                                                                                                                             |
+| `A different file named … is already in Media`      | Another file has the upload's filename. Nothing was written. Link to that file instead, or rename the upload and re-review.                                                                                                                                          |
+| `… has changed since the plan was reviewed`         | The local file is not the reviewed file. Rebuild the plan with `declareUpload` and review it again.                                                                                                                                                                  |
+| `Upload of … failed or lost its response`           | Check Media for the file. If it landed, a rerun finds and reuses it. A timed-out upload may still land: wait a minute before rerunning.                                                                                                                              |
+| `Media refused the upload (HTTP …)`                 | Nothing links to the file. 413: over Vercel's request limit — compress it. 400 with Payload's reason (for example not a valid PDF): fix the file and re-review. 401 or 403: the session expired or lacks rights — rerun and log in again.                            |
+| `… did not serve it in full`                        | Media lists the file at the reviewed size but served it empty or short (Blob not ready, or a storage fault). Nothing was written. Rerun in a minute; do not upload it under another name.                                                                            |
+| `Upload read-back failed`                           | The file is in Media (the receipt has its ID) and nothing links to it. "Not served in full yet": rerun in a minute and it is reused. "Not the reviewed file": inspect it in Media before retrying.                                                                   |
+| `Media saved … as …-1.pdf`                          | Someone uploaded a file with that name during the run, and Payload renamed ours. The receipt names the copy (`savedAs`); remove it in the admin, then decide which file the plan should use.                                                                         |
 | `vercel curl failed (exit 22)`                      | HTTP error; response bodies are withheld. Check deployment/CMS access. Exit 2 can mean a CLI flag was forwarded to curl: never pass `--scope` to `vercel curl`. Scope is supplied only to metadata API calls. Run `--preflight` again before asking for credentials. |
 | `Resource provisioning timed out` (build)           | Vercel-side; verify Neon is healthy and retry the deploy. Do not delete the Neon branch.                                                                                                                                                                             |
 

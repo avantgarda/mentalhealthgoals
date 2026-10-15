@@ -8,31 +8,34 @@
  * with a review document a non-technical reader can sign off, and deriving
  * from that same plan what a rendered page must show once it is applied.
  */
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { randomBytes } from 'node:crypto'
+import { readFileSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs'
+import { createHash, randomBytes } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 import { join } from 'node:path'
 
-import { fileLabel } from '../../src/utilities/fileLabel'
+import { fileLabel, formatFileSize } from '../../src/utilities/fileLabel'
 import {
   EDITABLE_COLLECTIONS,
+  MAX_UPLOAD_BYTES,
   matchFieldFor,
   validatePlan,
   type ContentChange,
   type ContentPlan,
+  type MediaUpload,
   type PartnerCreation,
 } from './content-patch-core'
 
 type Collection = ContentChange['collection']
 type Doc = Record<string, unknown> & { id: number | string; slug?: string; name?: string }
-/** An uploaded file, as the Media API returns it. Read-only to the tool: it
- * links to files, never uploads or edits them. */
+/** An uploaded file, as the Media API returns it. The tool links to files and
+ * uploads new ones a plan declares; it never edits or deletes one. */
 export type MediaFile = {
   id: number | string
   filename?: string | null
   mimeType?: string | null
   filesize?: number | null
   url?: string | null
+  alt?: string | null
 }
 export type Sources = Partial<Record<Collection, Doc[]>> & { media?: MediaFile[] }
 
@@ -53,6 +56,94 @@ export function loadSources(dir: string): Sources {
   const sources = readSources(dir)
   if (!Object.keys(sources).length) throw new Error(`No sources under ${dir}/sources`)
   return sources
+}
+
+// --- Files to upload ---------------------------------------------------------
+
+/** What a plan script declares; `declareUpload` adds the reviewed size and hash. */
+export type MediaUploadInput = Omit<MediaUpload, 'filesize' | 'sha256' | 'id' | 'mimeType'> & {
+  mimeType?: 'application/pdf'
+}
+
+export const sha256 = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex')
+
+/**
+ * The bytes of a file a plan uploads, read from the plan's directory. Refused
+ * unless it is a PDF the CMS will accept — and, once declared, exactly the
+ * file that was reviewed: one swapped or re-exported since would otherwise
+ * upload unseen.
+ */
+export function readUploadFile(
+  dir: string,
+  upload: Pick<MediaUpload, 'file' | 'filename'> &
+    Partial<Pick<MediaUpload, 'filesize' | 'sha256'>>,
+): Buffer {
+  const path = join(dir, upload.file)
+  if (!existsSync(path) || !statSync(path).isFile())
+    throw new Error(`File to upload not found: ${upload.file} (for ${upload.filename})`)
+  const bytes = readFileSync(path)
+  if (bytes.length > MAX_UPLOAD_BYTES)
+    throw new Error(
+      `${upload.file} is ${formatFileSize(bytes.length)}; the CMS accepts uploads up to ` +
+        `${formatFileSize(MAX_UPLOAD_BYTES)}. Compress it or link to it elsewhere.`,
+    )
+  // Payload's own test (validatePDF): the header, and an end-of-file marker and
+  // cross-reference table in the last 1 KB. A file failing it would pass review
+  // and then be refused partway through the run's uploads.
+  const tail = bytes.subarray(Math.max(bytes.length - 1024, 0)).toString('latin1')
+  if (
+    bytes.subarray(0, 5).toString('latin1') !== '%PDF-' ||
+    !tail.includes('%%EOF') ||
+    !tail.includes('xref')
+  )
+    throw new Error(`${upload.file} is not a PDF the CMS will accept`)
+  if (
+    (upload.filesize !== undefined && bytes.length !== upload.filesize) ||
+    (upload.sha256 !== undefined && sha256(bytes) !== upload.sha256)
+  )
+    throw new Error(
+      `${upload.file} has changed since the plan was reviewed: rebuild the plan and review it again`,
+    )
+  return bytes
+}
+
+/** Declare a file to upload, recording the size and hash of what is reviewed. */
+export function declareUpload(dir: string, input: MediaUploadInput): MediaUpload {
+  const bytes = readUploadFile(dir, input)
+  return {
+    ...input,
+    mimeType: input.mimeType ?? 'application/pdf',
+    filesize: bytes.length,
+    sha256: sha256(bytes),
+  }
+}
+
+/** Each upload as Media will list it, under its placeholder until a run gives
+ * it an ID: what lets a review and `relinkToMedia` name the file. */
+const plannedMedia = (uploads: MediaUpload[] = []): MediaFile[] =>
+  uploads.map((upload) => ({
+    id: upload.id ?? upload.reference,
+    filename: upload.filename,
+    mimeType: upload.mimeType,
+    filesize: upload.filesize,
+    url: `/api/media/file/${upload.filename}`,
+  }))
+
+/**
+ * The snapshot as it will be once the plan's files are uploaded: each appears
+ * in Media under its placeholder, so `relinkToMedia` links typed addresses to
+ * it and the review names it. A file already in Media under the same name is
+ * refused — link to that one, or choose another name.
+ */
+export function withUploads(sources: Sources, uploads: MediaUpload[]): Sources {
+  for (const upload of uploads) {
+    const existing = sources.media?.find((file) => file.filename === upload.filename)
+    if (existing)
+      throw new Error(
+        `"${upload.filename}" is already in Media (#${existing.id}): link to it, or upload under another name`,
+      )
+  }
+  return { ...sources, media: [...(sources.media ?? []), ...plannedMedia(uploads)] }
 }
 
 /** One record by the field the tool matches on. Throws rather than guess. */
@@ -223,7 +314,9 @@ export function relinkToMedia(node: unknown, sources: Sources): string[] {
     if (!sources.media) throw new Error('No sources/media.json: re-take the snapshot')
     const file = sources.media.find((f) => f.filename === filename)
     if (!file)
-      throw new Error(`No file named "${filename}" in Media: upload it, then re-take the snapshot`)
+      throw new Error(
+        `No file named "${filename}" in Media: declare it as an upload and pass withUploads(sources, uploads)`,
+      )
     if (file.mimeType !== 'application/pdf')
       throw new Error(
         `"${filename}" in Media is ${file.mimeType ?? 'of unknown type'}, not a PDF; ` +
@@ -376,19 +469,29 @@ export function change(
   return result
 }
 
+/** What a plan creates besides its updates. A bare array is partners, as
+ * plan scripts written before uploads existed pass it. */
+export type Creations = { createPartners?: PartnerCreation[]; uploadMedia?: MediaUpload[] }
+
 export function writePlan(
   dir: string,
   name: string,
   changes: ContentChange[],
   status?: string,
-  createPartners?: PartnerCreation[],
+  creations?: PartnerCreation[] | Creations,
 ): ContentPlan {
+  const { createPartners, uploadMedia } = Array.isArray(creations)
+    ? { createPartners: creations, uploadMedia: undefined }
+    : (creations ?? {})
   const plan = validatePlan({
     version: 1 as const,
     name,
     changes,
     ...(createPartners ? { createPartners } : {}),
+    ...(uploadMedia?.length ? { uploadMedia } : {}),
   })
+  // The file reviewed is the file the run will upload.
+  for (const upload of plan.uploadMedia ?? []) readUploadFile(dir, upload)
   // The snapshot beside the plan names the pages and files internal links pick.
   const sources = readSources(dir)
   mkdirSync(dir, { recursive: true, mode: 0o700 })
@@ -443,16 +546,32 @@ const renamedSlug = (c: ContentChange) =>
   typeof c.before.slug === 'string' && c.before.slug !== c.after.slug
 
 /** The review a non-technical reader signs off. With the snapshot's sources,
- * an internal link shows the page or file it picks rather than an ID. */
-export function renderReview(plan: ContentPlan, status?: string, sources: Sources = {}): string {
+ * an internal link shows the page or file it picks rather than an ID; a link
+ * to a file the plan uploads shows that file's name. */
+export function renderReview(plan: ContentPlan, status?: string, snapshot: Sources = {}): string {
+  const sources = {
+    ...snapshot,
+    media: [...(snapshot.media ?? []), ...plannedMedia(plan.uploadMedia)],
+  }
   let out = `# ${plan.name}\n\nGenerated from a snapshot of the target environment.\n\n`
   out += `**Status: ${status ?? 'not yet applied or verified.'}**\n\n`
   out +=
     '## What this plan cannot change\n\n' +
     'Only the listed content fields, partner relationships and existing-person corrections ' +
-    'are updated. New programme partners are created only when listed below. No records are ' +
-    'deleted or Team members added. Publishing status, media uploads, page URLs and navigation globals ' +
-    'are outside what the tool can write.\n\n'
+    'are updated. New programme partners are created, and files uploaded to Media, only when ' +
+    'listed below. No records or files are deleted or replaced, and no Team members added. ' +
+    'Publishing status, page URLs and navigation globals are outside what the tool can write.\n\n'
+  for (const upload of plan.uploadMedia ?? []) {
+    out += `## New file in Media: ${upload.filename}\n\n`
+    out +=
+      'Uploaded before any record changes, and served at ' +
+      `\`/api/media/file/${upload.filename}\`. Links below show it as \`media:${upload.filename}\`.\n\n` +
+      `- File: \`${upload.file}\`\n` +
+      `- Size: ${formatFileSize(upload.filesize)} (${upload.filesize.toLocaleString('en-GB')} bytes)\n` +
+      `- Alt text: ${upload.alt}\n` +
+      `- SHA-256: \`${upload.sha256}\`\n` +
+      `- Reference: \`${upload.reference}\`\n\n`
+  }
   for (const partner of plan.createPartners ?? []) {
     out += `## New programme partner: ${partner.data.name}\n\n`
     out += `Reference: \`${partner.reference}\`\n\n`
@@ -524,6 +643,12 @@ export function renderChecklist(plan: ContentPlan): string {
     '- [ ] Other pages displaying the affected person, workstream or partner reviewed.\n' +
     '- [ ] Relevant names, titles, roles, full biographies and image alt text checked together.\n' +
     '- [ ] Partner links, correct logo artwork, loading, spacing and optical size checked.\n' +
+    (plan.uploadMedia ?? [])
+      .map(
+        (upload) =>
+          `- [ ] \`/api/media/file/${upload.filename}\` opens the reviewed document; its alt text in Media is right.\n`,
+      )
+      .join('') +
     (linkedMediaIds(plan.changes.map((change) => change.after)).length
       ? '- [ ] Every file link opens the right PDF, and its type and size show once.\n'
       : '') +

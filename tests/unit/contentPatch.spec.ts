@@ -7,6 +7,8 @@ import {
   isUnpublishedDraft,
   matchFieldFor,
   matchValues,
+  MAX_UPLOAD_BYTES,
+  resolveReferences,
   sameDocument,
   validatePlan,
   type ContentChange,
@@ -312,6 +314,90 @@ describe('validatePlan', () => {
         ],
       }),
     ).toThrow(/Duplicate/)
+  })
+})
+
+describe('files a plan uploads', () => {
+  const reference = '__MEDIA_EXAMPLE__'
+  const upload = {
+    reference,
+    file: 'files/Example slides.pdf',
+    filename: 'example-slides.pdf',
+    alt: 'Example slides',
+    mimeType: 'application/pdf',
+    filesize: 1_500,
+    sha256: 'a'.repeat(64),
+  }
+  const fileLink = (value: unknown, relationTo = 'media') => ({
+    type: 'link',
+    fields: { linkType: 'internal', newTab: false, doc: { relationTo, value } },
+    children: [{ type: 'text', text: 'Example slides' }],
+  })
+  const rich = (...children: unknown[]) => ({ root: { type: 'root', children } })
+  const page = (...children: unknown[]) => ({
+    collection: 'pages',
+    match: { field: 'slug', value: 'about' },
+    before: { layout: [] },
+    after: { layout: [{ blockType: 'content', columns: [{ richText: rich(...children) }] }] },
+  })
+  const bundle = (overrides: Record<string, unknown> = {}, ...children: unknown[]) => ({
+    version: 1,
+    name: 'Invented upload',
+    changes: [page(...(children.length ? children : [fileLink(reference)]))],
+    uploadMedia: [{ ...upload, ...overrides }],
+  })
+
+  it('accepts a declared PDF linked from after, and nothing looser', () => {
+    expect(validatePlan(bundle())).toBeTruthy()
+    for (const filename of ['Example-slides.pdf', 'example slides.pdf', 'example_slides.pdf'])
+      expect(() => validatePlan(bundle({ filename }))).toThrow(/lowercase words/)
+    expect(() => validatePlan(bundle({ filename: 'example-slides.docx' }))).toThrow(/\.pdf/)
+    expect(() => validatePlan(bundle({ mimeType: 'image/png' }))).toThrow(/Only PDFs/)
+    expect(() => validatePlan(bundle({ alt: ' ' }))).toThrow(/alt text/)
+    expect(() => validatePlan(bundle({ filesize: MAX_UPLOAD_BYTES + 1 }))).toThrow(/larger/)
+    expect(() => validatePlan(bundle({ sha256: undefined }))).toThrow(/SHA-256/)
+    for (const file of ['../elsewhere.pdf', '/tmp/example.pdf', 'files//example.pdf'])
+      expect(() => validatePlan(bundle({ file }))).toThrow(/inside the plan/)
+    expect(() => validatePlan(bundle({ caption: 'Not allowed' }))).toThrow(/Invalid media upload/)
+    expect(() => validatePlan(bundle({ reference: '__PARTNER_EXAMPLE__' }))).toThrow(
+      /Invalid media upload/,
+    )
+    expect(() =>
+      validatePlan({ ...bundle(), uploadMedia: [upload, { ...upload, reference: '__MEDIA_B__' }] }),
+    ).toThrow(/Duplicate/)
+  })
+
+  it('places a reference only as the file an internal link picks, in after', () => {
+    expect(() => validatePlan(bundle({}, fileLink(reference, 'pages')))).toThrow(/Media reference/)
+    expect(() =>
+      validatePlan(bundle({}, { type: 'upload', relationTo: 'media', value: reference })),
+    ).toThrow(/Media reference/)
+    expect(() =>
+      validatePlan(bundle({}, { type: 'text', text: reference }, fileLink(reference))),
+    ).toThrow(/Media reference/)
+    expect(() => validatePlan(bundle({}, fileLink('__MEDIA_UNDECLARED__')))).toThrow(
+      /Media reference/,
+    )
+    const [linking] = bundle().changes
+    expect(() =>
+      validatePlan({ ...bundle(), changes: [{ ...linking, before: linking.after }] }),
+    ).toThrow(/Media reference/)
+  })
+
+  it('requires every upload to be linked, until a run resolves it', () => {
+    expect(() => validatePlan(bundle({}, fileLink(5)))).toThrow(/must be linked/)
+    expect(validatePlan(bundle({ id: 12 }, fileLink(12)))).toBeTruthy()
+    expect(() => validatePlan(bundle({ id: 'twelve' }, fileLink(12)))).toThrow(/Media ID/)
+  })
+
+  it('resolves a reference in after to the Media ID, and records the ID', () => {
+    const resolved = resolveReferences(validatePlan(bundle()), new Map([[reference, 12]]))
+    expect(JSON.stringify(resolved.changes)).not.toContain(reference)
+    expect(resolved.changes[0].after).toEqual(page(fileLink(12)).after)
+    expect(resolved.uploadMedia).toEqual([{ ...upload, id: 12 }])
+    expect(validatePlan(resolved)).toBeTruthy()
+    const pending = resolveReferences(validatePlan(bundle()), new Map())
+    expect(pending.uploadMedia?.[0].id).toBeUndefined()
   })
 })
 

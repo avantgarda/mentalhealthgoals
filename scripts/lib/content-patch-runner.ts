@@ -4,17 +4,20 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 
+import { formatFileSize } from '../../src/utilities/fileLabel'
 import type { CmsClient, Deployment } from './cms-client'
-import { linkedMediaIds, type MediaFile } from './content-plan'
+import { linkedMediaIds, readUploadFile, sha256, type MediaFile } from './content-plan'
 import {
   assessChange,
+  isMediaReference,
   isUnpublishedDraft,
   matchValues,
-  resolvePartnerReferences,
+  resolveReferences,
   sameDocument,
   validatePlan,
   type ContentChange,
   type ContentPlan,
+  type MediaUpload,
   type PartnerCreation,
 } from './content-patch-core'
 
@@ -23,14 +26,18 @@ type Write = {
   collection: string
   target: string
   id?: number | string
-  status: 'in flight' | 'written' | 'verified'
+  status: 'in flight' | 'uploaded' | 'written' | 'verified'
   updatedAt?: string
+  /** The name Media gave an upload, when not the one requested. */
+  savedAs?: string
 }
 export type PatchOptions = {
   apply: boolean
   allowProduction?: boolean
   reverse?: boolean
   backupDir?: string
+  /** Where the plan's files to upload are, relative paths resolving here. */
+  planDir?: string
   log?: (message: string) => void
 }
 
@@ -79,10 +86,126 @@ export function readMedia(client: CmsClient, ids: (number | string)[]): MediaFil
   return client.api(`/api/media?${query}`).docs ?? []
 }
 
+/** Every row ID (`id` strings) in a field value, at any depth. */
+function rowIds(value: unknown): string[] {
+  if (!value || typeof value !== 'object') return []
+  return Object.entries(value).flatMap(([key, item]) =>
+    key === 'id' && typeof item === 'string' ? [item] : rowIds(item),
+  )
+}
+
+/** The plan as the checks after a run read it — the record as it then stands.
+ * A reversal tolerates new IDs on both sides while it runs: the rows the
+ * forward plan added (gone once it is written) and the rows it restores. Only
+ * the restored rows remain, so the checks get only their IDs; the others sit
+ * in `before`, where validatePlan rightly refuses generated IDs. */
+function settled(plan: ContentPlan): ContentPlan {
+  return {
+    ...plan,
+    changes: plan.changes.map(({ generatedIds, ...change }) => {
+      const before = new Set(rowIds(change.before))
+      const restored = (generatedIds ?? []).filter((id) => !before.has(id))
+      return restored.length ? { ...change, generatedIds: restored } : change
+    }),
+  }
+}
+
+/** Where Media serves a file. */
+export const mediaFilePath = (filename: string) => `/api/media/file/${encodeURIComponent(filename)}`
+
+function readMediaByFilename(client: CmsClient, filename: string): MediaFile | undefined {
+  const query = new URLSearchParams({
+    depth: '0',
+    limit: '2',
+    'where[filename][equals]': filename,
+  })
+  const result = client.api(`/api/media?${query}`)
+  if (result.totalDocs > 1) throw new Error(`Several files in Media named ${filename}`)
+  return result.totalDocs ? result.docs?.[0] : undefined
+}
+
+/** A file in Media is the reviewed upload only if it is the same bytes. The
+ * record's type and size are checked first; the bytes are then downloaded and
+ * hashed. A record of the reviewed size whose bytes do not arrive in full is
+ * `unserved` — not yet served, or a storage fault — never a different file:
+ * that would send the editor to upload a second copy under another name. */
+function compareFile(
+  client: CmsClient,
+  file: MediaFile,
+  upload: MediaUpload,
+): { same: boolean; unserved?: string } {
+  if (file.mimeType !== upload.mimeType || file.filesize !== upload.filesize) return { same: false }
+  let bytes: Buffer
+  try {
+    bytes = client.download(mediaFilePath(upload.filename))
+  } catch (error) {
+    return { same: false, unserved: (error as Error).message }
+  }
+  if (bytes.length !== upload.filesize)
+    return { same: false, unserved: `served ${bytes.length} of ${upload.filesize} bytes` }
+  return { same: sha256(bytes) === upload.sha256 }
+}
+
+export type UploadState = {
+  upload: MediaUpload
+  /** The file already in Media under this name: the same bytes, so reused. */
+  doc?: MediaFile
+  /** The local file, read only when it still has to be uploaded. */
+  bytes?: Buffer
+}
+
+/**
+ * Where each of a plan's files stands: already in Media (the same bytes,
+ * reused) or ready to upload (the reviewed local file). Refuses a different
+ * file under the same name, and a reversal without the file, before anything
+ * is written. Media is publicly readable, so this works before login too.
+ */
+export function assessUploads(
+  client: CmsClient,
+  plan: ContentPlan,
+  options: { planDir?: string; reverse?: boolean; log?: (message: string) => void } = {},
+): UploadState[] {
+  const log = options.log ?? console.log
+  return (plan.uploadMedia ?? []).map((upload) => {
+    const doc = readMediaByFilename(client, upload.filename)
+    const label = `media/${upload.filename}`
+    if (doc) {
+      const check =
+        upload.id !== undefined && doc.id !== upload.id
+          ? { same: false }
+          : compareFile(client, doc, upload)
+      if (check.unserved)
+        throw new Error(
+          `Media lists ${upload.filename} (#${doc.id}) at the reviewed size but did not serve ` +
+            `it in full (${check.unserved}). Nothing was written. Run the same command again ` +
+            'in a minute; do not upload it under another name.',
+        )
+      if (!check.same)
+        throw new Error(
+          `A different file named ${upload.filename} is already in Media (#${doc.id}). ` +
+            'Nothing was written. Choose another filename, or link to that file instead.',
+        )
+      if (doc.alt !== upload.alt)
+        log(`note: ${label} keeps the alt text it has in Media, not the plan's`)
+      log(`already in Media: ${label} (#${doc.id}), the reviewed file`)
+      return { upload, doc }
+    }
+    if (upload.id !== undefined || options.reverse)
+      throw new Error(`Uploaded file is missing from Media: ${upload.filename}`)
+    if (!options.planDir) throw new Error(`No plan directory to upload ${upload.filename} from`)
+    const bytes = readUploadFile(options.planDir, upload)
+    log(`ready to upload: ${label} (${formatFileSize(upload.filesize)}) from ${upload.file}`)
+    return { upload, bytes }
+  })
+}
+
 /** Every file a plan links to must still be in Media, and a PDF: a deleted one
- * would leave the link's words with no link, and nothing else would notice. */
+ * would leave the link's words with no link, and nothing else would notice.
+ * A file the run has yet to upload is checked once it is uploaded. */
 function checkLinkedMedia(client: CmsClient, plan: ContentPlan, log: (message: string) => void) {
-  const ids = linkedMediaIds(plan.changes.map((change) => change.after))
+  const ids = linkedMediaIds(plan.changes.map((change) => change.after)).filter(
+    (id) => !isMediaReference(id),
+  )
   const files = readMedia(client, ids)
   for (const id of ids) {
     const file = files.find((f) => String(f.id) === String(id))
@@ -109,11 +232,17 @@ export function runContentPatch(
   if (deployment.environment === 'production' && options.apply && !options.allowProduction)
     throw new Error('Production writes require --allow-production after content approval')
   if (options.apply && !options.backupDir) throw new Error('Apply requires a backup directory')
+  const uploads = assessUploads(client, template, {
+    planDir: options.planDir,
+    reverse: options.reverse,
+    log,
+  })
   const partners = (template.createPartners ?? []).map((partner) => ({
     partner,
     doc: readPartner(client, partner),
   }))
   const ids = new Map<string, number | string>()
+  for (const { upload, doc } of uploads) if (doc) ids.set(upload.reference, doc.id)
   for (const { partner, doc } of partners) {
     if (doc) ids.set(partner.reference, doc.id)
     else if (options.reverse)
@@ -121,17 +250,27 @@ export function runContentPatch(
     log(`${doc ? 'already exists' : 'ready to create'}: partners/${partner.data.name}`)
   }
   const resolvedPlan = () => {
-    const resolved = resolvePartnerReferences(template, ids)
+    const resolved = resolveReferences(template, ids)
     if (options.reverse)
-      resolved.changes = resolved.changes.map((change) => ({
-        ...change,
-        match: {
-          ...change.match,
-          value: String(change.after[change.match.field] ?? change.match.value),
-        },
-        before: change.after,
-        after: change.before,
-      }))
+      resolved.changes = resolved.changes.map((change) => {
+        // Rows the plan removed come back on reversal, and Payload gives a row
+        // re-inserted under an ID the record no longer holds a new one, just
+        // as it may for the rows a plan adds. Their IDs are tolerated like
+        // generatedIds; the rows' content is still compared in full.
+        const kept = new Set(rowIds(change.after))
+        const restored = rowIds(change.before).filter((id) => !kept.has(id))
+        const generatedIds = [...new Set([...(change.generatedIds ?? []), ...restored])]
+        return {
+          ...change,
+          match: {
+            ...change.match,
+            value: String(change.after[change.match.field] ?? change.match.value),
+          },
+          before: change.after,
+          after: change.before,
+          ...(generatedIds.length ? { generatedIds } : {}),
+        }
+      })
     return resolved
   }
   let plan = resolvedPlan()
@@ -144,7 +283,7 @@ export function runContentPatch(
     )
     return { change, doc, state }
   })
-  if (!options.apply) return plan
+  if (!options.apply) return settled(plan)
 
   const directory = resolve(options.backupDir!)
   mkdirSync(directory, { recursive: true, mode: 0o700 })
@@ -157,12 +296,67 @@ export function runContentPatch(
     state: 'applying',
     originals,
     partners,
+    uploads: uploads.map(({ upload, doc }) => ({ ...upload, existing: doc?.id ?? null })),
     writes: [] as Write[],
   }
   const save = () => writeFileSync(backupFile, JSON.stringify(receipt, null, 2), { mode: 0o600 })
   save()
   log(`Backup: ${backupFile}`)
   try {
+    // Files first: nothing links to one until it is in Media, verified byte
+    // for byte. A lost response is recovered on rerun by the same comparison.
+    for (const { upload, bytes, doc } of uploads) {
+      if (doc || options.reverse) continue
+      if (readMediaByFilename(client, upload.filename))
+        throw new Error(`Media changed during this run: ${upload.filename}`)
+      const write: Write = { collection: 'media', target: upload.filename, status: 'in flight' }
+      receipt.writes.push(write)
+      save()
+      let result
+      try {
+        result = client.upload(
+          '/api/media?depth=0',
+          { bytes: bytes!, filename: upload.filename, mimeType: upload.mimeType },
+          { alt: upload.alt },
+        )
+      } catch (error) {
+        throw new Error(
+          `Upload of ${upload.filename} failed or lost its response: ${(error as Error).message} ` +
+            'Look for the file in Media before retrying; a rerun reuses it if it landed.',
+        )
+      }
+      if (!result.doc?.id)
+        throw new Error('Upload returned no record; inspect the receipt and Media before retrying')
+      write.id = result.doc.id
+      write.status = 'uploaded'
+      if (result.doc.filename !== upload.filename) {
+        write.savedAs = result.doc.filename
+        save()
+        throw new Error(
+          `Media saved ${upload.filename} as ${result.doc.filename}: another file took the name ` +
+            'during this run. Inspect Media before retrying.',
+        )
+      }
+      save()
+      const saved = readMediaByFilename(client, upload.filename)
+      const check =
+        saved && saved.id === write.id ? compareFile(client, saved, upload) : { same: false }
+      if (check.unserved)
+        throw new Error(
+          `Upload read-back failed: ${upload.filename} is in Media (#${write.id}) but was not ` +
+            `served in full yet (${check.unserved}). Nothing links to it. Run the same command ` +
+            'again in a minute: it reuses the file once Media serves it.',
+        )
+      if (!saved || !check.same)
+        throw new Error(
+          `Upload read-back failed: ${upload.filename} (#${write.id}) in Media is not the ` +
+            'reviewed file. Nothing links to it; inspect it in Media before retrying.',
+        )
+      ids.set(upload.reference, saved.id)
+      write.status = 'verified'
+      save()
+      log(`Verified upload: media/${upload.filename} (#${saved.id})`)
+    }
     // There is no cross-record transaction. Refuse duplicates before creation;
     // a lost response is recoverable by matching the reviewed identity on rerun.
     for (const { partner, doc } of partners) {
@@ -192,9 +386,14 @@ export function runContentPatch(
       log(`Verified new partner: ${partner.data.name} (${saved.id})`)
     }
     plan = resolvedPlan()
-    // Creations have been resolved. Reversal never deletes partner records.
+    // Creations have been resolved. Reversal never deletes partners or files.
     delete plan.createPartners
-    validatePlan(plan)
+    // Validated as reviewed — forwards, with its references resolved. A
+    // reversal swaps before and after, so the rows a plan added (its
+    // generatedIds) become rows it removes, which the forward rule rejects.
+    const reviewed = resolveReferences(template, ids)
+    delete reviewed.createPartners
+    validatePlan(reviewed)
     for (let i = 0; i < plan.changes.length; i++) {
       const change = plan.changes[i]
       const original = originals[i]
@@ -238,7 +437,7 @@ export function runContentPatch(
     }
     receipt.state = 'applied'
     save()
-    return plan
+    return settled(plan)
   } catch (error) {
     receipt.state = 'stopped; inspect writes before retrying'
     save()

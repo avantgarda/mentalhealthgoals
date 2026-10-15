@@ -9,7 +9,9 @@
  * record's revised fields must be visible on its page, a page's SEO title and
  * description must sit in the document head, long passages that were removed
  * must be gone, links that moved must have moved, and a record whose
- * slug changed must answer at the new path and 404 at the old one. With a login
+ * slug changed must answer at the new path and 404 at the old one. A file the
+ * plan uploaded must be in Media under its name and served as a PDF of the
+ * reviewed size. With a login
  * it also confirms each record is found under its new name and carries a
  * version — the proof that the write went through Payload and is reversible.
  *
@@ -35,7 +37,7 @@ import {
   visibleText,
   type HeadPassage,
 } from './lib/content-plan'
-import { readMedia } from './lib/content-patch-runner'
+import { mediaFilePath, readMedia } from './lib/content-patch-runner'
 
 const args = process.argv.slice(2)
 const deployment = resolveDeployment(argument(args, '--deployment'))
@@ -45,6 +47,8 @@ if (plan.createPartners?.length)
   throw new Error(
     'Verify the resolved-plan.json produced by content:run for plans creating partners',
   )
+if (plan.uploadMedia?.some((upload) => upload.id === undefined))
+  throw new Error('Verify the resolved-plan.json produced by content:run for plans uploading files')
 const { MHG_CMS_EMAIL: email, MHG_CMS_PASSWORD: password } = process.env
 
 const client = createCmsClient(deployment.hostname)
@@ -65,6 +69,48 @@ try {
     const ok = file?.mimeType === 'application/pdf'
     results.push({ media: id, ok, filename: file?.filename, mimeType: file?.mimeType })
     report(ok, `media #${id} → ${file ? `${file.filename} (${file.mimeType})` : 'missing'}`)
+  }
+  // Each uploaded file: its record, then the file as a reader gets it. One
+  // byte is enough to read the type and the full size from the headers.
+  const uploads = plan.uploadMedia ?? []
+  const records = readMedia(
+    client,
+    uploads.map((upload) => upload.id!),
+  )
+  for (const upload of uploads) {
+    const record = records.find((f) => String(f.id) === String(upload.id))
+    const path = mediaFilePath(upload.filename)
+    const served = client.probe(path)
+    const contentType = served.headers['content-type']?.split(';')[0].trim()
+    const size = Number(
+      served.status === 206
+        ? served.headers['content-range']?.match(/\/(\d+)$/)?.[1]
+        : served.headers['content-length'],
+    )
+    const ok =
+      record?.filename === upload.filename &&
+      record.mimeType === upload.mimeType &&
+      record.filesize === upload.filesize &&
+      (served.status === 206 || served.status === 200) &&
+      contentType === upload.mimeType &&
+      size === upload.filesize
+    results.push({
+      upload: upload.filename,
+      ok,
+      id: upload.id,
+      record: record
+        ? { filename: record.filename, mimeType: record.mimeType, filesize: record.filesize }
+        : null,
+      status: served.status,
+      contentType,
+      size,
+      expectSize: upload.filesize,
+    })
+    report(
+      ok,
+      `${served.status} ${path} → ${contentType ?? '?'}, ${Number.isFinite(size) ? size : '?'} bytes` +
+        (ok ? '' : `  — want media #${upload.id}, ${upload.mimeType}, ${upload.filesize} bytes`),
+    )
   }
   for (const e of deriveExpectations(plan, { media })) {
     // A record's words may render on more than one page (a workstream's summary

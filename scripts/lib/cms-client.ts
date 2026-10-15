@@ -24,15 +24,18 @@ export type Deployment = {
 
 const env = { ...process.env, CI: '1', NO_UPDATE_NOTIFIER: '1' }
 
-function vercel(parameters: string[]): string {
+function vercel(parameters: string[], timeout = 90_000): string {
   const result = spawnSync('vercel', parameters, {
     encoding: 'utf8',
     maxBuffer: 20 * 1024 * 1024,
-    timeout: 90_000,
+    timeout,
     env,
   })
   if (result.status !== 0) {
     const operation = parameters.includes('api') ? 'api' : parameters[0]
+    const timedOut = result.error && 'code' in result.error && result.error.code === 'ETIMEDOUT'
+    if (result.signal && !timedOut)
+      throw new Error(`vercel ${operation} was stopped (${result.signal}); the run stops here`)
     // Classify without echoing stderr, bodies or arguments: any of those may
     // contain authentication material. Scope belongs to metadata, never curl.
     const hint =
@@ -89,9 +92,23 @@ export function resolveDeployment(hostArg: string): Deployment {
   }
 }
 
+export type UploadFile = { bytes: Buffer; filename: string; mimeType: string }
+
 export type CmsClient = {
   /** A JSON API request. Throws on any non-2xx without exposing the body. */
   api: (path: string, method?: string, data?: unknown) => ReturnType<typeof JSON.parse>
+  /** A multipart upload to an upload collection: the file, and its other
+   * fields as Payload's `_payload`. Throws like `api`. */
+  upload: (
+    path: string,
+    file: UploadFile,
+    data: Record<string, unknown>,
+  ) => ReturnType<typeof JSON.parse>
+  /** A file's bytes. Throws unless it is served in full (200). */
+  download: (path: string) => Buffer
+  /** The first byte of a file, for its status and headers (lower-cased
+   * names): Payload's file route does not answer HEAD. Never throws on status. */
+  probe: (path: string) => { status: number; headers: Record<string, string> }
   /** A rendered page, following redirects. Never throws on HTTP status. */
   page: (path: string) => { status: number; html: string }
   login: (email: string, password: string) => void
@@ -103,36 +120,150 @@ export function createCmsClient(hostname: string): CmsClient {
   const scratch = mkdtempSync(join(tmpdir(), 'mhg-cms-'))
   const configFile = join(scratch, 'curl.conf')
   writeFileSync(configFile, 'header = "Content-Type: application/json"\n', { mode: 0o600 })
+  // The session alone, for requests that are not JSON: given a JSON
+  // Content-Type, curl would send a multipart upload under that type.
+  const sessionFile = join(scratch, 'session.conf')
+  writeFileSync(sessionFile, '', { mode: 0o600 })
   let sequence = 0
   let authenticated = false
 
-  const curl = (path: string, extra: string[]) =>
-    vercel([
-      'curl',
-      path,
-      '--deployment',
-      hostname,
-      '--',
-      '--globoff',
-      '--silent',
-      '--show-error',
-      '--max-time',
-      '60',
-      ...extra,
-    ])
+  const curl = (path: string, extra: string[], seconds = 60) =>
+    vercel(
+      [
+        'curl',
+        path,
+        '--deployment',
+        hostname,
+        '--',
+        '--globoff',
+        '--silent',
+        '--show-error',
+        '--max-time',
+        String(seconds),
+        ...extra,
+      ],
+      (seconds + 30) * 1000,
+    )
 
   const api: CmsClient['api'] = (path, method = 'GET', data) => {
     const extra = ['--fail-with-body', '--config', configFile, '--request', method]
-    if (data !== undefined) {
-      const body = join(scratch, `request-${sequence++}.json`)
+    // Removed as soon as it is sent: the login body holds the password.
+    const body = data === undefined ? undefined : join(scratch, `request-${sequence++}.json`)
+    if (body) {
       writeFileSync(body, JSON.stringify(data), { mode: 0o600 })
       extra.push('--data-binary', `@${body}`)
     }
-    const response = curl(path, extra)
+    let response
+    try {
+      response = curl(path, extra)
+    } finally {
+      if (body) rmSync(body, { force: true })
+    }
     try {
       return JSON.parse(response)
     } catch {
       throw new Error('CMS returned an invalid JSON response; response withheld')
+    }
+  }
+
+  const upload: CmsClient['upload'] = (path, file, data) => {
+    // A private copy under a plain name: curl's form syntax would misread a
+    // path or filename containing `;` or `,`, and these are neither.
+    const copy = join(scratch, `upload-${sequence++}`)
+    writeFileSync(copy, file.bytes, { mode: 0o600 })
+    try {
+      // Up to 4 MB over a home connection: a longer limit than other requests.
+      const response = curl(
+        path,
+        [
+          '--config',
+          sessionFile,
+          '--form',
+          `file=@${copy};type=${file.mimeType};filename=${file.filename}`,
+          '--form-string',
+          `_payload=${JSON.stringify(data)}`,
+          '--write-out',
+          '\n%{http_code}',
+        ],
+        300,
+      )
+      const cut = response.lastIndexOf('\n')
+      const status = Number(response.slice(cut + 1))
+      let body
+      try {
+        body = JSON.parse(response.slice(0, cut))
+      } catch {
+        body = undefined
+      }
+      if (!(status >= 200 && status < 300)) {
+        // Unlike a login's, an upload's refusal holds nothing secret, and it is
+        // the only clue to why: 413 is the size limit, 401 or 403 the session,
+        // and Payload's messages name a file it will not take.
+        const errors: unknown[] = Array.isArray(body?.errors) ? body.errors : []
+        const reasons = errors
+          .map((e) => (e && typeof e === 'object' ? (e as { message?: unknown }).message : ''))
+          .filter((m): m is string => typeof m === 'string' && m.length > 0)
+          .join('; ')
+          .slice(0, 300)
+        throw new Error(
+          `Media refused the upload (HTTP ${status || 'none'})${reasons ? `: ${reasons}` : ''}`,
+        )
+      }
+      if (body === undefined)
+        throw new Error('CMS returned an invalid JSON response; response withheld')
+      return body
+    } finally {
+      rmSync(copy, { force: true })
+    }
+  }
+
+  const download: CmsClient['download'] = (path) => {
+    const out = join(scratch, `download-${sequence++}`)
+    try {
+      // Anything but 200 is not the file: Payload's Blob route answers 204,
+      // with no body, when it cannot fetch one.
+      const status = curl(
+        path,
+        ['--fail', '--config', sessionFile, '--output', out, '--write-out', '%{http_code}'],
+        300,
+      )
+      if (status.trim() !== '200')
+        throw new Error(`Media served HTTP ${status.trim()}, not the file`)
+      return readFileSync(out)
+    } finally {
+      rmSync(out, { force: true })
+    }
+  }
+
+  const probe: CmsClient['probe'] = (path) => {
+    const head = join(scratch, `probe-${sequence}.headers`)
+    const body = join(scratch, `probe-${sequence++}.body`)
+    try {
+      curl(path, [
+        '--config',
+        sessionFile,
+        '--range',
+        '0-0',
+        '--dump-header',
+        head,
+        '--output',
+        body,
+      ])
+      // The last response's block, should anything precede it (a 100 Continue).
+      const lines = readFileSync(head, 'utf8')
+        .trim()
+        .split(/\r?\n\r?\n/)
+        .at(-1)!
+        .split(/\r?\n/)
+      const headers: Record<string, string> = {}
+      for (const line of lines.slice(1)) {
+        const at = line.indexOf(':')
+        if (at > 0) headers[line.slice(0, at).trim().toLowerCase()] = line.slice(at + 1).trim()
+      }
+      return { status: Number(lines[0].split(' ')[1]), headers }
+    } finally {
+      rmSync(head, { force: true })
+      rmSync(body, { force: true })
     }
   }
 
@@ -152,11 +283,11 @@ export function createCmsClient(hostname: string): CmsClient {
       )
     }
     if (!result.token || !result.user) throw new Error('CMS authentication failed')
-    writeFileSync(
-      configFile,
-      `header = "Content-Type: application/json"\nheader = "Authorization: JWT ${result.token}"\n`,
-      { mode: 0o600 },
-    )
+    const session = `header = "Authorization: JWT ${result.token}"\n`
+    writeFileSync(configFile, `header = "Content-Type: application/json"\n${session}`, {
+      mode: 0o600,
+    })
+    writeFileSync(sessionFile, session, { mode: 0o600 })
     authenticated = true
   }
 
@@ -172,7 +303,7 @@ export function createCmsClient(hostname: string): CmsClient {
     rmSync(scratch, { recursive: true, force: true })
   }
 
-  return { api, page, login, dispose }
+  return { api, upload, download, probe, page, login, dispose }
 }
 
 /** The editor login every content script expects in its environment. */
