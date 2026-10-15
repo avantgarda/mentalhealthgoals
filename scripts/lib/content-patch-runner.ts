@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 
 import type { CmsClient, Deployment } from './cms-client'
+import { linkedMediaIds, type MediaFile } from './content-plan'
 import {
   assessChange,
   isUnpublishedDraft,
@@ -66,6 +67,35 @@ function readPartner(client: CmsClient, partner: PartnerCreation): Doc | undefin
   return doc
 }
 
+/** The files in Media with these IDs, as the deployment has them. Media is
+ * publicly readable — the site serves the files — so this needs no login. */
+export function readMedia(client: CmsClient, ids: (number | string)[]): MediaFile[] {
+  if (!ids.length) return []
+  const query = new URLSearchParams({
+    depth: '0',
+    limit: String(ids.length),
+    'where[id][in]': ids.join(','),
+  })
+  return client.api(`/api/media?${query}`).docs ?? []
+}
+
+/** Every file a plan links to must still be in Media, and a PDF: a deleted one
+ * would leave the link's words with no link, and nothing else would notice. */
+function checkLinkedMedia(client: CmsClient, plan: ContentPlan, log: (message: string) => void) {
+  const ids = linkedMediaIds(plan.changes.map((change) => change.after))
+  const files = readMedia(client, ids)
+  for (const id of ids) {
+    const file = files.find((f) => String(f.id) === String(id))
+    if (!file)
+      throw new Error(
+        `Linked file is missing from Media: #${id}. Rebuild the plan from a fresh snapshot.`,
+      )
+    if (file.mimeType !== 'application/pdf')
+      throw new Error(`Linked file is not a PDF: media/${file.filename} (#${id})`)
+    log(`file found: media/${file.filename} (#${id})`)
+  }
+}
+
 /** Check all targets before the first content write. Return the numeric,
  * resolved plan for verification, including corrected names on reruns. */
 export function runContentPatch(
@@ -105,6 +135,7 @@ export function runContentPatch(
     return resolved
   }
   let plan = resolvedPlan()
+  checkLinkedMedia(client, plan, log)
   const originals = plan.changes.map((change) => {
     const doc = readChange(client, change)
     const state = assessChange(doc, change)

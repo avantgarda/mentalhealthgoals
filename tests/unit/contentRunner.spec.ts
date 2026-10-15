@@ -63,6 +63,10 @@ function fixture() {
       { id: 20, updatedAt: 'baseline', name: 'Dr Example', role: 'Lead', bio: 'Preserved bio' },
     ],
     pages: [{ id: 30, updatedAt: 'baseline', slug: 'about', layout: [], _status: 'published' }],
+    media: [
+      { id: 5, updatedAt: 'baseline', filename: 'example-slides.pdf', mimeType: 'application/pdf' },
+      { id: 6, updatedAt: 'baseline', filename: 'example-photo.png', mimeType: 'image/png' },
+    ],
   }
   let sequence = 0
   let failReadback = false
@@ -102,8 +106,11 @@ function fixture() {
       if (failReadback && collection === 'workstreams' && writes.includes('workstreams'))
         throw new Error('Readback unavailable')
       const filters = [...url.searchParams].filter(([key]) => key.endsWith('[equals]'))
+      const ids = url.searchParams.get('where[id][in]')?.split(',')
       const hits = docs.filter((doc) =>
-        filters.some(([key, value]) => doc[key.includes('[name]') ? 'name' : 'slug'] === value),
+        ids
+          ? ids.includes(String(doc.id))
+          : filters.some(([key, value]) => doc[key.includes('[name]') ? 'name' : 'slug'] === value),
       )
       return { totalDocs: hits.length, docs: structuredClone(hits) }
     }),
@@ -233,5 +240,59 @@ describe('reviewed CMS write sequence', () => {
     expect(f.state.partners).toHaveLength(1)
     expect(f.state.people[0].name).toBe('Dr Example')
     expect(f.state.workstreams[0].partners).toEqual([4])
+  })
+})
+
+describe('links to files in Media', () => {
+  const fileLink = (id: number) => ({
+    type: 'link',
+    fields: { linkType: 'internal', newTab: false, doc: { relationTo: 'media', value: id } },
+    children: [{ type: 'text', text: 'Example slides' }],
+  })
+  const linking = (id: number): ContentPlan => ({
+    version: 1,
+    name: 'Invented file link',
+    changes: [
+      {
+        collection: 'pages',
+        match: { field: 'slug', value: 'about' },
+        before: { layout: [] },
+        after: {
+          layout: [
+            {
+              blockType: 'content',
+              columns: [{ richText: { root: { type: 'root', children: [fileLink(id)] } } }],
+            },
+          ],
+        },
+      },
+    ],
+  })
+
+  it('finds every linked file before writing, and names it in the log', () => {
+    const f = fixture()
+    const opts = options()
+    runContentPatch(f.client, deployment, linking(5), opts)
+    expect(f.writes).toEqual(['pages'])
+    expect(opts.log).toHaveBeenCalledWith('file found: media/example-slides.pdf (#5)')
+  })
+
+  it.each([
+    [404, /missing from Media: #404/],
+    [6, /not a PDF: media\/example-photo.png/],
+  ])('refuses a link to Media #%s before any content write', (id, message) => {
+    const f = fixture()
+    const before = structuredClone(f.state)
+    expect(() => runContentPatch(f.client, deployment, linking(id), options())).toThrow(message)
+    expect(f.writes).toEqual([])
+    expect(f.state).toEqual(before)
+  })
+
+  it('reverses a file link without needing the file', () => {
+    const f = fixture()
+    runContentPatch(f.client, deployment, linking(5), options())
+    f.state.media = []
+    runContentPatch(f.client, deployment, linking(5), { ...options(), reverse: true })
+    expect(f.state.pages[0].layout).toEqual([])
   })
 })
