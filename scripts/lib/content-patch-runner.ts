@@ -86,6 +86,14 @@ export function readMedia(client: CmsClient, ids: (number | string)[]): MediaFil
   return client.api(`/api/media?${query}`).docs ?? []
 }
 
+/** Every row ID (`id` strings) in a field value, at any depth. */
+function rowIds(value: unknown): string[] {
+  if (!value || typeof value !== 'object') return []
+  return Object.entries(value).flatMap(([key, item]) =>
+    key === 'id' && typeof item === 'string' ? [item] : rowIds(item),
+  )
+}
+
 /** Where Media serves a file. */
 export const mediaFilePath = (filename: string) => `/api/media/file/${encodeURIComponent(filename)}`
 
@@ -206,15 +214,25 @@ export function runContentPatch(
   const resolvedPlan = () => {
     const resolved = resolveReferences(template, ids)
     if (options.reverse)
-      resolved.changes = resolved.changes.map((change) => ({
-        ...change,
-        match: {
-          ...change.match,
-          value: String(change.after[change.match.field] ?? change.match.value),
-        },
-        before: change.after,
-        after: change.before,
-      }))
+      resolved.changes = resolved.changes.map((change) => {
+        // Rows the plan removed come back on reversal, and Payload gives a row
+        // re-inserted under an ID the record no longer holds a new one, just
+        // as it may for the rows a plan adds. Their IDs are tolerated like
+        // generatedIds; the rows' content is still compared in full.
+        const kept = new Set(rowIds(change.after))
+        const restored = rowIds(change.before).filter((id) => !kept.has(id))
+        const generatedIds = [...new Set([...(change.generatedIds ?? []), ...restored])]
+        return {
+          ...change,
+          match: {
+            ...change.match,
+            value: String(change.after[change.match.field] ?? change.match.value),
+          },
+          before: change.after,
+          after: change.before,
+          ...(generatedIds.length ? { generatedIds } : {}),
+        }
+      })
     return resolved
   }
   let plan = resolvedPlan()

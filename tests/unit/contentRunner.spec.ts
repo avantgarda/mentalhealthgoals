@@ -73,6 +73,9 @@ function fixture() {
   const files = new Map<string, Buffer>()
   let sequence = 0
   let failReadback = false
+  // Like Payload: a row written with an ID the record does not hold gets a new one.
+  let reissueNewRowIds = false
+  let reissued = 0
   let mutateAfterCreation = false
   let loseCreateResponse = false
   let loseUploadResponse = false
@@ -130,6 +133,25 @@ function fixture() {
             doc.updatedAt === url.searchParams.get('where[and][1][updatedAt][equals]'),
         )
         if (!doc) return { docs: [] }
+        if (reissueNewRowIds) {
+          const held = new Set<string>()
+          const collect = (value: unknown) => {
+            if (!value || typeof value !== 'object') return
+            for (const [key, item] of Object.entries(value))
+              if (key === 'id' && typeof item === 'string') held.add(item)
+              else collect(item)
+          }
+          collect(doc)
+          const reissue = (value: unknown) => {
+            if (!value || typeof value !== 'object') return
+            const node = value as Record<string, unknown>
+            if (typeof node.id === 'string' && !held.has(node.id))
+              node.id = `reissued-${++reissued}`
+            Object.values(node).forEach(reissue)
+          }
+          data = structuredClone(data)
+          reissue(data)
+        }
         Object.assign(doc, data, { updatedAt: `write-${++sequence}` })
         writes.push(collection)
         return { docs: [structuredClone(doc)] }
@@ -164,6 +186,9 @@ function fixture() {
     },
     failReadback: () => {
       failReadback = true
+    },
+    reissueNewRowIds: () => {
+      reissueNewRowIds = true
     },
     mutateAfterCreation: () => {
       mutateAfterCreation = true
@@ -358,10 +383,42 @@ describe('rows a plan adds', () => {
 
   it('reverses a change that added rows with minted IDs', () => {
     const f = fixture()
+    f.reissueNewRowIds()
     runContentPatch(f.client, deployment, adding, options())
     expect(f.state.pages[0].layout).toHaveLength(1)
     runContentPatch(f.client, deployment, adding, { ...options(), reverse: true })
     expect(f.state.pages[0].layout).toEqual([])
+  })
+})
+
+describe('rows a plan removes', () => {
+  const removing: ContentPlan = {
+    version: 1,
+    name: 'Invented row removal',
+    changes: [
+      {
+        collection: 'pages',
+        match: { field: 'slug', value: 'about' },
+        before: {
+          layout: [
+            { id: 'kept-row', blockType: 'content', columns: [] },
+            { id: 'old-row', blockType: 'content', columns: [] },
+          ],
+        },
+        after: { layout: [{ id: 'kept-row', blockType: 'content', columns: [] }] },
+      },
+    ],
+  }
+
+  it('reverses a removal although the restored row gets a new ID', () => {
+    const f = fixture()
+    f.state.pages[0].layout = structuredClone(removing.changes[0].before.layout)
+    f.reissueNewRowIds()
+    runContentPatch(f.client, deployment, removing, options())
+    expect(f.state.pages[0].layout).toHaveLength(1)
+    runContentPatch(f.client, deployment, removing, { ...options(), reverse: true })
+    expect(f.state.pages[0].layout).toHaveLength(2)
+    expect((f.state.pages[0].layout as { id: string }[])[1].id).toMatch(/^reissued-/)
   })
 })
 
