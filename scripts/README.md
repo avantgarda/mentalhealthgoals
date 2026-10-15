@@ -61,9 +61,16 @@ pnpm sync:db --with-pii   # include users, sessions and form submissions
 ```
 
 Personal data is left behind by default: no users, no sessions, no form submissions. Their tables
-are still created, so the schema matches production — only the rows are skipped. An empty `users`
-table means `/admin` offers to create the first user, which is the intended way to get a local
-admin account.
+are still created, so the schema matches production — only the rows are skipped.
+
+The sync then runs `pnpm local:admin`, which creates a local admin account from `SEED_ADMIN_EMAIL`
+and `SEED_ADMIN_PASSWORD` in `.env.local`, so a re-sync does not mean making a login again. It goes
+through Payload, so the password is hashed as the admin would hash it; it refuses any database that
+is not on this machine, leaves an existing account unchanged, and never prints the password. If the
+two settings are not set, `/admin` offers to create the first user instead. If this branch has
+migrations production does not, and the account could not be created, run `pnpm payload migrate`
+and then `pnpm local:admin`. Use a password that is not a production login: these values are for
+local databases only.
 
 Use the **unpooled** Neon connection string. `pg_dump` needs a session, and a pooler will give you
 intermittent failures instead of an honest error.

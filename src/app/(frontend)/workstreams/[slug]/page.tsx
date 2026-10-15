@@ -11,6 +11,7 @@ import { getCachedPartners } from '@/utilities/getPartners'
 import { notFound } from 'next/navigation'
 import React, { cache } from 'react'
 
+import { getServerSideURL } from '@/utilities/getURL'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import { LinkifyEntities } from '@/utilities/linkifyEntities'
 import { personAnchor } from '@/utilities/personAnchor'
@@ -362,14 +363,16 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
   if (!workstream) return {}
 
   const title = `${workstream.title} | Mental Health Goals Programme`
+  const url = `${getServerSideURL()}/workstreams/${workstream.slug}`
 
   return {
+    alternates: { canonical: url },
     title,
     description: workstream.summary,
     openGraph: mergeOpenGraph({
       title,
       description: workstream.summary || '',
-      url: `/workstreams/${workstream.slug}`,
+      url,
     }),
   }
 }

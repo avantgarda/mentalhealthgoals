@@ -254,8 +254,9 @@ async function main(): Promise<void> {
 
   if (choice === 0) {
     console.log('')
-    console.log('The users table was left empty, so /admin will ask you to create the first')
-    console.log('user. That account is local only.')
+    console.log('Log in to /admin with SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD from .env.local')
+    console.log('(the sync created that local admin). If they are not set, /admin asks you to')
+    console.log('create the first user instead. Either way the account is local only.')
   }
 }
 

@@ -77,6 +77,9 @@ Two things it will not give you, neither of which matters:
 - `pnpm sync:db` caches an unencrypted dump under `temp/neon-dumps/`. By default it holds content
   only — no users, no sessions, no form submissions. `--with-pii` includes all of them, including
   password hashes, so use it only when you actually need them and delete the cache afterwards.
+- Your local login comes from `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` in `.env.local`: after
+  every sync, `pnpm local:admin` creates that admin in the local database. Choose a password you do
+  not use for the production CMS. You never need production's users locally.
 
 ## One-time setup: the read-only sync role
 

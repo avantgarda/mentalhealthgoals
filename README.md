@@ -49,9 +49,11 @@ pnpm sync:media   # download the files that content refers to
 ```
 
 `sync:db` drops and recreates the local database and refuses any target that is not localhost. It
-leaves personal data behind by default — no users, no sessions, no form submissions — so `/admin`
-will offer to create your first local user. `sync:media` needs no credentials; the blob store is
-public-read.
+leaves personal data behind by default — no users, no sessions, no form submissions — and then
+creates a local admin from `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` in `.env.local`
+(`pnpm local:admin`), so you can log in to `/admin` straight away. Without those two settings,
+`/admin` offers to create the first user instead. `sync:media` needs no credentials; the blob store
+is public-read.
 
 There is no way to push content the other way, and that is deliberate. The repository holds no
 copy of the site's content to overwrite production with.
@@ -112,10 +114,10 @@ message uses `{{*:table}}`, the table is rebuilt from the form itself: its field
 a person chose rather than its stored value, Yes or No for a box, and a link to the record in the
 CMS
 (`src/utilities/emailTemplate.ts`, applied through the form builder's `beforeEmail` hook in
-`src/utilities/formEmails.ts`). The lockup image is fetched from the permanent
-`mentalhealthgoals.vercel.app` alias rather than the site's own URL — an email is opened long
-after it is sent, the custom domain is parked until launch, and deployment URLs sit behind
-SSO. Editors need do nothing. If the frame ever fails to build, the message goes out plain
+`src/utilities/formEmails.ts`). The lockup image is always fetched from
+`www.mentalhealthgoals.co.uk`, whichever environment sent the email — an email is opened long
+after it is sent, a local build's URL is localhost, and deployment URLs sit behind SSO.
+Editors need do nothing. If the frame ever fails to build, the message goes out plain
 rather than not at all.
 
 Scheduled publishing is disabled: on Vercel nothing runs Payload's jobs queue, so scheduled
@@ -230,6 +232,7 @@ run — and because the deploy is part of that run, it deploys too. To deploy `m
 | `pnpm bootstrap`                     | Fresh clone to running site: tools, `.env.local`, database                          |
 | `pnpm sync:db`                       | Copy production's content into the local database                                   |
 | `pnpm sync:media`                    | Download the files that content refers to into `public/media`                       |
+| `pnpm local:admin`                   | Create the local admin from `SEED_ADMIN_*` (run by `sync:db`; localhost only)       |
 | `pnpm blobs:mirror`                  | Copy the production blob store into the preview one (owner-only)                    |
 | `pnpm content:snapshot`              | Baseline every editable collection from a deployment into a plan dir                |
 | `pnpm content:editor create\|delete` | Temporary editor on a preview DB branch — the isolation canary                      |
