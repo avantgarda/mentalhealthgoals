@@ -19,12 +19,15 @@ import { ProgrammeDetails } from './ProgrammeDetails/config'
 import { plugins } from './plugins'
 import { defaultLexical } from '@/fields/defaultLexical'
 import { emailConfig } from './utilities/emailConfig'
-import { getServerSideURL } from './utilities/getURL'
+import { getPayloadServerURL } from './utilities/getPayloadServerURL'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+const serverURL = getPayloadServerURL()
+
 export default buildConfig({
+  serverURL,
   admin: {
     // Cosmetic only: the mark on the login screen and beside the nav, plus the
     // browser tab title and icon. Nothing here changes what the panel can do.
@@ -94,21 +97,10 @@ export default buildConfig({
   // their first collection appears here, so Users last keeps Admin at the
   // bottom rather than sitting between Content and Programme.
   collections: [Pages, Posts, Media, Categories, Workstreams, People, Partners, Users],
-  // Without an adapter Payload writes emails to the console — fine in dev,
-  // but production (password resets, contact-form notifications) needs Resend.
-  // The mentalhealthgoals.co.uk domain must be verified in Resend before
-  // emails will send from it.
-  //
-  // Recipients are not an environment setting. The contact form's notification
-  // address is stored on the form document, so it travels with the database —
-  // a preview runs on a branch of production's, and a developer who has run
-  // `pnpm sync:db` has production's rows on their laptop. Pointing a
-  // non-production environment at a different address therefore has to happen
-  // at the point of sending, which is what emailConfig's recipient override
-  // does: every message goes there instead, whatever the CMS says — except a
-  // form's reply to the person who filled it in, which goes where they typed.
+  // Account mail uses a dedicated nonproduction test mailbox; form mail keeps its audience policy.
   ...emailConfig(),
-  cors: [getServerSideURL()].filter(Boolean),
+  cors: [serverURL],
+  csrf: [serverURL],
   globals: [Header, Footer, Brand, ProgrammeDetails],
   plugins,
   secret: process.env.PAYLOAD_SECRET,

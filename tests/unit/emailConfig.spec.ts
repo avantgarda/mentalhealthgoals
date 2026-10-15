@@ -1,7 +1,8 @@
 import type { EmailAdapter, SendEmailOptions } from 'payload'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  emailConfig,
   AUDIENCE_HEADER,
   redirectTo,
   shouldSendRealEmail,
@@ -134,5 +135,89 @@ describe('redirectTo', () => {
     await adapter.sendEmail(reset)
     expect(sent.map((m) => m.to)).toEqual(['dev@example.com', 'ada@example.org', 'dev@example.com'])
     expect(adapter.name).toBe('fake')
+  })
+})
+
+afterEach(() => vi.unstubAllGlobals())
+describe('account and form email isolation', () => {
+  const make = (env: Parameters<typeof emailConfig>[0]) =>
+    emailConfig(env).email({ payload: { logger: { info: vi.fn() } } as never })
+  const message = {
+    to: 'staff@example.test',
+    cc: 'other@example.test',
+    bcc: 'hidden@example.test',
+    subject: 'Test',
+    html: '<p>Secret</p>',
+  }
+  it('requires an auth mailbox even when a general form override is configured', async () => {
+    const fetcher = vi.fn()
+    vi.stubGlobal('fetch', fetcher)
+    await expect(
+      make({ RESEND_API_KEY: 'test', EMAIL_OVERRIDE_RECIPIENT: 'forms@example.test' }).sendEmail(
+        message,
+      ),
+    ).rejects.toThrow(/disabled/)
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+  it('never reports auth success without a provider key, including production', async () => {
+    await expect(make({ VERCEL_ENV: 'production' }).sendEmail(message)).rejects.toThrow(/disabled/)
+    await expect(
+      make({ PAYLOAD_AUTH_EMAIL_TEST_TO: 'auth@example.test' }).sendEmail(message),
+    ).rejects.toThrow(/disabled/)
+  })
+  it('routes auth and team mail separately and preserves form replies', async () => {
+    const fetcher = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(Response.json({ id: 'test-id' })))
+    vi.stubGlobal('fetch', fetcher)
+    const adapter = make({
+      VERCEL_ENV: 'preview',
+      RESEND_API_KEY: 'test',
+      EMAIL_OVERRIDE_RECIPIENT: 'forms@example.test',
+      PAYLOAD_AUTH_EMAIL_TEST_TO: 'auth@example.test',
+    })
+    await adapter.sendEmail(message)
+    await adapter.sendEmail({ ...message, headers: { [AUDIENCE_HEADER]: 'team' } })
+    await adapter.sendEmail({
+      ...message,
+      cc: undefined,
+      bcc: undefined,
+      headers: { [AUDIENCE_HEADER]: 'person' },
+    })
+    const sent = fetcher.mock.calls.map((call) => JSON.parse(call[1].body))
+    expect(sent.map((m) => m.to)).toEqual([
+      'auth@example.test',
+      'forms@example.test',
+      'staff@example.test',
+    ])
+    expect(sent[0].cc).toBe('')
+    expect(sent[0].bcc).toBe('')
+  })
+  it('ignores both test overrides in production', async () => {
+    const fetcher = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(Response.json({ id: 'test-id' })))
+    vi.stubGlobal('fetch', fetcher)
+    const adapter = make({
+      VERCEL_ENV: 'production',
+      RESEND_API_KEY: 'test',
+      EMAIL_OVERRIDE_RECIPIENT: 'forms@example.test',
+      PAYLOAD_AUTH_EMAIL_TEST_TO: 'auth@example.test',
+    })
+    await adapter.sendEmail(message)
+    await adapter.sendEmail({ ...message, headers: { [AUDIENCE_HEADER]: 'team' } })
+    expect(fetcher.mock.calls.map((call) => JSON.parse(call[1].body).to)).toEqual([
+      'staff@example.test',
+      'staff@example.test',
+    ])
+  })
+  it('does not expose provider response bodies in account email errors', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('sensitive-token', { status: 500 })),
+    )
+    await expect(
+      make({ VERCEL_ENV: 'production', RESEND_API_KEY: 'test' }).sendEmail(message),
+    ).rejects.toThrow('Account email could not be sent.')
   })
 })

@@ -3,41 +3,11 @@ import type { EmailAdapter, SendEmailOptions } from 'payload'
 import { resendAdapter } from '@payloadcms/email-resend'
 
 import type { EmailAudience } from './emailTemplate'
+import { createAuthEmailAdapter, type AuthEmailEnvironment } from './authEmailAdapter'
 
-/**
- * Resend, with a safety rule about who non-production environments may email.
- *
- * Recipients are not an environment setting. The contact form's notification
- * address is stored on the form document, so it travels with the database — a
- * preview deployment runs on a branch of production's, and a developer who has
- * run `pnpm sync:db` has production's rows on their laptop. Pointing a
- * non-production environment at a different address therefore has to happen at
- * the point of sending, which is what the override below does: every message
- * goes there instead, whatever the CMS says — the team's notification, a
- * password reset, anything.
- *
- * With one exception. A form's reply to the person who filled it in goes where
- * they said. A tester types their own address and reads the same email a
- * visitor would, and no address but their own is in that message; the team
- * inbox is the one that must not fill up with tests. The form hook marks that
- * message with AUDIENCE_HEADER, and the override lets it through.
- *
- * On a preview deployment the rule is fail-closed: with no override address, no
- * adapter is attached and mail goes to the server log instead. A preview runs
- * unattended against real recipients, and "we forgot to set the variable" is
- * not an acceptable way to discover that.
- *
- * Locally the developer decides. Set EMAIL_OVERRIDE_RECIPIENT to watch real
- * mail arrive, or leave RESEND_API_KEY unset and read it in the console.
- *
- * VERCEL_ENV is only ever consulted to identify a deployment that is definitely
- * NOT production. It is never used to conclude that something IS production, so
- * an absent or renamed value cannot silently stop production sending.
- */
-export type EmailEnvironment = {
-  RESEND_API_KEY?: string
+/** Form mail retains its audience override; unmarked mail uses the stricter auth policy. */
+export type EmailEnvironment = AuthEmailEnvironment & {
   EMAIL_OVERRIDE_RECIPIENT?: string
-  VERCEL_ENV?: string
 }
 
 export const shouldSendRealEmail = (
@@ -45,7 +15,8 @@ export const shouldSendRealEmail = (
 ): { send: false } | { send: true; overrideRecipientAddress?: string } => {
   if (!env.RESEND_API_KEY) return { send: false }
 
-  const overrideRecipientAddress = env.EMAIL_OVERRIDE_RECIPIENT?.trim() || undefined
+  const overrideRecipientAddress =
+    env.VERCEL_ENV === 'production' ? undefined : env.EMAIL_OVERRIDE_RECIPIENT?.trim() || undefined
   const isNonProductionDeploy = Boolean(env.VERCEL_ENV) && env.VERCEL_ENV !== 'production'
 
   if (isNonProductionDeploy && !overrideRecipientAddress) return { send: false }
@@ -56,8 +27,8 @@ export const shouldSendRealEmail = (
 /**
  * Who a form email is for, as a header on the message: 'person' for the copy
  * sent to the address typed into the form, 'team' for the notification. The
- * form hook sets it; the override reads it. Anything without it — a password
- * reset, say — is treated as the team's.
+ * form hook sets it; the adapter uses it to separate form mail from account
+ * mail. Unmarked messages always use the stricter account-email policy.
  */
 export const AUDIENCE_HEADER = 'X-MHG-Audience'
 
@@ -90,20 +61,37 @@ export const withRecipientOverride =
     }
   }
 
-/** Spread into the Payload config. Empty means "write emails to the console". */
-export const emailConfig = (env: EmailEnvironment = process.env) => {
-  const decision = shouldSendRealEmail(env)
-  if (!decision.send) return {}
-
-  const adapter = resendAdapter({
-    apiKey: env.RESEND_API_KEY!,
-    defaultFromAddress: 'noreply@mentalhealthgoals.co.uk',
-    defaultFromName: 'Mental Health Goals Programme',
-  })
-
-  return {
-    email: decision.overrideRecipientAddress
-      ? withRecipientOverride(adapter, decision.overrideRecipientAddress)
-      : adapter,
-  }
-}
+/** Always install auth handling: disabled delivery must never look like success. */
+export const emailConfig = (env: EmailEnvironment = process.env): { email: EmailAdapter } => ({
+  email: (args) => {
+    const auth = createAuthEmailAdapter(env)(args)
+    const decision = shouldSendRealEmail(env)
+    const form = resendAdapter({
+      apiKey: env.RESEND_API_KEY || '',
+      defaultFromAddress: 'noreply@mentalhealthgoals.co.uk',
+      defaultFromName: 'Mental Health Goals Programme',
+    })(args)
+    return {
+      ...auth,
+      sendEmail: (message) => {
+        const headers = message.headers
+        const audience = Array.isArray(headers)
+          ? headers.find((h) => h.key.toLowerCase() === AUDIENCE_HEADER.toLowerCase())?.value
+          : Object.entries(headers || {}).find(
+              ([key]) => key.toLowerCase() === AUDIENCE_HEADER.toLowerCase(),
+            )?.[1]
+        // Only our form hook marks messages. Payload password emails are unmarked.
+        if (audience !== 'team' && audience !== 'person') return auth.sendEmail(message)
+        if (!decision.send) {
+          args.payload.logger.info('Form email delivery disabled; message body omitted.')
+          return Promise.resolve()
+        }
+        return form.sendEmail(
+          decision.overrideRecipientAddress
+            ? redirectTo(message, decision.overrideRecipientAddress)
+            : message,
+        )
+      },
+    }
+  },
+})

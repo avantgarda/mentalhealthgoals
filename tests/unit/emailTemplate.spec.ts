@@ -346,7 +346,7 @@ describe('beforeEmail', () => {
       throw new Error('database away')
     })
     const out = await beforeEmail([person], { req: r, data } as never)
-    expect(out).toEqual([person])
+    expect(out).toEqual([{ ...person, headers: { 'X-MHG-Audience': 'team' } }])
     expect(
       (r as { payload: { logger: { warn: ReturnType<typeof vi.fn> } } }).payload.logger.warn,
     ).toHaveBeenCalled()
