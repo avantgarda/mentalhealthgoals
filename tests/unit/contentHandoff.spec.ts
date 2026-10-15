@@ -60,6 +60,7 @@ function fixture(settings: Record<string, unknown> = {}) {
         workstreams: [],
         partners: [],
         people: [{ id: 20, name: 'Dr Example', role: 'Lead', updatedAt: 'baseline' }],
+        media: [{ id: 5, filename: 'example-slides.pdf', mimeType: 'application/pdf' }],
       },
       ...settings,
     }),
@@ -182,7 +183,7 @@ describe('single-command CMS handoff', () => {
     })
   })
 
-  it('takes a public snapshot including partners without a CMS login', () => {
+  it('takes a public snapshot including partners and Media without a CMS login', () => {
     const f = fixture()
     const result = spawnSync(
       process.execPath,
@@ -200,6 +201,9 @@ describe('single-command CMS handoff', () => {
     )
     expect(result.status, result.stderr).toBe(0)
     expect(readdirSync(join(f.dir, 'snapshot/sources'))).toContain('partners.json')
+    expect(
+      JSON.parse(readFileSync(join(f.dir, 'snapshot/sources/media.json'), 'utf8')),
+    ).toMatchObject([{ id: 5, filename: 'example-slides.pdf' }])
     expect(f.state().requests.some((r: { path: string }) => r.path === '/api/users/login')).toBe(
       false,
     )

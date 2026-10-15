@@ -13,6 +13,7 @@ import { randomBytes } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 import { join } from 'node:path'
 
+import { fileLabel } from '../../src/utilities/fileLabel'
 import {
   EDITABLE_COLLECTIONS,
   matchFieldFor,
@@ -24,17 +25,32 @@ import {
 
 type Collection = ContentChange['collection']
 type Doc = Record<string, unknown> & { id: number | string; slug?: string; name?: string }
-export type Sources = Partial<Record<Collection, Doc[]>>
+/** An uploaded file, as the Media API returns it. Read-only to the tool: it
+ * links to files, never uploads or edits them. */
+export type MediaFile = {
+  id: number | string
+  filename?: string | null
+  mimeType?: string | null
+  filesize?: number | null
+  url?: string | null
+}
+export type Sources = Partial<Record<Collection, Doc[]>> & { media?: MediaFile[] }
 
 // --- Snapshot ---------------------------------------------------------------
 
-/** Every `sources/<collection>.json` that `content-snapshot` wrote. */
-export function loadSources(dir: string): Sources {
+function readSources(dir: string): Sources {
   const sources: Sources = {}
-  for (const collection of EDITABLE_COLLECTIONS) {
+  for (const collection of [...EDITABLE_COLLECTIONS, 'media' as const]) {
     const file = join(dir, 'sources', `${collection}.json`)
     if (existsSync(file)) sources[collection] = JSON.parse(readFileSync(file, 'utf8'))
   }
+  return sources
+}
+
+/** Every `sources/<collection>.json` that `content-snapshot` wrote, Media
+ * included: an internal link names a file or page only by its ID. */
+export function loadSources(dir: string): Sources {
+  const sources = readSources(dir)
   if (!Object.keys(sources).length) throw new Error(`No sources under ${dir}/sources`)
   return sources
 }
@@ -62,16 +78,79 @@ export const text = (node: unknown): string => {
   return ((n?.children as unknown[]) ?? []).map(text).join('')
 }
 
-/** Text with links kept visible as `[label](url)` — a re-pointed link is a
- * content change even when the words stay the same. */
-export const inline = (node: unknown): string => {
-  const n = node as Obj | undefined
-  if (n?.type === 'link') {
-    const url = (n.fields as Obj | undefined)?.url ?? ''
-    return `[${((n.children as unknown[]) ?? []).map(inline).join('')}](${url})`
+const isInternal = (fields: unknown) => (fields as Obj | undefined)?.linkType === 'internal'
+
+/** What an internal link picked: `{ relationTo, value }`, where `value` is the
+ * ID at depth 0 and the document itself when populated. */
+function picked(fields: unknown): { relationTo: string; id: unknown } | undefined {
+  const doc = (fields as Obj | undefined)?.doc as Obj | undefined
+  if (!isInternal(fields) || typeof doc?.relationTo !== 'string') return undefined
+  const value = doc.value as Obj | number | string | undefined
+  return {
+    relationTo: doc.relationTo,
+    id: value && typeof value === 'object' ? value.id : value,
   }
+}
+
+const byId = <T extends { id: unknown }>(list: T[] | undefined, id: unknown) =>
+  list?.find((item) => String(item.id) === String(id))
+
+/** The file in Media an internal link points at, if the sources have it. */
+function linkedFile(fields: unknown, sources: Sources): MediaFile | undefined {
+  const doc = picked(fields)
+  return doc?.relationTo === 'media' ? byId(sources.media, doc.id) : undefined
+}
+
+const LINK_KINDS: Record<string, string> = { pages: 'page', posts: 'post', media: 'media' }
+
+/**
+ * Where a link goes, for a reviewer: a custom link's URL, or what an internal
+ * link picked — `page:/about`, `post:/posts/launch`, `media:slides.pdf`. A
+ * document the sources do not have shows as its ID, `media#42`, so a link
+ * re-pointed at another document still reads as a change.
+ */
+export function linkTarget(fields: unknown, sources: Sources = {}): string {
+  if (!isInternal(fields)) {
+    const url = (fields as Obj | undefined)?.url
+    return typeof url === 'string' ? url : ''
+  }
+  const doc = picked(fields)
+  if (!doc) return 'internal:?'
+  const kind = LINK_KINDS[doc.relationTo] ?? doc.relationTo
+  if (doc.relationTo === 'media') {
+    const filename = byId(sources.media, doc.id)?.filename
+    if (filename) return `${kind}:${filename}`
+  } else if (doc.relationTo === 'pages' || doc.relationTo === 'posts') {
+    const slug = byId(sources[doc.relationTo], doc.id)?.slug
+    if (slug) return `${kind}:${recordPaths(doc.relationTo, slug)[0]}`
+  }
+  return `${kind}#${String(doc.id)}`
+}
+
+/** Text with links kept visible as `[label](target)` — a re-pointed link is a
+ * content change even when the words stay the same. Pass the sources to name
+ * an internal link's page or file rather than its ID. */
+export const inline = (node: unknown, sources: Sources = {}): string => {
+  const n = node as Obj | undefined
+  const children = () => ((n?.children as unknown[]) ?? []).map((c) => inline(c, sources)).join('')
+  if (n?.type === 'link') return `[${children()}](${linkTarget(n.fields, sources)})`
   if (typeof n?.text === 'string') return n.text
-  return ((n?.children as unknown[]) ?? []).map(inline).join('')
+  return children()
+}
+
+/**
+ * The words a reader sees, as the site renders them (`RichText/links.tsx`): a
+ * link is its text, except that a link to a file in Media is followed by the
+ * file's type and size — "Slides (PDF, 2.3 MB)". A file the sources do not
+ * have renders as plain words, as the site does when the file is gone.
+ */
+export const readerText = (node: unknown, sources: Sources = {}): string => {
+  const n = node as Obj | undefined
+  if (typeof n?.text === 'string') return n.text
+  const words = ((n?.children as unknown[]) ?? []).map((c) => readerText(c, sources)).join('')
+  const file = n?.type === 'link' ? linkedFile(n.fields, sources) : undefined
+  const label = file?.url ? fileLabel(file) : ''
+  return label ? `${words} (${label})` : words
 }
 
 export const textNode = (value: string) => ({
@@ -102,7 +181,7 @@ export function relink(node: unknown, from: string, to: string): number {
     if (!value || typeof value !== 'object') return
     const n = value as Obj
     const fields = n.fields as Obj | undefined
-    if (n.type === 'link' && fields?.url === from) {
+    if (n.type === 'link' && !isInternal(fields) && fields?.url === from) {
       fields.url = to
       count++
     }
@@ -112,14 +191,79 @@ export function relink(node: unknown, from: string, to: string): number {
   return count
 }
 
-/** Every link URL under a node, in document order. */
-export function links(node: unknown): string[] {
+/** Where a typed link to an uploaded file points: `/api/media/file/<filename>`. */
+const FILE_URL = /^\/api\/media\/file\/([^/?#]+)$/
+/** A type and size typed beside a file link: "(PDF, 2.3 MB)". */
+const LABEL = String.raw`\(\s*[a-z0-9]{2,5},\s*\d+(?:\.\d+)?\s*[kmg]b\s*\)`
+const LABEL_AT_END = new RegExp(String.raw`\s*${LABEL}\s*$`, 'i')
+const LABEL_AT_START = new RegExp(String.raw`^\s*${LABEL}`, 'i')
+
+/**
+ * Turn every custom link to an uploaded file — `/api/media/file/<filename>` —
+ * into a link to that file in Media, as the link dialog's picker makes it. The
+ * site then links to the file and adds its type and size itself, so a size
+ * typed at the end of the link's words ("Slides (PDF, 2.3 MB)") is dropped or
+ * it would show twice. Refuses a file `sources.media` does not have, or one
+ * that is not a PDF: the picker offers PDFs only. Returns the filenames
+ * converted, in document order, for the plan to check against what it expects.
+ */
+export function relinkToMedia(node: unknown, sources: Sources): string[] {
+  const converted: string[] = []
+  const walk = (value: unknown, siblings?: unknown[], index = 0) => {
+    if (Array.isArray(value)) return value.forEach((item, i) => walk(item, value, i))
+    if (!value || typeof value !== 'object') return
+    const n = value as Obj
+    const fields = n.fields as Obj | undefined
+    const path = typeof fields?.url === 'string' ? FILE_URL.exec(fields.url) : null
+    if (n.type !== 'link' || isInternal(fields) || !path) {
+      Object.values(n).forEach((child) => walk(child))
+      return
+    }
+    const filename = decodeURIComponent(path[1])
+    if (!sources.media) throw new Error('No sources/media.json: re-take the snapshot')
+    const file = sources.media.find((f) => f.filename === filename)
+    if (!file)
+      throw new Error(`No file named "${filename}" in Media: upload it, then re-take the snapshot`)
+    if (file.mimeType !== 'application/pdf')
+      throw new Error(
+        `"${filename}" in Media is ${file.mimeType ?? 'of unknown type'}, not a PDF; ` +
+          'the link picker offers PDFs only',
+      )
+    const next = siblings?.[index + 1] as Obj | undefined
+    if (typeof next?.text === 'string' && LABEL_AT_START.test(next.text))
+      throw new Error(`"${filename}": a size follows the link; take it out of that text first`)
+    const words = (n.children as Obj[] | undefined) ?? []
+    const last = words.at(-1)
+    if (typeof last?.text === 'string') {
+      last.text = last.text.replace(LABEL_AT_END, '')
+      // The size in a text node of its own: drop the node, and the space before it.
+      if (!last.text && words.length > 1) {
+        words.pop()
+        const previous = words.at(-1)
+        if (typeof previous?.text === 'string') previous.text = previous.text.trimEnd()
+      }
+    }
+    if (!text(n).trim()) throw new Error(`"${filename}": the link has no words besides its size`)
+    const linkFields: Obj = { ...fields }
+    delete linkFields.url
+    n.fields = { ...linkFields, linkType: 'internal', doc: { relationTo: 'media', value: file.id } }
+    converted.push(filename)
+  }
+  walk(node)
+  return converted
+}
+
+/** Every link target a page renders under a node, in document order: a custom
+ * link's URL, and a linked file's URL when the sources have the file. Links to
+ * pages and posts are left out. */
+export function links(node: unknown, sources: Sources = {}): string[] {
   const out: string[] = []
   const walk = (value: unknown) => {
     if (Array.isArray(value)) return value.forEach(walk)
     if (!value || typeof value !== 'object') return
     const n = value as Obj
-    const url = (n.fields as Obj | undefined)?.url
+    const fields = n.fields as Obj | undefined
+    const url = isInternal(fields) ? linkedFile(fields, sources)?.url : fields?.url
     if (n.type === 'link' && typeof url === 'string') out.push(url)
     Object.values(n).forEach(walk)
   }
@@ -127,16 +271,32 @@ export function links(node: unknown): string[] {
   return out
 }
 
+/** Every Media ID linked from rich text under a value, once each. */
+export function linkedMediaIds(value: unknown): (number | string)[] {
+  const out = new Set<number | string>()
+  const walk = (item: unknown) => {
+    if (Array.isArray(item)) return item.forEach(walk)
+    if (!item || typeof item !== 'object') return
+    const n = item as Obj
+    const doc = n.type === 'link' ? picked(n.fields) : undefined
+    if (doc?.relationTo === 'media' && (typeof doc.id === 'number' || typeof doc.id === 'string'))
+      out.add(doc.id)
+    Object.values(n).forEach(walk)
+  }
+  walk(value)
+  return [...out]
+}
+
 /** One reviewable segment per block, counting list items separately so a change
  * to a single bullet does not present as a rewrite of the whole list. */
-export const segments = (node: unknown): string[] => {
+export const segments = (node: unknown, sources: Sources = {}): string[] => {
   const n = node as Obj | undefined
   if (n?.type === 'list') {
     return ((n.children as unknown[]) ?? [])
-      .map((li) => `• ${inline(li)}`)
+      .map((li) => `• ${inline(li, sources)}`)
       .filter((s) => s !== '• ')
   }
-  const t = inline(n).trim()
+  const t = inline(n, sources).trim()
   return t ? [t] : []
 }
 
@@ -169,16 +329,17 @@ const isRow = (n: Obj) => typeof n.label === 'string' && typeof n.url === 'strin
 
 /** Segments of a field for the review: strings under prose keys, bullet rows,
  * `label: url` link rows, rich text, and whatever those nest inside. */
-export function fieldSegments(value: unknown, key?: string): string[] {
+export function fieldSegments(value: unknown, key?: string, sources: Sources = {}): string[] {
   if (value == null) return []
   if (typeof value === 'string') return (!key || PROSE_KEYS.has(key)) && value.trim() ? [value] : []
   if (typeof value !== 'object') return []
-  if (Array.isArray(value)) return value.flatMap((item) => fieldSegments(item, key))
+  if (Array.isArray(value)) return value.flatMap((item) => fieldSegments(item, key, sources))
   const n = value as Obj
   if (typeof n.point === 'string') return [n.point]
   if (isRow(n)) return [`${n.label}: ${n.url}`]
-  if (n.root) return ((n.root as Obj).children as unknown[]).flatMap(segments)
-  return Object.entries(n).flatMap(([k, v]) => fieldSegments(v, k))
+  if (n.root)
+    return ((n.root as Obj).children as unknown[]).flatMap((block) => segments(block, sources))
+  return Object.entries(n).flatMap(([k, v]) => fieldSegments(v, k, sources))
 }
 
 // --- Building a plan --------------------------------------------------------
@@ -228,9 +389,11 @@ export function writePlan(
     changes,
     ...(createPartners ? { createPartners } : {}),
   })
+  // The snapshot beside the plan names the pages and files internal links pick.
+  const sources = readSources(dir)
   mkdirSync(dir, { recursive: true, mode: 0o700 })
   writeFileSync(join(dir, 'plan.json'), JSON.stringify(plan, null, 2), { mode: 0o600 })
-  writeFileSync(join(dir, 'review.md'), renderReview(plan, status), { mode: 0o600 })
+  writeFileSync(join(dir, 'review.md'), renderReview(plan, status, sources), { mode: 0o600 })
   writeFileSync(join(dir, 'qa.md'), renderChecklist(plan), { mode: 0o600 })
   return plan
 }
@@ -279,7 +442,9 @@ export function render(ops: Op[]): string {
 const renamedSlug = (c: ContentChange) =>
   typeof c.before.slug === 'string' && c.before.slug !== c.after.slug
 
-export function renderReview(plan: ContentPlan, status?: string): string {
+/** The review a non-technical reader signs off. With the snapshot's sources,
+ * an internal link shows the page or file it picks rather than an ID. */
+export function renderReview(plan: ContentPlan, status?: string, sources: Sources = {}): string {
   let out = `# ${plan.name}\n\nGenerated from a snapshot of the target environment.\n\n`
   out += `**Status: ${status ?? 'not yet applied or verified.'}**\n\n`
   out +=
@@ -303,7 +468,10 @@ export function renderReview(plan: ContentPlan, status?: string): string {
     out += `## ${c.collection}/${c.match.value}\n\n`
     for (const key of Object.keys(c.after)) {
       if (key === 'slug' && renamedSlug(c)) continue // already shown as a URL change
-      const ops = diff(fieldSegments(c.before[key], key), fieldSegments(c.after[key], key))
+      const ops = diff(
+        fieldSegments(c.before[key], key, sources),
+        fieldSegments(c.after[key], key, sources),
+      )
       const relationships = (value: unknown, path: string, out: Record<string, unknown> = {}) => {
         if (Array.isArray(value))
           value.forEach((entry, i) => relationships(entry, `${path}.${i}`, out))
@@ -356,6 +524,9 @@ export function renderChecklist(plan: ContentPlan): string {
     '- [ ] Other pages displaying the affected person, workstream or partner reviewed.\n' +
     '- [ ] Relevant names, titles, roles, full biographies and image alt text checked together.\n' +
     '- [ ] Partner links, correct logo artwork, loading, spacing and optical size checked.\n' +
+    (linkedMediaIds(plan.changes.map((change) => change.after)).length
+      ? '- [ ] Every file link opens the right PDF, and its type and size show once.\n'
+      : '') +
     '- [ ] Manual steps completed, or outstanding items clearly reported.\n'
   )
 }
@@ -400,11 +571,21 @@ export function recordPaths(collection: Collection, key: string): string[] {
 type Passage = { text: string } | { href: string }
 
 const normalise = (s: string) => s.replace(/\s+/g, ' ').trim()
-/** A review segment as a reader sees it: no bullet, links as their label. */
-const bare = (s: string) => normalise(s.replace(/^• /, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1'))
+
+/** A block's passages as a reader sees them, a list's items separately. */
+const readerSegments = (node: unknown, sources: Sources): string[] => {
+  const n = node as Obj | undefined
+  const items = n?.type === 'list' ? ((n.children as unknown[]) ?? []) : [n]
+  return items.map((item) => normalise(readerText(item, sources))).filter(Boolean)
+}
 
 /** What a page has to show for a field value: visible words, and link targets. */
-function passages(value: unknown, key?: string, out: Passage[] = []): Passage[] {
+function passages(
+  value: unknown,
+  key: string | undefined,
+  sources: Sources,
+  out: Passage[] = [],
+): Passage[] {
   if (value == null) return out
   if (typeof value === 'string') {
     if ((!key || PROSE_KEYS.has(key)) && value.trim()) out.push({ text: normalise(value) })
@@ -412,7 +593,7 @@ function passages(value: unknown, key?: string, out: Passage[] = []): Passage[] 
   }
   if (typeof value !== 'object') return out
   if (Array.isArray(value)) {
-    for (const item of value) passages(item, key, out)
+    for (const item of value) passages(item, key, sources, out)
     return out
   }
   const n = value as Obj
@@ -426,11 +607,11 @@ function passages(value: unknown, key?: string, out: Passage[] = []): Passage[] 
   }
   if (n.root) {
     for (const block of (n.root as Obj).children as unknown[])
-      for (const s of segments(block)) out.push({ text: bare(s) })
-    for (const href of links(n)) out.push({ href })
+      for (const s of readerSegments(block, sources)) out.push({ text: s })
+    for (const href of links(n, sources)) out.push({ href })
     return out
   }
-  for (const [k, v] of Object.entries(n)) passages(v, k, out)
+  for (const [k, v] of Object.entries(n)) passages(v, k, sources, out)
   return out
 }
 
@@ -453,7 +634,10 @@ export function headPassages(meta: unknown): HeadPassage[] {
   return out
 }
 
-export function deriveExpectations(plan: ContentPlan): Expectation[] {
+/** What each changed record's page must and must not show once the plan is
+ * applied. Links to files in Media need `sources.media` — the files as the
+ * deployment has them — for the type and size the site adds after the words. */
+export function deriveExpectations(plan: ContentPlan, sources: Sources = {}): Expectation[] {
   const out: Expectation[] = []
   const texts = (p: Passage[]) => p.flatMap((x) => ('text' in x ? [x.text] : []))
   const hrefs = (p: Passage[]) => p.flatMap((x) => ('href' in x ? [x.href] : []))
@@ -463,8 +647,8 @@ export function deriveExpectations(plan: ContentPlan): Expectation[] {
     const after = typeof c.after[field] === 'string' ? (c.after[field] as string) : before
     const keys = Object.keys(c.after)
     const body = keys.filter((k) => k !== 'meta')
-    const was = body.flatMap((k) => passages(c.before[k], k))
-    const now = body.flatMap((k) => passages(c.after[k], k))
+    const was = body.flatMap((k) => passages(c.before[k], k, sources))
+    const now = body.flatMap((k) => passages(c.after[k], k, sources))
     const wasHead = keys.includes('meta') ? headPassages(c.before.meta) : []
     const nowHead = keys.includes('meta') ? headPassages(c.after.meta) : []
     const has = (list: HeadPassage[], h: HeadPassage) =>

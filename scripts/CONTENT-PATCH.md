@@ -19,9 +19,9 @@ in migrations.
    pnpm content:snapshot --deployment mentalhealthgoals.vercel.app --dir temp/<change> --public
    ```
 
-   This includes partners, but omits private fields such as `usageNote` and
-   unpublished drafts. The user-run patcher authenticates and checks latest
-   drafts before any content write. An authenticated snapshot is available when
+   This includes partners and Media file records, but omits private fields such
+   as `usageNote` and unpublished drafts. The user-run patcher authenticates and
+   checks latest drafts before any content write. An authenticated snapshot is available when
    needed; local seed accounts are not production accounts.
 
 2. **Prepare the complete handoff.** Adapt `scripts/content-plan.template.ts` and
@@ -96,9 +96,9 @@ and `qa.md` record what actually happened.
 
 The maintained runner supports copy fields listed below, **existing-person name
 corrections**, **workstream partner relationships**, page partner blocks through
-`layout`, and **explicit new programme partner declarations**. It does not add
-Team members, delete records, upload media, alter publishing status or edit
-navigation globals. Describe any manual Media/Partners admin steps precisely in
+`layout`, **explicit new programme partner declarations** and **links to PDFs
+already in Media**. It does not add Team members, delete records, upload media,
+alter publishing status or edit navigation globals. Describe any manual Media/Partners admin steps precisely in
 `RUN.md`, with the file, target record/field and whether to do them before or
 after the command. Do not call them impossible just because this tool lacks the
 operation. Extend the mechanism only when the requested scope actually needs it.
@@ -133,6 +133,26 @@ record with the same name; a mismatch or duplicate stops before writes. A rerun
 reuses an identical existing record. Creation is not transactional across
 records: if another editor races creation, duplicate detection/readback stops
 the run and the receipt needs inspection.
+
+### Linking text to a PDF in Media
+
+A rich-text link can pick a PDF from Media rather than type its address; the
+site then links to the file and adds its type and size after the words, as in
+"Slides (PDF, 2.3 MB)". `relinkToMedia(field, sources)` turns every custom link
+to `/api/media/file/<filename>` under a field into such a link, finding the file
+by filename in the snapshot's `sources/media.json`. It removes a type and size
+typed at the end of the link's words, which would otherwise show twice, and
+returns the filenames it converted: check them against the files you expect. It
+stops when a file is missing from Media or is not a PDF, when a size follows
+the link outside its words, or when the snapshot has no Media. Upload missing
+files first (a manual step in `RUN.md`), then snapshot again.
+
+`review.md` shows what an internal link picks: `[Slides](media:slides.pdf)`,
+`[About](page:/about)`, `[Launch](post:/posts/launch)`. `writePlan` names them
+from the snapshot beside the plan; anything it cannot name shows by ID
+(`media#42`). Before any write the runner checks that each linked file is still
+in Media and is a PDF, and page verification expects the type and size the
+site adds, from the deployment's own Media records.
 
 ## Completion checklist
 

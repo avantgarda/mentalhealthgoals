@@ -28,7 +28,14 @@ import {
   matchValues,
   validatePlan,
 } from './lib/content-patch-core'
-import { deriveExpectations, headText, visibleText, type HeadPassage } from './lib/content-plan'
+import {
+  deriveExpectations,
+  headText,
+  linkedMediaIds,
+  visibleText,
+  type HeadPassage,
+} from './lib/content-plan'
+import { readMedia } from './lib/content-patch-runner'
 
 const args = process.argv.slice(2)
 const deployment = resolveDeployment(argument(args, '--deployment'))
@@ -50,7 +57,16 @@ const report = (ok: boolean, line: string) => {
 }
 
 try {
-  for (const e of deriveExpectations(plan)) {
+  // A link to a file in Media renders with the file's type and size after its
+  // words, so the page checks need the files as this deployment has them.
+  const media = readMedia(client, linkedMediaIds(plan.changes.flatMap((c) => [c.before, c.after])))
+  for (const id of linkedMediaIds(plan.changes.map((c) => c.after))) {
+    const file = media.find((f) => String(f.id) === String(id))
+    const ok = file?.mimeType === 'application/pdf'
+    results.push({ media: id, ok, filename: file?.filename, mimeType: file?.mimeType })
+    report(ok, `media #${id} → ${file ? `${file.filename} (${file.mimeType})` : 'missing'}`)
+  }
+  for (const e of deriveExpectations(plan, { media })) {
     // A record's words may render on more than one page (a workstream's summary
     // sits on the index); a passage counts if any of them shows it, and an old
     // one must be gone from all of them. The status is the record's own page.

@@ -8,7 +8,8 @@
  * Use --public for a credential-free published production baseline. Private
  * fields and latest drafts require an authenticated snapshot. Everything is
  * fetched — the site is small — so a plan script never needs to know in advance
- * which records it will touch.
+ * which records it will touch. Partners and Media come along for reference:
+ * they name what relationships and internal links point at.
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -31,20 +32,30 @@ try {
   }
   mkdirSync(dir, { recursive: true, mode: 0o700 })
   const counts: Record<string, number> = {}
-  for (const collection of [...EDITABLE_COLLECTIONS, 'partners']) {
-    const query = new URLSearchParams({
-      depth: '0',
-      limit: '500',
-      ...(publicRead ? {} : { draft: 'true' }),
-    })
-    const result = client.api(`/api/${collection}?${query}`)
-    if (result.totalDocs > result.docs.length) {
-      throw new Error(`${collection}: ${result.totalDocs} records exceed one page`)
+  // Media is read for what internal links name: a file's ID, filename, type and
+  // size. It keeps no drafts, and may run to more than one page.
+  for (const collection of [...EDITABLE_COLLECTIONS, 'partners', 'media']) {
+    const docs: unknown[] = []
+    let totalDocs = 0
+    for (let page = 1; ; page++) {
+      const query = new URLSearchParams({
+        depth: '0',
+        limit: '500',
+        page: String(page),
+        ...(publicRead || collection === 'media' ? {} : { draft: 'true' }),
+      })
+      const result = client.api(`/api/${collection}?${query}`)
+      docs.push(...result.docs)
+      totalDocs = result.totalDocs
+      if (!result.hasNextPage) break
     }
-    writeFileSync(join(dir, `${collection}.json`), JSON.stringify(result.docs, null, 2), {
+    if (docs.length !== totalDocs) {
+      throw new Error(`${collection}: read ${docs.length} of ${totalDocs} records; snapshot again`)
+    }
+    writeFileSync(join(dir, `${collection}.json`), JSON.stringify(docs, null, 2), {
       mode: 0o600,
     })
-    counts[collection] = result.docs.length
+    counts[collection] = docs.length
   }
   writeFileSync(
     join(dir, 'meta.json'),

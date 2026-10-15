@@ -24,6 +24,7 @@ import {
   loadSources,
   paragraph,
   relink,
+  relinkToMedia,
   text,
   writePlan,
 } from './lib/content-plan'
@@ -69,6 +70,14 @@ const content = structuredClone(post.content)
 if (relink(content, 'https://old.example.org/', 'https://new.example.org/') === 0)
   throw new Error('Expected link not found')
 changes.push(change('posts', post, { content }))
+
+// A page: point typed links to uploaded PDFs at the files in Media. The site
+// adds each file's type and size, so a size typed into the words is removed.
+const forum = find(sources, 'pages', 'example-forum')
+const forumLayout = structuredClone(forum.layout)
+const files = relinkToMedia(forumLayout, sources)
+if (files.join() !== 'example-slides.pdf') throw new Error(`Unexpected file links: ${files}`)
+changes.push(change('pages', forum, { layout: forumLayout }))
 
 writePlan(dir, 'Example plan — replace with a name the team will recognise', changes)
 console.log(`Wrote ${dir}/plan.json, review.md and qa.md (${changes.length} changes)`)
