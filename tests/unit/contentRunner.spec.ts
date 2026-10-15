@@ -340,6 +340,31 @@ describe('links to files in Media', () => {
   })
 })
 
+describe('rows a plan adds', () => {
+  const minted = 'a1b2c3d4e5f6a1b2c3d4e5f6'
+  const adding: ContentPlan = {
+    version: 1,
+    name: 'Invented new row',
+    changes: [
+      {
+        collection: 'pages',
+        match: { field: 'slug', value: 'about' },
+        before: { layout: [] },
+        after: { layout: [{ id: minted, blockType: 'content', columns: [] }] },
+        generatedIds: [minted],
+      },
+    ],
+  }
+
+  it('reverses a change that added rows with minted IDs', () => {
+    const f = fixture()
+    runContentPatch(f.client, deployment, adding, options())
+    expect(f.state.pages[0].layout).toHaveLength(1)
+    runContentPatch(f.client, deployment, adding, { ...options(), reverse: true })
+    expect(f.state.pages[0].layout).toEqual([])
+  })
+})
+
 describe('files a plan uploads', () => {
   const pdf = Buffer.from('%PDF-1.4\ninvented slides\n%%EOF\n')
   const reference = '__MEDIA_EXAMPLE__'

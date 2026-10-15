@@ -321,7 +321,12 @@ export function runContentPatch(
     plan = resolvedPlan()
     // Creations have been resolved. Reversal never deletes partners or files.
     delete plan.createPartners
-    validatePlan(plan)
+    // Validated as reviewed — forwards, with its references resolved. A
+    // reversal swaps before and after, so the rows a plan added (its
+    // generatedIds) become rows it removes, which the forward rule rejects.
+    const reviewed = resolveReferences(template, ids)
+    delete reviewed.createPartners
+    validatePlan(reviewed)
     for (let i = 0; i < plan.changes.length; i++) {
       const change = plan.changes[i]
       const original = originals[i]
