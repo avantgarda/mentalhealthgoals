@@ -94,6 +94,22 @@ function rowIds(value: unknown): string[] {
   )
 }
 
+/** The plan as the checks after a run read it — the record as it then stands.
+ * A reversal tolerates new IDs on both sides while it runs: the rows the
+ * forward plan added (gone once it is written) and the rows it restores. Only
+ * the restored rows remain, so the checks get only their IDs; the others sit
+ * in `before`, where validatePlan rightly refuses generated IDs. */
+function settled(plan: ContentPlan): ContentPlan {
+  return {
+    ...plan,
+    changes: plan.changes.map(({ generatedIds, ...change }) => {
+      const before = new Set(rowIds(change.before))
+      const restored = (generatedIds ?? []).filter((id) => !before.has(id))
+      return restored.length ? { ...change, generatedIds: restored } : change
+    }),
+  }
+}
+
 /** Where Media serves a file. */
 export const mediaFilePath = (filename: string) => `/api/media/file/${encodeURIComponent(filename)}`
 
@@ -109,13 +125,25 @@ function readMediaByFilename(client: CmsClient, filename: string): MediaFile | u
 }
 
 /** A file in Media is the reviewed upload only if it is the same bytes. The
- * record's size is checked first; the bytes are then downloaded and hashed. */
-function sameFile(client: CmsClient, file: MediaFile, upload: MediaUpload): boolean {
-  return (
-    file.mimeType === upload.mimeType &&
-    file.filesize === upload.filesize &&
-    sha256(client.download(mediaFilePath(upload.filename))) === upload.sha256
-  )
+ * record's type and size are checked first; the bytes are then downloaded and
+ * hashed. A record of the reviewed size whose bytes do not arrive in full is
+ * `unserved` — not yet served, or a storage fault — never a different file:
+ * that would send the editor to upload a second copy under another name. */
+function compareFile(
+  client: CmsClient,
+  file: MediaFile,
+  upload: MediaUpload,
+): { same: boolean; unserved?: string } {
+  if (file.mimeType !== upload.mimeType || file.filesize !== upload.filesize) return { same: false }
+  let bytes: Buffer
+  try {
+    bytes = client.download(mediaFilePath(upload.filename))
+  } catch (error) {
+    return { same: false, unserved: (error as Error).message }
+  }
+  if (bytes.length !== upload.filesize)
+    return { same: false, unserved: `served ${bytes.length} of ${upload.filesize} bytes` }
+  return { same: sha256(bytes) === upload.sha256 }
 }
 
 export type UploadState = {
@@ -142,7 +170,17 @@ export function assessUploads(
     const doc = readMediaByFilename(client, upload.filename)
     const label = `media/${upload.filename}`
     if (doc) {
-      if ((upload.id !== undefined && doc.id !== upload.id) || !sameFile(client, doc, upload))
+      const check =
+        upload.id !== undefined && doc.id !== upload.id
+          ? { same: false }
+          : compareFile(client, doc, upload)
+      if (check.unserved)
+        throw new Error(
+          `Media lists ${upload.filename} (#${doc.id}) at the reviewed size but did not serve ` +
+            `it in full (${check.unserved}). Nothing was written. Run the same command again ` +
+            'in a minute; do not upload it under another name.',
+        )
+      if (!check.same)
         throw new Error(
           `A different file named ${upload.filename} is already in Media (#${doc.id}). ` +
             'Nothing was written. Choose another filename, or link to that file instead.',
@@ -245,7 +283,7 @@ export function runContentPatch(
     )
     return { change, doc, state }
   })
-  if (!options.apply) return plan
+  if (!options.apply) return settled(plan)
 
   const directory = resolve(options.backupDir!)
   mkdirSync(directory, { recursive: true, mode: 0o700 })
@@ -301,8 +339,19 @@ export function runContentPatch(
       }
       save()
       const saved = readMediaByFilename(client, upload.filename)
-      if (!saved || saved.id !== write.id || !sameFile(client, saved, upload))
-        throw new Error(`Upload read-back failed: ${upload.filename}`)
+      const check =
+        saved && saved.id === write.id ? compareFile(client, saved, upload) : { same: false }
+      if (check.unserved)
+        throw new Error(
+          `Upload read-back failed: ${upload.filename} is in Media (#${write.id}) but was not ` +
+            `served in full yet (${check.unserved}). Nothing links to it. Run the same command ` +
+            'again in a minute: it reuses the file once Media serves it.',
+        )
+      if (!saved || !check.same)
+        throw new Error(
+          `Upload read-back failed: ${upload.filename} (#${write.id}) in Media is not the ` +
+            'reviewed file. Nothing links to it; inspect it in Media before retrying.',
+        )
       ids.set(upload.reference, saved.id)
       write.status = 'verified'
       save()
@@ -388,7 +437,7 @@ export function runContentPatch(
     }
     receipt.state = 'applied'
     save()
-    return plan
+    return settled(plan)
   } catch (error) {
     receipt.state = 'stopped; inspect writes before retrying'
     save()

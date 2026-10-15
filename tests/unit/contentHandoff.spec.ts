@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import {
   copyFileSync,
@@ -186,7 +186,7 @@ describe('single-command CMS handoff', () => {
 
   it('uploads a declared file in the same command, links it, and checks it is served', () => {
     const f = fixture()
-    const pdf = Buffer.from('%PDF-1.4\ninvented slides\n%%EOF\n')
+    const pdf = Buffer.from('%PDF-1.4\ninvented slides\nxref\n%%EOF\n')
     mkdirSync(join(f.dir, 'files'))
     writeFileSync(join(f.dir, 'files/Slides v3.pdf'), pdf)
     const layout = (value: number | string) => [
@@ -293,9 +293,173 @@ describe('single-command CMS handoff', () => {
     expect(f.state().requests.some((r: { method: string }) => r.method === 'DELETE')).toBe(false)
   }, 60_000)
 
+  // One invented PDF, uploaded and linked from the About page.
+  const declareSlides = (f: ReturnType<typeof fixture>) => {
+    const pdf = Buffer.from('%PDF-1.4\ninvented slides\nxref\n%%EOF\n')
+    mkdirSync(join(f.dir, 'files'))
+    writeFileSync(join(f.dir, 'files/slides.pdf'), pdf)
+    const link = (value: number | string) => ({
+      type: 'link',
+      fields: { linkType: 'internal', doc: { relationTo: 'media', value } },
+      children: [{ type: 'text', text: 'Invented slides' }],
+    })
+    writeFileSync(
+      f.planFile,
+      JSON.stringify({
+        version: 1,
+        name: 'Invented upload',
+        uploadMedia: [
+          {
+            reference: '__MEDIA_SLIDES__',
+            file: 'files/slides.pdf',
+            filename: 'example-new-slides.pdf',
+            alt: 'Invented slides',
+            mimeType: 'application/pdf',
+            filesize: pdf.length,
+            sha256: createHash('sha256').update(pdf).digest('hex'),
+          },
+        ],
+        changes: [
+          {
+            collection: 'pages',
+            match: { field: 'slug', value: 'about' },
+            before: { layout: [] },
+            after: {
+              layout: [
+                {
+                  blockType: 'content',
+                  columns: [
+                    { richText: { root: { type: 'root', children: [link('__MEDIA_SLIDES__')] } } },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    )
+  }
+  const login = 'editor@example.org\noffline-password\n'
+
+  it('says why Media refused an upload, and writes nothing else', () => {
+    const f = fixture({
+      uploadRefusal: {
+        status: 400,
+        body: { errors: [{ message: 'The file you uploaded was not a valid PDF.' }] },
+      },
+    })
+    declareSlides(f)
+    const result = f.run(['--apply', '--allow-production'], login)
+    expect(result.status).not.toBe(0)
+    expect(result.stderr).toContain(
+      'Media refused the upload (HTTP 400): The file you uploaded was not a valid PDF.',
+    )
+    expect(f.state().collections.media).toHaveLength(1)
+    expect(f.state().collections.pages[0].layout).toEqual([])
+  }, 60_000)
+
+  it('waits for a file Media lists but does not yet serve, then reuses it', () => {
+    const f = fixture({ unservedFiles: true })
+    declareSlides(f)
+    const first = f.run(['--apply', '--allow-production'], login)
+    expect(first.status).not.toBe(0)
+    expect(first.stderr).toContain('Upload read-back failed: example-new-slides.pdf is in Media')
+    expect(first.stderr).toContain('Run the same command again in a minute')
+    expect(f.state().collections.pages[0].layout).toEqual([])
+    // Still not served: the rerun says so, not that another file has the name.
+    const second = f.run(['--apply', '--allow-production'], login)
+    expect(second.stderr).toContain('did not serve it in full (Media served HTTP 204')
+    expect(second.stderr).not.toContain('A different file')
+    const state = f.state()
+    state.unservedFiles = false
+    writeFileSync(f.env.MHG_TEST_CMS_STATE, JSON.stringify(state))
+    const third = f.run(['--apply', '--allow-production'], login)
+    expect(third.status, third.stdout + third.stderr).toBe(0)
+    expect(third.stdout).toContain('already in Media: media/example-new-slides.pdf (#77)')
+    expect(f.state().collections.media).toHaveLength(2)
+  }, 60_000)
+
+  it('ends the session and removes its files when stopped with Ctrl-C', async () => {
+    const f = fixture({ slowUpload: true })
+    declareSlides(f)
+    const temporary = mkdtempSync(join(tmpdir(), 'mhg-handoff-tmp-'))
+    directories.push(temporary)
+    const child = spawn(
+      'bash',
+      ['scripts/content-run.sh', '--plan', f.planFile, '--apply', '--allow-production'],
+      { cwd: f.dir, env: { ...f.env, TMPDIR: temporary }, detached: true },
+    )
+    child.stdin.end(login)
+    let stderr = ''
+    child.stderr.on('data', (chunk) => (stderr += chunk))
+    const exited = new Promise<number | null>((done) => child.on('exit', (code) => done(code)))
+    const posted = () =>
+      f
+        .state()
+        .requests.some(
+          (r: { path: string; method: string }) =>
+            r.method === 'POST' && r.path.startsWith('/api/media'),
+        )
+    for (let i = 0; i < 200 && !posted(); i++) await new Promise((r) => setTimeout(r, 100))
+    expect(posted()).toBe(true)
+    // Ctrl-C reaches the terminal's whole foreground group.
+    process.kill(-child.pid!, 'SIGINT')
+    expect(await exited).not.toBe(0)
+    const loggedOut = () =>
+      f.state().requests.some((r: { path: string }) => r.path === '/api/users/logout')
+    for (let i = 0; i < 100 && !loggedOut(); i++) await new Promise((r) => setTimeout(r, 100))
+    expect(loggedOut(), stderr).toBe(true)
+    expect(stderr).toContain('was stopped (SIGINT); the run stops here')
+    expect(readdirSync(temporary).filter((name) => name.startsWith('mhg-cms-'))).toEqual([])
+    expect(f.state().collections.pages[0].layout).toEqual([])
+  }, 60_000)
+
+  it('verifies a reversal of a plan that adds and removes rows', () => {
+    const minted = 'a1b2c3d4e5f6a1b2c3d4e5f6'
+    const row = (id: string) => ({ id, blockType: 'content', columns: [] })
+    const f = fixture()
+    const state = f.state()
+    state.collections.pages[0].layout = [row('kept-row'), row('old-row')]
+    writeFileSync(f.env.MHG_TEST_CMS_STATE, JSON.stringify(state))
+    writeFileSync(
+      f.planFile,
+      JSON.stringify({
+        version: 1,
+        name: 'Invented rows',
+        changes: [
+          {
+            collection: 'pages',
+            match: { field: 'slug', value: 'about' },
+            before: { layout: [row('kept-row'), row('old-row')] },
+            after: { layout: [row('kept-row'), row(minted)] },
+            generatedIds: [minted],
+          },
+        ],
+      }),
+    )
+    const input = 'editor@example.org\noffline-password\n'
+    const ok = (args: string[]) => {
+      const result = f.run(args, input)
+      expect(result.status, result.stdout + result.stderr).toBe(0)
+    }
+    ok(['--apply', '--allow-production'])
+    ok(['--verify-only'])
+    ok(['--apply', '--allow-production', '--reverse'])
+    ok(['--verify-only', '--reverse'])
+    expect(f.state().collections.pages[0].layout.map((r: { id: string }) => r.id)).toEqual([
+      'kept-row',
+      'old-row',
+    ])
+    for (const run of readdirSync(join(f.dir, 'backups')))
+      expect(
+        JSON.parse(readFileSync(join(f.dir, 'backups', run, 'run.json'), 'utf8'))
+          .automatedVerification,
+      ).toBe('passed')
+  }, 60_000)
+
   it('stops at preflight, before the login, on a different file under the same name', () => {
     const f = fixture()
-    const pdf = Buffer.from('%PDF-1.4\ninvented slides\n%%EOF\n')
+    const pdf = Buffer.from('%PDF-1.4\ninvented slides\nxref\n%%EOF\n')
     mkdirSync(join(f.dir, 'files'))
     writeFileSync(join(f.dir, 'files/slides.pdf'), pdf)
     writeFileSync(

@@ -87,8 +87,16 @@ export function readUploadFile(
       `${upload.file} is ${formatFileSize(bytes.length)}; the CMS accepts uploads up to ` +
         `${formatFileSize(MAX_UPLOAD_BYTES)}. Compress it or link to it elsewhere.`,
     )
-  if (bytes.subarray(0, 5).toString('latin1') !== '%PDF-')
-    throw new Error(`${upload.file} is not a PDF`)
+  // Payload's own test (validatePDF): the header, and an end-of-file marker and
+  // cross-reference table in the last 1 KB. A file failing it would pass review
+  // and then be refused partway through the run's uploads.
+  const tail = bytes.subarray(Math.max(bytes.length - 1024, 0)).toString('latin1')
+  if (
+    bytes.subarray(0, 5).toString('latin1') !== '%PDF-' ||
+    !tail.includes('%%EOF') ||
+    !tail.includes('xref')
+  )
+    throw new Error(`${upload.file} is not a PDF the CMS will accept`)
   if (
     (upload.filesize !== undefined && bytes.length !== upload.filesize) ||
     (upload.sha256 !== undefined && sha256(bytes) !== upload.sha256)

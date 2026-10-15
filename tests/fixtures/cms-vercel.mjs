@@ -60,13 +60,30 @@ if (args.includes('api')) {
       )
     if (flag('--dump-header'))
       writeFileSync(flag('--dump-header'), `${headers.join('\r\n')}\r\n\r\n`)
-    const body = !bytes ? Buffer.alloc(0) : ranged ? bytes.subarray(0, 1) : bytes
+    // Payload's Blob route answers 204, empty, when it cannot fetch the file.
+    const unserved = bytes && !ranged && state.unservedFiles
+    const body = !bytes || unserved ? Buffer.alloc(0) : ranged ? bytes.subarray(0, 1) : bytes
     if (flag('--output')) writeFileSync(flag('--output'), body)
     else process.stdout.write(body)
     save()
     if (!bytes && (args.includes('--fail') || args.includes('--fail-with-body'))) process.exit(22)
+    if (flag('--write-out')) process.stdout.write(String(unserved ? 204 : status))
   } else if (path.startsWith('/api/') && forms.length) {
-    // A multipart upload: `file=@<path>;type=…;filename=…` and `_payload`.
+    // A multipart upload: `file=@<path>;type=…;filename=…` and `_payload`,
+    // sent with the session.
+    if (!config || !readFileSync(config, 'utf8').includes('Authorization: JWT')) process.exit(3)
+    // A slow connection: long enough to be interrupted.
+    if (state.slowUpload) {
+      save()
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20_000)
+    }
+    if (state.uploadRefusal) {
+      save()
+      process.stdout.write(
+        `${JSON.stringify(state.uploadRefusal.body)}\n${state.uploadRefusal.status}`,
+      )
+      process.exit(0)
+    }
     const [source, ...parameters] = forms
       .find((form) => form.startsWith('file=@'))
       .slice('file=@'.length)
@@ -92,6 +109,7 @@ if (args.includes('api')) {
     state.collections.media.push(doc)
     save()
     out({ doc })
+    if (flag('--write-out')) process.stdout.write('\n201')
   } else if (path.startsWith('/api/')) {
     const url = new URL(path, 'https://example.invalid')
     const collection = url.pathname.split('/')[2]

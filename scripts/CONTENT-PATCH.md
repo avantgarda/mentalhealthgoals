@@ -209,9 +209,32 @@ remove one by hand in the admin only when nothing links to it. Verification
 checks each uploaded file's Media record, and fetches its first byte (the file
 route does not answer `HEAD`) for status, `application/pdf` and the full size.
 
-A file deleted from Media and re-uploaded under the same name may still be
-served from Vercel's cache as the old file, so the comparison would refuse it.
-Upload a replacement under a new filename.
+A file is public, and listed in Media, the moment it is uploaded — before
+anything links to it. Vercel's CDN keeps `/api/media/file/<name>` for up to a
+year, and the run's own checks fill that cache. So:
+
+- **A corrected file goes up under a new filename** (`…-v2.pdf`), and the
+  links move to it. Re-uploaded under the old name, it would still be served
+  as the old file, and the comparison would refuse it.
+- **Withdrawing a file** (a speaker asks for their slides back) takes three
+  steps: a reviewed plan that unlinks it, deleting it in the admin, then a
+  purge of Vercel's CDN cache. Deleting it alone leaves it online. The purge is
+  a production setting: ask before touching Vercel.
+- **If a run stops** after uploading some files (Ctrl-C, a fence, a failed
+  check), run the same command again: it reuses them by hash and carries on.
+  Ctrl-C stops at the request in flight, ends the session and removes its
+  files; the receipt shows how far it got. Do not re-snapshot and rebuild in
+  between: `withUploads` refuses a name already in Media. If the plan must
+  change, drop those files' `declareUpload` — the snapshot now has them, so
+  `relinkToMedia` picks them like any other file.
+- **`--reverse` needs every declared file** still in Media, unchanged, though
+  it writes no file. If one has been replaced or deleted since, restore the
+  records from their version history in the admin instead.
+- **After a reversal, the same plan is refused** (`Content differs from
+reviewed baseline`): rows it had removed come back under new IDs. Re-snapshot
+  and rebuild before applying it again.
+- **Previews and local copies** have their own Blob store: run
+  `pnpm blobs:mirror` after the first production upload, or their links fail.
 
 ## Completion checklist
 
@@ -401,7 +424,11 @@ canary login and database isolation before continuing.
 | `Expected exactly one …`                            | The match value finds zero or several records. For a renamed slug, both names are tried.                                                                                                                                                                             |
 | `A different file named … is already in Media`      | Another file has the upload's filename. Nothing was written. Link to that file instead, or rename the upload and re-review.                                                                                                                                          |
 | `… has changed since the plan was reviewed`         | The local file is not the reviewed file. Rebuild the plan with `declareUpload` and review it again.                                                                                                                                                                  |
-| `Upload of … failed or lost its response`           | Check Media for the file. If it landed, a rerun finds and reuses it; if Media refused it (too large, not a PDF), fix the file and re-review.                                                                                                                         |
+| `Upload of … failed or lost its response`           | Check Media for the file. If it landed, a rerun finds and reuses it. A timed-out upload may still land: wait a minute before rerunning.                                                                                                                              |
+| `Media refused the upload (HTTP …)`                 | Nothing links to the file. 413: over Vercel's request limit — compress it. 400 with Payload's reason (for example not a valid PDF): fix the file and re-review. 401 or 403: the session expired or lacks rights — rerun and log in again.                            |
+| `… did not serve it in full`                        | Media lists the file at the reviewed size but served it empty or short (Blob not ready, or a storage fault). Nothing was written. Rerun in a minute; do not upload it under another name.                                                                            |
+| `Upload read-back failed`                           | The file is in Media (the receipt has its ID) and nothing links to it. "Not served in full yet": rerun in a minute and it is reused. "Not the reviewed file": inspect it in Media before retrying.                                                                   |
+| `… was stopped (SIGINT)`                            | Ctrl-C. The session was ended and its files removed; the receipt shows what was done. Rerun the same command to finish.                                                                                                                                              |
 | `Media saved … as …-1.pdf`                          | Someone uploaded a file with that name during the run, and Payload renamed ours. The receipt names the copy (`savedAs`); remove it in the admin, then decide which file the plan should use.                                                                         |
 | `vercel curl failed (exit 22)`                      | HTTP error; response bodies are withheld. Check deployment/CMS access. Exit 2 can mean a CLI flag was forwarded to curl: never pass `--scope` to `vercel curl`. Scope is supplied only to metadata API calls. Run `--preflight` again before asking for credentials. |
 | `Resource provisioning timed out` (build)           | Vercel-side; verify Neon is healthy and retry the deploy. Do not delete the Neon branch.                                                                                                                                                                             |

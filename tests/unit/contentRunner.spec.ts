@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CmsClient, Deployment } from '../../scripts/lib/cms-client'
-import type { ContentPlan } from '../../scripts/lib/content-patch-core'
+import { validatePlan, type ContentPlan } from '../../scripts/lib/content-patch-core'
 import { runContentPatch } from '../../scripts/lib/content-patch-runner'
 
 type Doc = Record<string, unknown> & { id: number; updatedAt: string }
@@ -386,8 +386,10 @@ describe('rows a plan adds', () => {
     f.reissueNewRowIds()
     runContentPatch(f.client, deployment, adding, options())
     expect(f.state.pages[0].layout).toHaveLength(1)
-    runContentPatch(f.client, deployment, adding, { ...options(), reverse: true })
+    const reversed = runContentPatch(f.client, deployment, adding, { ...options(), reverse: true })
     expect(f.state.pages[0].layout).toEqual([])
+    // What content:verify is then given must pass its own validation.
+    expect(validatePlan(reversed).changes[0].generatedIds).toBeUndefined()
   })
 })
 
@@ -416,14 +418,18 @@ describe('rows a plan removes', () => {
     f.reissueNewRowIds()
     runContentPatch(f.client, deployment, removing, options())
     expect(f.state.pages[0].layout).toHaveLength(1)
-    runContentPatch(f.client, deployment, removing, { ...options(), reverse: true })
+    const reversed = runContentPatch(f.client, deployment, removing, {
+      ...options(),
+      reverse: true,
+    })
     expect(f.state.pages[0].layout).toHaveLength(2)
     expect((f.state.pages[0].layout as { id: string }[])[1].id).toMatch(/^reissued-/)
+    expect(validatePlan(reversed).changes[0].generatedIds).toEqual(['old-row'])
   })
 })
 
 describe('files a plan uploads', () => {
-  const pdf = Buffer.from('%PDF-1.4\ninvented slides\n%%EOF\n')
+  const pdf = Buffer.from('%PDF-1.4\ninvented slides\nxref\n%%EOF\n')
   const reference = '__MEDIA_EXAMPLE__'
   const upload = {
     reference,
@@ -519,8 +525,8 @@ describe('files a plan uploads', () => {
       const f = fixture()
       const other =
         scenario === 'different bytes'
-          ? Buffer.from('%PDF-1.4\ninvented other!\n%%EOF\n')
-          : Buffer.from('%PDF-1.4\nlonger, invented other slides\n%%EOF\n')
+          ? Buffer.from('%PDF-1.4\ninvented other!\nxref\n%%EOF\n')
+          : Buffer.from('%PDF-1.4\nlonger, invented other slides\nxref\n%%EOF\n')
       f.state.media.push({
         id: 8,
         updatedAt: 'baseline',

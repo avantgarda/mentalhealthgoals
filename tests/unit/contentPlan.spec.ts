@@ -443,7 +443,7 @@ describe('writePlan', () => {
 describe('files a plan uploads', () => {
   const dir = mkdtempSync(join(tmpdir(), 'plan-uploads-'))
   afterAll(() => rmSync(dir, { recursive: true, force: true }))
-  const pdf = Buffer.from(`%PDF-1.4\n${'invented slides '.repeat(100)}\n%%EOF\n`)
+  const pdf = Buffer.from(`%PDF-1.4\n${'invented slides '.repeat(100)}\nxref\n%%EOF\n`)
   mkdirSync(join(dir, 'files'))
   writeFileSync(join(dir, 'files/New slides v3.pdf'), pdf)
   const input = {
@@ -462,10 +462,15 @@ describe('files a plan uploads', () => {
     })
   })
 
-  it('refuses a missing file, one that is not a PDF, one too large, and one changed since review', () => {
+  it('refuses a missing file, one that is not a PDF, a cut-short one, one too large, and one changed since review', () => {
     expect(() => declareUpload(dir, { ...input, file: 'files/missing.pdf' })).toThrow(/not found/)
     writeFileSync(join(dir, 'files/notes.pdf'), 'Plain text, named like a PDF')
     expect(() => declareUpload(dir, { ...input, file: 'files/notes.pdf' })).toThrow(/not a PDF/)
+    // Cut short: the header alone is not enough for the CMS.
+    writeFileSync(join(dir, 'files/cut.pdf'), pdf.subarray(0, 40))
+    expect(() => declareUpload(dir, { ...input, file: 'files/cut.pdf' })).toThrow(
+      /not a PDF the CMS will accept/,
+    )
     writeFileSync(join(dir, 'files/large.pdf'), Buffer.concat([pdf, Buffer.alloc(4_000_000)]))
     expect(() => declareUpload(dir, { ...input, file: 'files/large.pdf' })).toThrow(
       /accepts uploads up to 4\.0 MB/,
