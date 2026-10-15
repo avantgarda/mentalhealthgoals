@@ -24,18 +24,6 @@ export type Deployment = {
 
 const env = { ...process.env, CI: '1', NO_UPDATE_NOTIFIER: '1' }
 
-/** Every open client's cleanup. Without a listener, Ctrl-C ends the process
- * at once: no `finally` runs, so the session stays open and its token stays on
- * disk. With one, the request in flight is interrupted (curl gets the signal
- * too), the run stops through its `finally` blocks, and the process then exits
- * as interrupted. A second Ctrl-C still ends it at once. */
-const open = new Set<() => void>()
-let listening = false
-const interrupted = (signal: NodeJS.Signals) => {
-  for (const dispose of [...open]) dispose()
-  process.exit(signal === 'SIGINT' ? 130 : 143)
-}
-
 function vercel(parameters: string[], timeout = 90_000): string {
   const result = spawnSync('vercel', parameters, {
     encoding: 'utf8',
@@ -129,11 +117,6 @@ export type CmsClient = {
 }
 
 export function createCmsClient(hostname: string): CmsClient {
-  if (!listening) {
-    process.once('SIGINT', interrupted)
-    process.once('SIGTERM', interrupted)
-    listening = true
-  }
   const scratch = mkdtempSync(join(tmpdir(), 'mhg-cms-'))
   const configFile = join(scratch, 'curl.conf')
   writeFileSync(configFile, 'header = "Content-Type: application/json"\n', { mode: 0o600 })
@@ -309,7 +292,6 @@ export function createCmsClient(hostname: string): CmsClient {
   }
 
   const dispose: CmsClient['dispose'] = () => {
-    open.delete(dispose)
     if (authenticated) {
       try {
         api('/api/users/logout', 'POST', {})
@@ -321,7 +303,6 @@ export function createCmsClient(hostname: string): CmsClient {
     rmSync(scratch, { recursive: true, force: true })
   }
 
-  open.add(dispose)
   return { api, upload, download, probe, page, login, dispose }
 }
 

@@ -379,9 +379,10 @@ describe('single-command CMS handoff', () => {
     expect(f.state().collections.media).toHaveLength(2)
   }, 60_000)
 
-  it('ends the session and removes its files when stopped with Ctrl-C', async () => {
+  it('stops at once on Ctrl-C mid-upload, and writes nothing after', async () => {
     const f = fixture({ slowUpload: true })
     declareSlides(f)
+    // The stopped run's temporary files land here, not in the real temp folder.
     const temporary = mkdtempSync(join(tmpdir(), 'mhg-handoff-tmp-'))
     directories.push(temporary)
     const child = spawn(
@@ -390,9 +391,8 @@ describe('single-command CMS handoff', () => {
       { cwd: f.dir, env: { ...f.env, TMPDIR: temporary }, detached: true },
     )
     child.stdin.end(login)
-    let stderr = ''
-    child.stderr.on('data', (chunk) => (stderr += chunk))
-    const exited = new Promise<number | null>((done) => child.on('exit', (code) => done(code)))
+    // 'close' waits for every process holding the output, the run included.
+    const closed = new Promise((done) => child.on('close', done))
     const posted = () =>
       f
         .state()
@@ -402,15 +402,12 @@ describe('single-command CMS handoff', () => {
         )
     for (let i = 0; i < 200 && !posted(); i++) await new Promise((r) => setTimeout(r, 100))
     expect(posted()).toBe(true)
+    const sent = f.state().requests.length
     // Ctrl-C reaches the terminal's whole foreground group.
     process.kill(-child.pid!, 'SIGINT')
-    expect(await exited).not.toBe(0)
-    const loggedOut = () =>
-      f.state().requests.some((r: { path: string }) => r.path === '/api/users/logout')
-    for (let i = 0; i < 100 && !loggedOut(); i++) await new Promise((r) => setTimeout(r, 100))
-    expect(loggedOut(), stderr).toBe(true)
-    expect(stderr).toContain('was stopped (SIGINT); the run stops here')
-    expect(readdirSync(temporary).filter((name) => name.startsWith('mhg-cms-'))).toEqual([])
+    await closed
+    await new Promise((r) => setTimeout(r, 1000))
+    expect(f.state().requests).toHaveLength(sent)
     expect(f.state().collections.pages[0].layout).toEqual([])
   }, 60_000)
 

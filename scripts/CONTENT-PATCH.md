@@ -222,8 +222,8 @@ year, and the run's own checks fill that cache. So:
   a production setting: ask before touching Vercel.
 - **If a run stops** after uploading some files (Ctrl-C, a fence, a failed
   check), run the same command again: it reuses them by hash and carries on.
-  Ctrl-C stops at the request in flight, ends the session and removes its
-  files; the receipt shows how far it got. Do not re-snapshot and rebuild in
+  Ctrl-C ends the run at once; the receipt shows how far it got, and the
+  session expires on its own within two hours. Do not re-snapshot and rebuild in
   between: `withUploads` refuses a name already in Media. If the plan must
   change, drop those files' `declareUpload` — the snapshot now has them, so
   `relinkToMedia` picks them like any other file.
@@ -428,7 +428,6 @@ canary login and database isolation before continuing.
 | `Media refused the upload (HTTP …)`                 | Nothing links to the file. 413: over Vercel's request limit — compress it. 400 with Payload's reason (for example not a valid PDF): fix the file and re-review. 401 or 403: the session expired or lacks rights — rerun and log in again.                            |
 | `… did not serve it in full`                        | Media lists the file at the reviewed size but served it empty or short (Blob not ready, or a storage fault). Nothing was written. Rerun in a minute; do not upload it under another name.                                                                            |
 | `Upload read-back failed`                           | The file is in Media (the receipt has its ID) and nothing links to it. "Not served in full yet": rerun in a minute and it is reused. "Not the reviewed file": inspect it in Media before retrying.                                                                   |
-| `… was stopped (SIGINT)`                            | Ctrl-C. The session was ended and its files removed; the receipt shows what was done. Rerun the same command to finish.                                                                                                                                              |
 | `Media saved … as …-1.pdf`                          | Someone uploaded a file with that name during the run, and Payload renamed ours. The receipt names the copy (`savedAs`); remove it in the admin, then decide which file the plan should use.                                                                         |
 | `vercel curl failed (exit 22)`                      | HTTP error; response bodies are withheld. Check deployment/CMS access. Exit 2 can mean a CLI flag was forwarded to curl: never pass `--scope` to `vercel curl`. Scope is supplied only to metadata API calls. Run `--preflight` again before asking for credentials. |
 | `Resource provisioning timed out` (build)           | Vercel-side; verify Neon is healthy and retry the deploy. Do not delete the Neon branch.                                                                                                                                                                             |
