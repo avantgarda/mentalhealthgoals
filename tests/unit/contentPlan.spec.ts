@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -6,6 +7,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 import {
   Minter,
   change,
+  declareUpload,
   deriveExpectations,
   diff,
   fieldSegments,
@@ -15,6 +17,7 @@ import {
   linkedMediaIds,
   links,
   paragraph,
+  readUploadFile,
   readerText,
   recordPaths,
   relink,
@@ -25,6 +28,7 @@ import {
   segments,
   text,
   visibleText,
+  withUploads,
   writePlan,
 } from '../../scripts/lib/content-plan'
 
@@ -432,6 +436,92 @@ describe('writePlan', () => {
       )
     } finally {
       rmSync(withSources, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('files a plan uploads', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plan-uploads-'))
+  afterAll(() => rmSync(dir, { recursive: true, force: true }))
+  const pdf = Buffer.from(`%PDF-1.4\n${'invented slides '.repeat(100)}\n%%EOF\n`)
+  mkdirSync(join(dir, 'files'))
+  writeFileSync(join(dir, 'files/New slides v3.pdf'), pdf)
+  const input = {
+    reference: '__MEDIA_NEW_SLIDES__',
+    file: 'files/New slides v3.pdf',
+    filename: 'example-new-slides.pdf',
+    alt: 'Invented slides',
+  }
+
+  it('records the reviewed size and hash of a declared file', () => {
+    expect(declareUpload(dir, input)).toEqual({
+      ...input,
+      mimeType: 'application/pdf',
+      filesize: pdf.length,
+      sha256: createHash('sha256').update(pdf).digest('hex'),
+    })
+  })
+
+  it('refuses a missing file, one that is not a PDF, one too large, and one changed since review', () => {
+    expect(() => declareUpload(dir, { ...input, file: 'files/missing.pdf' })).toThrow(/not found/)
+    writeFileSync(join(dir, 'files/notes.pdf'), 'Plain text, named like a PDF')
+    expect(() => declareUpload(dir, { ...input, file: 'files/notes.pdf' })).toThrow(/not a PDF/)
+    writeFileSync(join(dir, 'files/large.pdf'), Buffer.concat([pdf, Buffer.alloc(4_000_000)]))
+    expect(() => declareUpload(dir, { ...input, file: 'files/large.pdf' })).toThrow(
+      /accepts uploads up to 4\.0 MB/,
+    )
+    const upload = declareUpload(dir, input)
+    expect(() => readUploadFile(dir, { ...upload, sha256: 'b'.repeat(64) })).toThrow(
+      /changed since the plan was reviewed/,
+    )
+  })
+
+  it('links a typed address to the file the plan uploads', () => {
+    const upload = declareUpload(dir, input)
+    const content = rich({
+      type: 'paragraph',
+      children: [link('New slides (PDF, 2 KB)', '/api/media/file/example-new-slides.pdf')],
+    })
+    const planned = withUploads(sources, [upload])
+    expect(relinkToMedia(content, planned)).toEqual(['example-new-slides.pdf'])
+    expect(linkedMediaIds(content)).toEqual(['__MEDIA_NEW_SLIDES__'])
+    expect(inline(content.root.children[0], planned)).toBe(
+      '[New slides](media:example-new-slides.pdf)',
+    )
+    expect(() => withUploads(sources, [{ ...upload, filename: 'test-slides.pdf' }])).toThrow(
+      /already in Media \(#41\)/,
+    )
+  })
+
+  it('writes the upload into the plan and the review, and refuses a file changed after', () => {
+    const upload = declareUpload(dir, input)
+    const before = rich({ type: 'paragraph', children: [{ type: 'text', text: 'Slides soon.' }] })
+    const after = rich({
+      type: 'paragraph',
+      children: [link('New slides', '/api/media/file/example-new-slides.pdf')],
+    })
+    relinkToMedia(after, withUploads({ media: [] }, [upload]))
+    const changes = [
+      change('posts', { id: 3, slug: 'launch', content: before }, { content: after }),
+    ]
+    const plan = writePlan(dir, 'Upload', changes, undefined, { uploadMedia: [upload] })
+    expect(plan.uploadMedia).toEqual([upload])
+    expect(JSON.parse(readFileSync(join(dir, 'plan.json'), 'utf8')).uploadMedia).toEqual([upload])
+    const review = readFileSync(join(dir, 'review.md'), 'utf8')
+    expect(review).toContain('## New file in Media: example-new-slides.pdf')
+    expect(review).toContain(`- Size: 2 KB (${pdf.length.toLocaleString('en-GB')} bytes)`)
+    expect(review).toContain('- Alt text: Invented slides')
+    expect(review).toContain('> [New slides](media:example-new-slides.pdf)')
+    expect(readFileSync(join(dir, 'qa.md'), 'utf8')).toContain(
+      '`/api/media/file/example-new-slides.pdf` opens the reviewed document',
+    )
+    writeFileSync(join(dir, 'files/New slides v3.pdf'), Buffer.concat([pdf, Buffer.from(' ')]))
+    try {
+      expect(() => writePlan(dir, 'Upload', changes, undefined, { uploadMedia: [upload] })).toThrow(
+        /changed since/,
+      )
+    } finally {
+      writeFileSync(join(dir, 'files/New slides v3.pdf'), pdf)
     }
   })
 })

@@ -89,9 +89,23 @@ export function resolveDeployment(hostArg: string): Deployment {
   }
 }
 
+export type UploadFile = { bytes: Buffer; filename: string; mimeType: string }
+
 export type CmsClient = {
   /** A JSON API request. Throws on any non-2xx without exposing the body. */
   api: (path: string, method?: string, data?: unknown) => ReturnType<typeof JSON.parse>
+  /** A multipart upload to an upload collection: the file, and its other
+   * fields as Payload's `_payload`. Throws like `api`. */
+  upload: (
+    path: string,
+    file: UploadFile,
+    data: Record<string, unknown>,
+  ) => ReturnType<typeof JSON.parse>
+  /** A file's bytes. Throws on any non-2xx. */
+  download: (path: string) => Buffer
+  /** The first byte of a file, for its status and headers (lower-cased
+   * names): Payload's file route does not answer HEAD. Never throws on status. */
+  probe: (path: string) => { status: number; headers: Record<string, string> }
   /** A rendered page, following redirects. Never throws on HTTP status. */
   page: (path: string) => { status: number; html: string }
   login: (email: string, password: string) => void
@@ -103,6 +117,10 @@ export function createCmsClient(hostname: string): CmsClient {
   const scratch = mkdtempSync(join(tmpdir(), 'mhg-cms-'))
   const configFile = join(scratch, 'curl.conf')
   writeFileSync(configFile, 'header = "Content-Type: application/json"\n', { mode: 0o600 })
+  // The session alone, for requests that are not JSON: given a JSON
+  // Content-Type, curl would send a multipart upload under that type.
+  const sessionFile = join(scratch, 'session.conf')
+  writeFileSync(sessionFile, '', { mode: 0o600 })
   let sequence = 0
   let authenticated = false
 
@@ -136,6 +154,73 @@ export function createCmsClient(hostname: string): CmsClient {
     }
   }
 
+  const upload: CmsClient['upload'] = (path, file, data) => {
+    // A private copy under a plain name: curl's form syntax would misread a
+    // path or filename containing `;` or `,`, and these are neither.
+    const copy = join(scratch, `upload-${sequence++}`)
+    writeFileSync(copy, file.bytes, { mode: 0o600 })
+    try {
+      const response = curl(path, [
+        '--fail-with-body',
+        '--config',
+        sessionFile,
+        '--form',
+        `file=@${copy};type=${file.mimeType};filename=${file.filename}`,
+        '--form-string',
+        `_payload=${JSON.stringify(data)}`,
+      ])
+      try {
+        return JSON.parse(response)
+      } catch {
+        throw new Error('CMS returned an invalid JSON response; response withheld')
+      }
+    } finally {
+      rmSync(copy, { force: true })
+    }
+  }
+
+  const download: CmsClient['download'] = (path) => {
+    const out = join(scratch, `download-${sequence++}`)
+    try {
+      curl(path, ['--fail', '--config', sessionFile, '--output', out])
+      return readFileSync(out)
+    } finally {
+      rmSync(out, { force: true })
+    }
+  }
+
+  const probe: CmsClient['probe'] = (path) => {
+    const head = join(scratch, `probe-${sequence}.headers`)
+    const body = join(scratch, `probe-${sequence++}.body`)
+    try {
+      curl(path, [
+        '--config',
+        sessionFile,
+        '--range',
+        '0-0',
+        '--dump-header',
+        head,
+        '--output',
+        body,
+      ])
+      // The last response's block, should anything precede it (a 100 Continue).
+      const lines = readFileSync(head, 'utf8')
+        .trim()
+        .split(/\r?\n\r?\n/)
+        .at(-1)!
+        .split(/\r?\n/)
+      const headers: Record<string, string> = {}
+      for (const line of lines.slice(1)) {
+        const at = line.indexOf(':')
+        if (at > 0) headers[line.slice(0, at).trim().toLowerCase()] = line.slice(at + 1).trim()
+      }
+      return { status: Number(lines[0].split(' ')[1]), headers }
+    } finally {
+      rmSync(head, { force: true })
+      rmSync(body, { force: true })
+    }
+  }
+
   const page: CmsClient['page'] = (path) => {
     const out = curl(path, ['--location', '--write-out', '\n%{http_code}'])
     const cut = out.lastIndexOf('\n')
@@ -152,11 +237,11 @@ export function createCmsClient(hostname: string): CmsClient {
       )
     }
     if (!result.token || !result.user) throw new Error('CMS authentication failed')
-    writeFileSync(
-      configFile,
-      `header = "Content-Type: application/json"\nheader = "Authorization: JWT ${result.token}"\n`,
-      { mode: 0o600 },
-    )
+    const session = `header = "Authorization: JWT ${result.token}"\n`
+    writeFileSync(configFile, `header = "Content-Type: application/json"\n${session}`, {
+      mode: 0o600,
+    })
+    writeFileSync(sessionFile, session, { mode: 0o600 })
     authenticated = true
   }
 
@@ -172,7 +257,7 @@ export function createCmsClient(hostname: string): CmsClient {
     rmSync(scratch, { recursive: true, force: true })
   }
 
-  return { api, page, login, dispose }
+  return { api, upload, download, probe, page, login, dispose }
 }
 
 /** The editor login every content script expects in its environment. */

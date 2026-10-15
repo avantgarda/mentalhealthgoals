@@ -2,9 +2,11 @@
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
+import { formatFileSize } from '../src/utilities/fileLabel'
 import { argument, createCmsClient, requireCredentials, resolveDeployment } from './lib/cms-client'
 import { assessChange, checkCanary, validatePlan } from './lib/content-patch-core'
-import { readChange, runContentPatch } from './lib/content-patch-runner'
+import { assessUploads, readChange, runContentPatch } from './lib/content-patch-runner'
+import { readUploadFile } from './lib/content-plan'
 
 const args = process.argv.slice(2)
 const booleanOptions = [
@@ -28,7 +30,16 @@ function main() {
     throw new Error('Choose --apply or --verify-only')
   const planFile = resolve(argument(args, '--plan'))
   const plan = validatePlan(JSON.parse(readFileSync(planFile, 'utf8')))
+  const planDir = dirname(planFile)
   if (args.includes('--validate')) {
+    // A resolved plan's files are already in Media; a reviewed plan's must be
+    // the reviewed bytes, beside it.
+    for (const upload of plan.uploadMedia ?? []) {
+      if (upload.id === undefined) readUploadFile(planDir, upload)
+      console.log(
+        `upload: media/${upload.filename} (${formatFileSize(upload.filesize)}) from ${upload.file}`,
+      )
+    }
     console.log(`Valid reviewed plan: ${plan.name}. No CMS requests made.`)
     return
   }
@@ -50,6 +61,8 @@ function main() {
         throw new Error(
           'Public CMS read failed; check deployment protection and the linked project',
         )
+      // Media is public: a file that would clash stops here, before the login.
+      assessUploads(client, plan, { planDir, reverse: args.includes('--reverse') })
       console.log(
         `Preflight passed: ${deployment.environment} ${deployment.hostname}; Vercel metadata and public CMS transport work. No CMS login or content writes.`,
       )
@@ -74,12 +87,16 @@ function main() {
     const resolved = runContentPatch(client, deployment, plan, {
       apply: false,
       reverse: args.includes('--reverse'),
+      planDir,
     })
     if (!apply && !args.includes('--verify-only')) {
       console.log('Dry run complete. No content was written.')
       return
     }
     if (args.includes('--verify-only')) {
+      for (const upload of resolved.uploadMedia ?? [])
+        if (upload.id === undefined)
+          throw new Error(`File has not been uploaded: ${upload.filename}`)
       for (const change of resolved.changes)
         if (assessChange(readChange(client, change), change) !== 'already applied')
           throw new Error(`Update has not been applied: ${change.match.value}`)
@@ -93,6 +110,7 @@ function main() {
           allowProduction: args.includes('--allow-production'),
           reverse: args.includes('--reverse'),
           backupDir: directory,
+          planDir,
         })
       : resolved
     const resolvedFile = join(directory, 'resolved-plan.json')

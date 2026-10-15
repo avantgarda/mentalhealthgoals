@@ -1,5 +1,6 @@
 // @vitest-environment node
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -68,15 +69,45 @@ function fixture() {
       { id: 6, updatedAt: 'baseline', filename: 'example-photo.png', mimeType: 'image/png' },
     ],
   }
+  /** What Media serves, by filename. */
+  const files = new Map<string, Buffer>()
   let sequence = 0
   let failReadback = false
   let mutateAfterCreation = false
   let loseCreateResponse = false
+  let loseUploadResponse = false
+  let renameUpload = false
   const writes: string[] = []
   const client: CmsClient = {
     login: vi.fn(),
     dispose: vi.fn(),
     page: vi.fn(),
+    probe: vi.fn(),
+    upload: vi.fn((_path, file, data) => {
+      // Payload gives a taken name a numeric suffix rather than replace a file.
+      const filename = renameUpload ? file.filename.replace(/\.pdf$/, '-1.pdf') : file.filename
+      const doc: Doc = {
+        ...data,
+        id: 77,
+        updatedAt: `write-${++sequence}`,
+        filename,
+        mimeType: file.mimeType,
+        filesize: file.bytes.length,
+      }
+      state.media.push(doc)
+      files.set(filename, file.bytes)
+      writes.push('upload media')
+      if (loseUploadResponse) {
+        loseUploadResponse = false
+        throw new Error('Response lost')
+      }
+      return { doc: structuredClone(doc) }
+    }),
+    download: vi.fn((path) => {
+      const bytes = files.get(decodeURIComponent(path.replace('/api/media/file/', '')))
+      if (!bytes) throw new Error('vercel curl failed (exit 22)')
+      return bytes
+    }),
     api: vi.fn((path, method = 'GET', data) => {
       const url = new URL(path, 'https://example.invalid')
       const collection = url.pathname.split('/')[2]
@@ -110,15 +141,27 @@ function fixture() {
       const hits = docs.filter((doc) =>
         ids
           ? ids.includes(String(doc.id))
-          : filters.some(([key, value]) => doc[key.includes('[name]') ? 'name' : 'slug'] === value),
+          : filters.some(
+              ([key, value]) =>
+                doc[
+                  key.includes('[filename]') ? 'filename' : key.includes('[name]') ? 'name' : 'slug'
+                ] === value,
+            ),
       )
       return { totalDocs: hits.length, docs: structuredClone(hits) }
     }),
   }
   return {
     state,
+    files,
     writes,
     client,
+    loseUploadResponse: () => {
+      loseUploadResponse = true
+    },
+    renameUpload: () => {
+      renameUpload = true
+    },
     failReadback: () => {
       failReadback = true
     },
@@ -294,5 +337,174 @@ describe('links to files in Media', () => {
     f.state.media = []
     runContentPatch(f.client, deployment, linking(5), { ...options(), reverse: true })
     expect(f.state.pages[0].layout).toEqual([])
+  })
+})
+
+describe('files a plan uploads', () => {
+  const pdf = Buffer.from('%PDF-1.4\ninvented slides\n%%EOF\n')
+  const reference = '__MEDIA_EXAMPLE__'
+  const upload = {
+    reference,
+    file: 'files/Example slides v3.pdf',
+    filename: 'example-new-slides.pdf',
+    alt: 'Invented slides',
+    mimeType: 'application/pdf' as const,
+    filesize: pdf.length,
+    sha256: createHash('sha256').update(pdf).digest('hex'),
+  }
+  const fileLink = (value: number | string) => ({
+    type: 'link',
+    fields: { linkType: 'internal', newTab: false, doc: { relationTo: 'media', value } },
+    children: [{ type: 'text', text: 'Invented slides' }],
+  })
+  const layout = (value: number | string) => [
+    {
+      blockType: 'content',
+      columns: [{ richText: { root: { type: 'root', children: [fileLink(value)] } } }],
+    },
+  ]
+  const uploading: ContentPlan = {
+    version: 1,
+    name: 'Invented upload',
+    uploadMedia: [upload],
+    changes: [
+      {
+        collection: 'pages',
+        match: { field: 'slug', value: 'about' },
+        before: { layout: [] },
+        after: { layout: layout(reference) },
+      },
+    ],
+  }
+  const planDir = () => {
+    const dir = mkdtempSync(join(tmpdir(), 'mhg-upload-test-'))
+    directories.push(dir)
+    mkdirSync(join(dir, 'files'))
+    writeFileSync(join(dir, upload.file), pdf)
+    return dir
+  }
+  const uploadOptions = () => ({ ...options(), planDir: planDir() })
+
+  it('dry runs: names the upload and writes nothing', () => {
+    const f = fixture()
+    const log = vi.fn()
+    const plan = runContentPatch(f.client, deployment, uploading, {
+      apply: false,
+      planDir: planDir(),
+      log,
+    })
+    expect(log).toHaveBeenCalledWith(
+      'ready to upload: media/example-new-slides.pdf (1 KB) from files/Example slides v3.pdf',
+    )
+    expect(log).toHaveBeenCalledWith('ready: pages/about [layout]')
+    expect(plan.uploadMedia?.[0].id).toBeUndefined()
+    expect(f.writes).toEqual([])
+    expect(f.client.upload).not.toHaveBeenCalled()
+  })
+
+  it('uploads before any record write, links the new file, and reruns without writes', () => {
+    const f = fixture()
+    const opts = uploadOptions()
+    const resolved = runContentPatch(f.client, deployment, uploading, opts)
+    expect(f.writes).toEqual(['upload media', 'pages'])
+    expect(f.client.upload).toHaveBeenCalledWith(
+      '/api/media?depth=0',
+      { bytes: pdf, filename: 'example-new-slides.pdf', mimeType: 'application/pdf' },
+      { alt: 'Invented slides' },
+    )
+    expect(f.state.pages[0].layout).toEqual(layout(77))
+    expect(resolved.uploadMedia).toEqual([{ ...upload, id: 77 }])
+    expect(JSON.stringify(resolved.changes)).not.toContain(reference)
+    const writes = receipt(opts.backupDir).writes
+    expect(
+      writes.map((w: { collection: string; status: string }) => [w.collection, w.status]),
+    ).toEqual([
+      ['media', 'verified'],
+      ['pages', 'verified'],
+    ])
+    f.writes.length = 0
+    const rerun = uploadOptions()
+    runContentPatch(f.client, deployment, uploading, rerun)
+    expect(f.writes).toEqual([])
+    expect(rerun.log).toHaveBeenCalledWith(
+      'already in Media: media/example-new-slides.pdf (#77), the reviewed file',
+    )
+  })
+
+  it.each(['different bytes', 'different size'])(
+    'refuses another file under the same name (%s) before any write',
+    (scenario) => {
+      const f = fixture()
+      const other =
+        scenario === 'different bytes'
+          ? Buffer.from('%PDF-1.4\ninvented other!\n%%EOF\n')
+          : Buffer.from('%PDF-1.4\nlonger, invented other slides\n%%EOF\n')
+      f.state.media.push({
+        id: 8,
+        updatedAt: 'baseline',
+        filename: upload.filename,
+        mimeType: 'application/pdf',
+        filesize: other.length,
+      })
+      f.files.set(upload.filename, other)
+      const before = structuredClone(f.state)
+      expect(() => runContentPatch(f.client, deployment, uploading, uploadOptions())).toThrow(
+        /different file named example-new-slides.pdf is already in Media \(#8\)/,
+      )
+      expect(f.writes).toEqual([])
+      expect(f.state).toEqual(before)
+    },
+  )
+
+  it('refuses a local file changed since review before any write', () => {
+    const f = fixture()
+    const opts = uploadOptions()
+    writeFileSync(join(opts.planDir, upload.file), Buffer.concat([pdf, Buffer.from('\n')]))
+    expect(() => runContentPatch(f.client, deployment, uploading, opts)).toThrow(
+      /changed since the plan was reviewed/,
+    )
+    expect(f.writes).toEqual([])
+  })
+
+  it('recovers a lost upload response by reusing the uploaded file on rerun', () => {
+    const f = fixture()
+    f.loseUploadResponse()
+    const opts = uploadOptions()
+    expect(() => runContentPatch(f.client, deployment, uploading, opts)).toThrow(/Response lost/)
+    expect(receipt(opts.backupDir).writes).toMatchObject([
+      { collection: 'media', status: 'in flight' },
+    ])
+    expect(f.writes).toEqual(['upload media'])
+    runContentPatch(f.client, deployment, uploading, uploadOptions())
+    expect(f.writes).toEqual(['upload media', 'pages'])
+    expect(f.state.media.filter((doc) => doc.filename === upload.filename)).toHaveLength(1)
+  })
+
+  it('stops, with a truthful receipt, when Media saves the file under another name', () => {
+    const f = fixture()
+    f.renameUpload()
+    const opts = uploadOptions()
+    expect(() => runContentPatch(f.client, deployment, uploading, opts)).toThrow(
+      /as example-new-slides-1.pdf/,
+    )
+    expect(receipt(opts.backupDir).writes).toMatchObject([
+      { collection: 'media', status: 'uploaded', id: 77, savedAs: 'example-new-slides-1.pdf' },
+    ])
+    expect(f.writes).toEqual(['upload media'])
+  })
+
+  it('reverses the links and keeps the uploaded file', () => {
+    const f = fixture()
+    runContentPatch(f.client, deployment, uploading, uploadOptions())
+    f.writes.length = 0
+    runContentPatch(f.client, deployment, uploading, { ...uploadOptions(), reverse: true })
+    expect(f.writes).toEqual(['pages'])
+    expect(f.state.pages[0].layout).toEqual([])
+    expect(f.state.media.find((doc) => doc.filename === upload.filename)).toBeTruthy()
+    const missing = fixture()
+    expect(() =>
+      runContentPatch(missing.client, deployment, uploading, { ...uploadOptions(), reverse: true }),
+    ).toThrow(/missing from Media/)
+    expect(missing.client.upload).not.toHaveBeenCalled()
   })
 })

@@ -20,11 +20,82 @@ export type PartnerCreation = {
     order?: number
   }
 }
+/** A file the run uploads to Media before it changes any record. */
+export type MediaUpload = {
+  /** A placeholder used only as the file a reviewed rich-text link picks. */
+  reference: string
+  /** The local file, relative to the plan's directory. */
+  file: string
+  /** The name Media serves it under: `/api/media/file/<filename>`. */
+  filename: string
+  alt: string
+  mimeType: 'application/pdf'
+  /** The reviewed bytes: a file swapped after review is refused, and a file
+   * already in Media under this name is reused only if it is these bytes. */
+  filesize: number
+  sha256: string
+  /** The Media record, once a run has uploaded or found the file. Only a
+   * resolved plan carries it. */
+  id?: number
+}
 export type ContentPlan = {
   version: 1
   name: string
   changes: ContentChange[]
   createPartners?: PartnerCreation[]
+  uploadMedia?: MediaUpload[]
+}
+
+/** Uploads go through a Vercel function, whose request limit is 4.5 MB. A
+ * 4 MB file leaves room for the rest of the request. */
+export const MAX_UPLOAD_BYTES = 4_000_000
+const UPLOAD_KEYS = ['reference', 'file', 'filename', 'alt', 'mimeType', 'filesize', 'sha256', 'id']
+const MEDIA_REFERENCE = /^__MEDIA_[A-Z0-9_]+__$/
+/** Lowercase words joined by hyphens: Media serves it unchanged, and it reads
+ * plainly in an address. */
+export const UPLOAD_FILENAME = /^[a-z0-9]+(?:-[a-z0-9]+)*\.pdf$/
+
+/** A placeholder for a file the plan uploads, before the run resolves it. */
+export const isMediaReference = (value: unknown): value is string =>
+  typeof value === 'string' && value.startsWith('__MEDIA_')
+
+/** A path that stays inside the plan's directory. */
+const isPlanRelative = (path: string) =>
+  path.split(/[\\/]/).every((part) => part && part !== '.' && part !== '..')
+
+function validateUpload(upload: MediaUpload, filenames: Set<string>) {
+  const name = typeof upload?.filename === 'string' ? upload.filename : '?'
+  if (
+    !upload ||
+    typeof upload !== 'object' ||
+    Object.keys(upload).some((key) => !UPLOAD_KEYS.includes(key)) ||
+    !MEDIA_REFERENCE.test(upload.reference ?? '')
+  )
+    throw new Error(`Invalid media upload: ${name}`)
+  if (typeof upload.file !== 'string' || !isPlanRelative(upload.file))
+    throw new Error(`Upload file must be a path inside the plan's directory: ${name}`)
+  if (!UPLOAD_FILENAME.test(name))
+    throw new Error(
+      `Upload filename must be lowercase words joined by hyphens, ending .pdf: ${name}`,
+    )
+  if (filenames.has(name)) throw new Error(`Duplicate media upload: ${name}`)
+  if (upload.mimeType !== 'application/pdf') throw new Error(`Only PDFs are uploaded: ${name}`)
+  if (typeof upload.alt !== 'string' || !upload.alt.trim())
+    throw new Error(`Upload needs alt text: ${name}`)
+  if (
+    !Number.isSafeInteger(upload.filesize) ||
+    upload.filesize <= 0 ||
+    typeof upload.sha256 !== 'string' ||
+    !/^[0-9a-f]{64}$/.test(upload.sha256)
+  )
+    throw new Error(`Upload needs the reviewed file's size and SHA-256: ${name}`)
+  if (upload.filesize > MAX_UPLOAD_BYTES)
+    throw new Error(
+      `Upload is larger than the CMS accepts (${MAX_UPLOAD_BYTES / 1e6} MB): ${name}, ${upload.filesize} bytes`,
+    )
+  if (upload.id !== undefined && !(Number.isSafeInteger(upload.id) && upload.id > 0))
+    throw new Error(`Invalid Media ID for upload: ${name}`)
+  filenames.add(name)
 }
 
 /** Pages keep their URLs out of reach: they carry the site's navigation and the
@@ -96,7 +167,9 @@ export function validatePlan(value: unknown): ContentPlan {
   }
   const seen = new Set<string>()
   if (
-    Object.keys(plan).some((key) => !['version', 'name', 'changes', 'createPartners'].includes(key))
+    Object.keys(plan).some(
+      (key) => !['version', 'name', 'changes', 'createPartners', 'uploadMedia'].includes(key),
+    )
   )
     throw new Error('Unsupported content plan option')
   const references = new Set<string>()
@@ -132,6 +205,16 @@ export function validatePlan(value: unknown): ContentPlan {
     references.add(partner.reference)
     partnerNames.add(data.name)
   }
+  if (plan.uploadMedia !== undefined && !Array.isArray(plan.uploadMedia))
+    throw new Error('Invalid media uploads')
+  const uploads = new Map<string, MediaUpload>()
+  const filenames = new Set<string>()
+  for (const upload of plan.uploadMedia ?? []) {
+    validateUpload(upload, filenames)
+    if (uploads.has(upload.reference))
+      throw new Error(`Duplicate media upload reference: ${upload.reference}`)
+    uploads.set(upload.reference, upload)
+  }
   const usedReferences = new Set<string>()
   for (const change of plan.changes) {
     const fields = allowedFields[change.collection]
@@ -152,15 +235,30 @@ export function validatePlan(value: unknown): ContentPlan {
       throw new Error('Unapproved content field')
     // New partner placeholders must be whole array entries in an actual
     // partner relationship, never a word in copy or a different relationship.
-    const inspect = (item: unknown, side: 'before' | 'after', relationship = false) => {
+    // A new file's placeholder is only ever the file an internal link picks:
+    // `fields.doc.value` under `linkType: 'internal'`, `relationTo: 'media'`.
+    const inspect = (
+      item: unknown,
+      side: 'before' | 'after',
+      slot?: 'partners' | 'media',
+      parent?: Record<string, unknown>,
+    ) => {
       if (typeof item === 'string' && item.startsWith('__PARTNER_')) {
-        if (side !== 'after' || !relationship || !references.has(item))
+        if (side !== 'after' || slot !== 'partners' || !references.has(item))
           throw new Error('Partner reference must be declared and used only in after.partners')
         usedReferences.add(item)
+      } else if (isMediaReference(item)) {
+        if (side !== 'after' || slot !== 'media' || !uploads.has(item))
+          throw new Error(
+            'Media reference must be declared and used only as the file a link picks, in after',
+          )
+        usedReferences.add(item)
       } else if (Array.isArray(item)) {
-        item.forEach((entry) => inspect(entry, side, relationship))
+        item.forEach((entry) => inspect(entry, side, slot === 'partners' ? slot : undefined))
       } else if (item && typeof item === 'object') {
         const obj = item as Record<string, unknown>
+        const linkedFile =
+          obj.relationTo === 'media' && parent?.linkType === 'internal' && parent.doc === obj
         Object.entries(obj).forEach(([key, entry]) =>
           inspect(
             entry,
@@ -168,7 +266,12 @@ export function validatePlan(value: unknown): ContentPlan {
             key === 'partners' &&
               Array.isArray(entry) &&
               (obj.blockType === 'partnerLogos' ||
-                (item === change[side] && change.collection === 'workstreams')),
+                (item === change[side] && change.collection === 'workstreams'))
+              ? 'partners'
+              : key === 'value' && linkedFile
+                ? 'media'
+                : undefined,
+            obj,
           ),
         )
       }
@@ -222,12 +325,19 @@ export function validatePlan(value: unknown): ContentPlan {
   }
   if ([...references].some((reference) => !usedReferences.has(reference)))
     throw new Error('Every new partner must be referenced by a reviewed change')
+  // A resolved plan carries each file's Media ID in place of its placeholder.
+  for (const upload of uploads.values())
+    if (upload.id === undefined && !usedReferences.has(upload.reference))
+      throw new Error(
+        `Every media upload must be linked from a reviewed change: ${upload.filename}`,
+      )
   return plan
 }
 
-/** Resolve only placeholders in after; an absent partner stays symbolic in a
- * dry run. The baseline is never rewritten. */
-export function resolvePartnerReferences(
+/** Resolve only placeholders in after; an absent partner or file stays
+ * symbolic in a dry run. The baseline is never rewritten. A resolved upload
+ * keeps its declaration, with the Media ID, for verification. */
+export function resolveReferences(
   plan: ContentPlan,
   ids: Map<string, number | string>,
 ): ContentPlan {
@@ -236,6 +346,11 @@ export function resolvePartnerReferences(
     ...change,
     after: JSON.parse(JSON.stringify(change.after), (_key, value) => ids.get(value) ?? value),
   }))
+  if (out.uploadMedia)
+    out.uploadMedia = out.uploadMedia.map((upload) => {
+      const id = ids.get(upload.reference)
+      return typeof id === 'number' ? { ...upload, id } : upload
+    })
   return out
 }
 

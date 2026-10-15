@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import {
   copyFileSync,
   mkdirSync,
@@ -181,6 +182,189 @@ describe('single-command CMS handoff', () => {
       automatedVerification: 'failed',
       liveWebsiteReview: 'pending',
     })
+  })
+
+  it('uploads a declared file in the same command, links it, and checks it is served', () => {
+    const f = fixture()
+    const pdf = Buffer.from('%PDF-1.4\ninvented slides\n%%EOF\n')
+    mkdirSync(join(f.dir, 'files'))
+    writeFileSync(join(f.dir, 'files/Slides v3.pdf'), pdf)
+    const layout = (value: number | string) => [
+      {
+        blockType: 'content',
+        columns: [
+          {
+            richText: {
+              root: {
+                type: 'root',
+                children: [
+                  {
+                    type: 'link',
+                    fields: { linkType: 'internal', doc: { relationTo: 'media', value } },
+                    children: [{ type: 'text', text: 'Invented slides' }],
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ]
+    writeFileSync(
+      f.planFile,
+      JSON.stringify({
+        version: 1,
+        name: 'Invented upload',
+        uploadMedia: [
+          {
+            reference: '__MEDIA_SLIDES__',
+            file: 'files/Slides v3.pdf',
+            filename: 'example-new-slides.pdf',
+            alt: 'Invented slides',
+            mimeType: 'application/pdf',
+            filesize: pdf.length,
+            sha256: createHash('sha256').update(pdf).digest('hex'),
+          },
+        ],
+        changes: [
+          {
+            collection: 'pages',
+            match: { field: 'slug', value: 'about' },
+            before: { layout: [] },
+            after: { layout: layout('__MEDIA_SLIDES__') },
+          },
+        ],
+      }),
+    )
+    const validated = f.run(['--validate'])
+    expect(validated.status, validated.stderr).toBe(0)
+    expect(validated.stdout).toContain(
+      'upload: media/example-new-slides.pdf (1 KB) from files/Slides v3.pdf',
+    )
+    expect(f.state().requests).toHaveLength(0)
+    const preflight = f.run(['--preflight'])
+    expect(preflight.status, preflight.stderr).toBe(0)
+    expect(preflight.stdout).toContain('ready to upload: media/example-new-slides.pdf (1 KB)')
+    expect(f.state().requests.every((r: { method: string }) => r.method === 'GET')).toBe(true)
+
+    const input = 'editor@example.org\noffline-password\n'
+    const uploads = () =>
+      f
+        .state()
+        .requests.filter(
+          (r: { path: string; method: string }) =>
+            r.method === 'POST' && r.path.startsWith('/api/media'),
+        )
+    const applied = f.run(['--apply', '--allow-production'], input)
+    expect(applied.status, applied.stdout + applied.stderr).toBe(0)
+    expect(applied.stdout).toContain('Verified upload: media/example-new-slides.pdf (#77)')
+    expect(uploads()).toHaveLength(1)
+    expect(f.state().collections.media).toContainEqual(
+      expect.objectContaining({
+        id: 77,
+        filename: 'example-new-slides.pdf',
+        alt: 'Invented slides',
+      }),
+    )
+    expect(f.state().collections.pages[0].layout).toEqual(layout(77))
+    const runDir = join(f.dir, 'backups', readdirSync(join(f.dir, 'backups'))[0])
+    const resolved = JSON.parse(readFileSync(join(runDir, 'resolved-plan.json'), 'utf8'))
+    expect(resolved.uploadMedia[0].id).toBe(77)
+    const verification = JSON.parse(readFileSync(join(runDir, 'verification.json'), 'utf8'))
+    expect(verification.results).toContainEqual(
+      expect.objectContaining({
+        upload: 'example-new-slides.pdf',
+        ok: true,
+        status: 206,
+        contentType: 'application/pdf',
+        size: pdf.length,
+      }),
+    )
+    expect(verification.failed).toBe(0)
+
+    // A rerun, a verification and a reversal upload nothing and delete nothing.
+    expect(f.run(['--apply', '--allow-production'], input).status).toBe(0)
+    expect(f.run(['--verify-only'], input).status).toBe(0)
+    const reversed = f.run(['--apply', '--allow-production', '--reverse'], input)
+    expect(reversed.status, reversed.stdout + reversed.stderr).toBe(0)
+    expect(uploads()).toHaveLength(1)
+    expect(f.state().collections.pages[0].layout).toEqual([])
+    expect(f.state().collections.media).toContainEqual(expect.objectContaining({ id: 77 }))
+    expect(f.state().requests.some((r: { method: string }) => r.method === 'DELETE')).toBe(false)
+  }, 60_000)
+
+  it('stops at preflight, before the login, on a different file under the same name', () => {
+    const f = fixture()
+    const pdf = Buffer.from('%PDF-1.4\ninvented slides\n%%EOF\n')
+    mkdirSync(join(f.dir, 'files'))
+    writeFileSync(join(f.dir, 'files/slides.pdf'), pdf)
+    writeFileSync(
+      f.planFile,
+      JSON.stringify({
+        version: 1,
+        name: 'Invented upload',
+        uploadMedia: [
+          {
+            reference: '__MEDIA_SLIDES__',
+            file: 'files/slides.pdf',
+            filename: 'example-slides.pdf',
+            alt: 'Invented slides',
+            mimeType: 'application/pdf',
+            filesize: pdf.length,
+            sha256: createHash('sha256').update(pdf).digest('hex'),
+          },
+        ],
+        changes: [
+          {
+            collection: 'pages',
+            match: { field: 'slug', value: 'about' },
+            before: { layout: [] },
+            after: {
+              layout: [
+                {
+                  blockType: 'content',
+                  columns: [
+                    {
+                      richText: {
+                        root: {
+                          type: 'root',
+                          children: [
+                            {
+                              type: 'link',
+                              fields: {
+                                linkType: 'internal',
+                                doc: { relationTo: 'media', value: '__MEDIA_SLIDES__' },
+                              },
+                              children: [{ type: 'text', text: 'Invented slides' }],
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    )
+    const state = JSON.parse(readFileSync(f.env.MHG_TEST_CMS_STATE, 'utf8'))
+    state.collections.media[0].filesize = 9
+    state.files = { 'example-slides.pdf': Buffer.from('%PDF-old!').toString('base64') }
+    writeFileSync(f.env.MHG_TEST_CMS_STATE, JSON.stringify(state))
+    const result = f.run(
+      ['--apply', '--allow-production'],
+      'editor@example.org\noffline-password\n',
+    )
+    expect(result.status).not.toBe(0)
+    expect(result.stderr).toContain(
+      'A different file named example-slides.pdf is already in Media (#5)',
+    )
+    expect(f.state().requests.some((r: { path: string }) => r.path === '/api/users/login')).toBe(
+      false,
+    )
+    expect(f.state().requests.every((r: { method: string }) => r.method === 'GET')).toBe(true)
   })
 
   it('takes a public snapshot including partners and Media without a CMS login', () => {
