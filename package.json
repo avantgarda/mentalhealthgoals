@@ -28,6 +28,7 @@
     "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "sync:db": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/sync-db.ts",
+    "local:admin": "cross-env NODE_OPTIONS=--no-deprecation tsx --env-file-if-exists=.env.local scripts/local-admin.ts",
     "sync:media": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/sync-media.ts",
     "content:snapshot": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/content-snapshot.ts",
     "content:editor": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/content-preview-editor.ts",

@@ -11,10 +11,12 @@
  * owner's — and the target is checked before anything is dropped.
  *
  * Personal data is left behind by default: no users, no sessions, no form
- * submissions. See PII_TABLE_PATTERNS below.
+ * submissions. See PII_TABLE_PATTERNS below. Afterwards it runs
+ * `pnpm local:admin`, which creates a local admin from SEED_ADMIN_EMAIL and
+ * SEED_ADMIN_PASSWORD when both are set in `.env.local`.
  */
 
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
@@ -42,7 +44,8 @@ function loadLocalEnv(): void {
  * something to migrate — only the rows are left behind.
  *
  * An empty `users` table means `/admin` offers "create the first user" on the
- * first visit. That is the intended flow: make yourself a local admin.
+ * first visit. `pnpm local:admin` fills that gap from SEED_ADMIN_EMAIL and
+ * SEED_ADMIN_PASSWORD, so a re-sync does not mean making the account again.
  *
  * Patterns are pg_dump glob patterns, so the `*` forms catch the `_rels` and
  * `_submission_data` side tables without naming each one.
@@ -378,15 +381,27 @@ async function syncDatabase(sourceConnectionString: string, options: Options): P
   // uploads through /api/media/file/<filename>, so the rows hold relative URLs
   // that resolve against whatever environment is running — no rewriting needed.
   console.log('🎉 Done.\n')
+
+  // A copy without users has no way into /admin. A separate process, because
+  // creating the account goes through Payload (so the password is hashed as
+  // the admin would hash it) and this script deliberately never loads it.
+  const admin = spawnSync('pnpm', ['-s', 'local:admin', '--after-sync'], {
+    env: process.env,
+    stdio: 'inherit',
+  })
+  if (admin.status !== 0) {
+    console.log('⚠️  The local admin was not created (see above). The sync itself succeeded.')
+  }
+  console.log('')
+
   console.log('Next:')
   console.log('  1. pnpm payload migrate    — apply any migrations this branch has that')
   console.log('                               production does not')
   console.log('  2. pnpm sync:media         — download the files the CMS references')
   console.log('  3. Restart `pnpm dev`      — globals are cached per server process, so a')
   console.log('                               running dev server keeps serving the old ones')
-  if (!options.withPii) {
-    console.log('')
-    console.log('The users table is empty by design: open /admin and create your local admin.')
+  if (admin.status !== 0) {
+    console.log('  4. pnpm local:admin        — create the local admin once migrations are applied')
   }
 }
 

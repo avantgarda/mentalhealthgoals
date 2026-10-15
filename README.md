@@ -49,9 +49,11 @@ pnpm sync:media   # download the files that content refers to
 ```
 
 `sync:db` drops and recreates the local database and refuses any target that is not localhost. It
-leaves personal data behind by default — no users, no sessions, no form submissions — so `/admin`
-will offer to create your first local user. `sync:media` needs no credentials; the blob store is
-public-read.
+leaves personal data behind by default — no users, no sessions, no form submissions — and then
+creates a local admin from `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` in `.env.local`
+(`pnpm local:admin`), so you can log in to `/admin` straight away. Without those two settings,
+`/admin` offers to create the first user instead. `sync:media` needs no credentials; the blob store
+is public-read.
 
 There is no way to push content the other way, and that is deliberate. The repository holds no
 copy of the site's content to overwrite production with.
@@ -230,6 +232,7 @@ run — and because the deploy is part of that run, it deploys too. To deploy `m
 | `pnpm bootstrap`                     | Fresh clone to running site: tools, `.env.local`, database                          |
 | `pnpm sync:db`                       | Copy production's content into the local database                                   |
 | `pnpm sync:media`                    | Download the files that content refers to into `public/media`                       |
+| `pnpm local:admin`                   | Create the local admin from `SEED_ADMIN_*` (run by `sync:db`; localhost only)       |
 | `pnpm blobs:mirror`                  | Copy the production blob store into the preview one (owner-only)                    |
 | `pnpm content:snapshot`              | Baseline every editable collection from a deployment into a plan dir                |
 | `pnpm content:editor create\|delete` | Temporary editor on a preview DB branch — the isolation canary                      |
