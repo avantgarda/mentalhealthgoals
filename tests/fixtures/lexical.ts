@@ -30,6 +30,21 @@ export const link = (t: string, url: string, newTab = false): any => ({
   version: 3,
 })
 
+/** A link to a document in the CMS, picked rather than typed. */
+export const internalLink = (t: string, relationTo: string, id: number, newTab = false): any => ({
+  type: 'link',
+  children: [text(t)],
+  direction: 'ltr',
+  fields: {
+    linkType: 'internal',
+    newTab,
+    doc: { relationTo, value: id },
+  },
+  format: '',
+  indent: 0,
+  version: 3,
+})
+
 export const paragraph = (...children: any[]): any => ({
   type: 'paragraph',
   children,

@@ -18,6 +18,22 @@ test.describe('Industry Engagement Forum', () => {
     ).toBeVisible()
   })
 
+  test('a link to an uploaded PDF goes to the file and says what it is', async ({
+    page,
+    request,
+  }) => {
+    await page.goto('/industry-engagement-forum')
+    const { filename, label, linkText } = FIXTURE.forum.slides
+
+    // Picked from Media in the editor; the type and size come from the file.
+    const link = page.getByRole('link', { name: `${linkText} (${label})`, exact: true })
+    await expect(link).toHaveAttribute('href', `/api/media/file/${filename}`)
+
+    const file = await request.get(`/api/media/file/${filename}`)
+    expect(file.status()).toBe(200)
+    expect(file.headers()['content-type']).toContain('application/pdf')
+  })
+
   test('the sticky bar waits for the hero, then offers the form', async ({ page }) => {
     await page.goto('/industry-engagement-forum')
     const bar = page.locator('[data-sticky-cta]')

@@ -146,6 +146,12 @@ Inside page text, insert the **Programme email** inline block rather than typing
 address: it shows whatever **Settings → Programme details** holds, so the address is changed in
 one place.
 
+To link text to a PDF (slides, a report), select the text, choose **Link → Internal Link**, and
+pick the PDF from Media — or upload it there with the **+** button (it still needs Alt text). The
+picker lists PDFs only, newest first. Don't type the file's address or size: the site adds the type
+and size to the link itself, as in "Slides (PDF, 2.3 MB)". Older links typed as a Custom URL to
+`/api/media/file/…` keep working but show only what was typed.
+
 ## Branding & the logo
 
 The site ships with five logo marks and a Payload global that decides which one

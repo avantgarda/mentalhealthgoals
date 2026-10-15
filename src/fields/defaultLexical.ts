@@ -1,4 +1,8 @@
-import type { TextFieldSingleValidation } from 'payload'
+import type {
+  FieldAffectingData,
+  PolymorphicRelationshipField,
+  TextFieldSingleValidation,
+} from 'payload'
 import {
   BoldFeature,
   ItalicFeature,
@@ -23,16 +27,35 @@ export const defaultLexical = lexicalEditor({
     // use bulleted lists). The frontend renderer knows lists regardless.
     UnorderedListFeature(),
     OrderedListFeature(),
+    // `media` lets an editor link text to an uploaded PDF from the picker (or
+    // upload one in place) instead of typing `/api/media/file/...`. The site
+    // adds the file type and size to the link text — see `MediaLink`.
     LinkFeature({
-      enabledCollections: ['pages', 'posts'],
+      enabledCollections: ['pages', 'posts', 'media'],
       fields: ({ defaultFields }) => {
-        const defaultFieldsWithoutUrl = defaultFields.filter((field) => {
-          if ('name' in field && field.name === 'url') return false
-          return true
+        const linkFields = defaultFields.flatMap((field): FieldAffectingData[] => {
+          if ('name' in field && field.name === 'url') return []
+          if ('name' in field && field.name === 'doc') {
+            // Payload's picker: one relationship across every enabled collection.
+            const doc = field as PolymorphicRelationshipField
+            const picker: PolymorphicRelationshipField = {
+              ...doc,
+              admin: {
+                ...doc.admin,
+                // Newest first: the file just uploaded for this link is on top.
+                sortOptions: { media: '-createdAt' },
+              },
+              // Images are placed with the Media block, not linked to as text.
+              filterOptions: ({ relationTo }) =>
+                relationTo === 'media' ? { mimeType: { equals: 'application/pdf' } } : true,
+            }
+            return [picker]
+          }
+          return [field]
         })
 
         return [
-          ...defaultFieldsWithoutUrl,
+          ...linkFields,
           {
             name: 'url',
             type: 'text',

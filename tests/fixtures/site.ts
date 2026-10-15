@@ -453,6 +453,16 @@ export const FIXTURE = {
     /** Appears in this page's body and nowhere else, so search finds one hit. */
     onlyHereToken: `${TOKEN}-forumonly`,
     confirmation: 'your registration has been received',
+    /**
+     * A PDF in Media, linked from the page's text with an internal link. The
+     * site, not the editor, adds the type and size, so `label` is what the
+     * reader sees after the link text.
+     */
+    slides: {
+      filename: 'fixture-slides.pdf',
+      linkText: 'Launch meeting slides',
+      label: 'PDF, 2 KB',
+    },
   },
 
   contact: {

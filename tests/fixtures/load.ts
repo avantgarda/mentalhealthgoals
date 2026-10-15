@@ -26,7 +26,16 @@ import sharp from 'sharp'
 import config from '@payload-config'
 
 import { FIXTURE, partners, people, workstreams } from './site'
-import { block, bullets, heading, inlineBlock, paragraph, root, text } from './lexical'
+import {
+  block,
+  bullets,
+  heading,
+  inlineBlock,
+  internalLink,
+  paragraph,
+  root,
+  text,
+} from './lexical'
 
 /**
  * Cleared dependents first. Parallel deletes here caused a Postgres deadlock in
@@ -79,6 +88,33 @@ async function swatch(name: string, rgb: [number, number, number], size = 320): 
     .toBuffer()
 
   return { name, data, mimetype: 'image/png', size: data.byteLength }
+}
+
+/**
+ * A one-page blank PDF of about 2 KB: real enough for Payload's upload checks
+ * (header, cross-reference table, end marker), padded so its size rounds to
+ * the figure FIXTURE.forum.slides.label promises.
+ */
+function blankPdf(name: string): File {
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << >> >>',
+  ]
+  let body = `%PDF-1.4\n%${'-'.repeat(1700)}\n`
+  const offsets = objects.map((object, i) => {
+    const offset = Buffer.byteLength(body, 'latin1')
+    body += `${i + 1} 0 obj\n${object}\nendobj\n`
+    return offset
+  })
+  const xref = Buffer.byteLength(body, 'latin1')
+  body +=
+    `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n` +
+    offsets.map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`).join('') +
+    `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+
+  const data = Buffer.from(body, 'latin1')
+  return { name, data, mimetype: 'application/pdf', size: data.byteLength }
 }
 
 async function wipe(payload: Payload, req: Awaited<ReturnType<typeof createLocalReq>>) {
@@ -170,6 +206,13 @@ async function load(): Promise<void> {
       })
       .then((doc) => doc.id),
   ])
+
+  const slides = await payload.create({
+    collection: 'media',
+    ...noRevalidate,
+    data: { alt: 'Launch meeting slides (PDF)' },
+    file: blankPdf(FIXTURE.forum.slides.filename),
+  })
 
   payload.logger.info('— Partners...')
   const partnerId: Record<string, number> = {}
@@ -538,6 +581,11 @@ async function load(): Promise<void> {
               `The agenda includes a ${FIXTURE.forum.onlyHereToken} session, a phrase that ` +
                 'appears on this page and nowhere else on the site.',
             ),
+          ),
+          paragraph(
+            text('Download the '),
+            internalLink(FIXTURE.forum.slides.linkText, 'media', slides.id),
+            text('.'),
           ),
         ),
         {
