@@ -585,6 +585,35 @@ describe('expectations derived from a plan', () => {
     expect(corrected.expectHref).toEqual([])
   })
 
+  it('expects a picked file link’s label and href, and drops the old file’s', () => {
+    const body = (...children: unknown[]) => ({
+      content: rich(paragraph('Unchanged opening paragraph.'), { type: 'paragraph', children }),
+    })
+    const plan = (before: unknown[], after: unknown[]) => ({
+      version: 1 as const,
+      name: 'Picked files',
+      changes: [
+        {
+          collection: 'posts' as const,
+          match: { field: 'slug' as const, value: 'launch' },
+          before: body(...before),
+          after: body(...after),
+        },
+      ],
+    })
+    const words = { type: 'text', text: 'Download the ' }
+    const [added] = deriveExpectations(plan([], [words, internal('Slides', 'media', 41)]), sources)
+    expect(added.expectText).toEqual(['Download the Slides (PDF, 2.3 MB)'])
+    expect(added.expectHref).toEqual(['/api/media/file/test-slides.pdf'])
+    const [moved] = deriveExpectations(
+      plan([words, internal('Slides', 'media', 41)], [words, internal('Slides', 'media', 42)]),
+      sources,
+    )
+    expect(moved.expectText).toEqual(['Download the Slides (PDF, 516 KB)'])
+    expect(moved.expectHref).toEqual(['/api/media/file/test%20slides%20v2.pdf'])
+    expect(moved.rejectHref).toEqual(['/api/media/file/test-slides.pdf'])
+  })
+
   it('knows where each collection renders', () => {
     expect(recordPaths('pages', 'home')).toEqual(['/'])
     expect(recordPaths('pages', 'about')).toEqual(['/about'])
