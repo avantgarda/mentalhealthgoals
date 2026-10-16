@@ -1,4 +1,4 @@
-import type { AccessArgs, FieldAccess } from 'payload'
+import type { Access, AccessArgs, FieldAccess } from 'payload'
 
 import type { User } from '@/payload-types'
 
@@ -9,9 +9,10 @@ export const isAdmin: AccessFn = ({ req: { user } }) => {
 }
 
 /** Admins can act on anyone; everyone else only on their own user document. */
-export const isAdminOrSelf = ({ req: { user }, id }: AccessArgs<User>): boolean => {
-  if (user?.role === 'admin') return true
-  return Boolean(user && id && user.id === id)
+export const isAdminOrSelf: Access<User> = ({ req: { user } }) => {
+  if (!user) return false
+  if (user.role === 'admin') return true
+  return { id: { equals: user.id } }
 }
 
 export const isAdminFieldLevel: FieldAccess = ({ req: { user } }) => {

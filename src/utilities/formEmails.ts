@@ -214,8 +214,8 @@ export const beforeEmail: BeforeEmail = async (emails, params) => {
       table,
     )
   } catch (error) {
-    // Unframed and unmarked: with an override set, both copies go to it.
+    // Keep the form marker even if branding fails; redirect both copies to the team test inbox.
     req.payload.logger.warn({ err: error, msg: 'Form email sent without the branded frame' })
-    return emails
+    return emails.map((email) => ({ ...email, headers: { [AUDIENCE_HEADER]: 'team' } }))
   }
 }

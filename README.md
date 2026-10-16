@@ -90,23 +90,35 @@ and the migrations disagree.
 
 Users have a **role**: `admin` (manage users) or `editor` (manage content only).
 The first account ever created is automatically an admin; accounts created after that default to
-editor unless an admin grants the admin role.
+editor unless an admin grants the admin role. Admins use **Admin → Users → Create New** to send
+an invitation: the recipient chooses their own password using a one-hour, single-use link.
+Pending accounts show a **Resend invitation** action. Editors can read and update only their own
+account; only admins can unlock accounts or manage other users.
+
+See [CMS accounts and recovery](scripts/CMS-ACCOUNTS.md) for invitation handling, environment
+settings, testing and deployment checks. Existing accounts and passwords remain active.
 
 ### Email
 
-Payload sends email (password resets, contact-form notifications) through
-[Resend](https://resend.com) when `RESEND_API_KEY` is set; without it, emails are written to the
-server console — fine for dev, not for production. The `mentalhealthgoals.co.uk` domain must be
-verified in Resend (DNS records) before mail will send from it. **Confirm the team inbox address
-before go-live** — it is stored on the contact form itself, in the CMS, not in an environment
-variable.
+Payload sends email through [Resend](https://resend.com), using `RESEND_API_KEY` and the verified
+sender `noreply@mentalhealthgoals.co.uk`. Account emails fail explicitly when delivery is not
+configured; reset links and message bodies are never printed to the console.
 
-Because it lives on the form, it travels with the database: a preview runs on a branch of
-production's, and `pnpm sync:db` brings production's rows to your laptop.
-`EMAIL_OVERRIDE_RECIPIENT` redirects every message there regardless of what the CMS says — the
-team's notification, password resets — with one exception: a form's auto-reply goes to the address
-the person typed, exactly as in production, so a tester reads what a visitor would. A preview
-deployment that has a Resend key but no override sends nothing at all, on purpose.
+Outside Vercel Production, **account invitations and password resets require
+`PAYLOAD_AUTH_EMAIL_TEST_TO`**, a private test mailbox. They all go there, regardless of the
+user's address. The general form override does not enable account mail. Production ignores both
+test overrides and sends to the actual recipients.
+
+Contact-form notifications retain their separate `EMAIL_OVERRIDE_RECIPIENT` setting. A preview
+without that override sends no form mail. With it, team notifications go to the override, while
+form auto-replies go to the address the tester entered. Without a Resend key, form delivery is
+skipped with a log message. The production notification recipient is stored on the form in the
+CMS, so confirm it with the team before go-live.
+
+Reset links use an explicit Payload server URL: the deployment's `VERCEL_URL` for previews,
+and `NEXT_PUBLIC_SERVER_URL` (falling back to `VERCEL_PROJECT_PRODUCTION_URL`) for production.
+For local work, set `NEXT_PUBLIC_SERVER_URL` to the local origin and port. See the account
+runbook for a controlled inbox test before inviting staff.
 
 Every email a form sends goes out in a branded frame: the programme lockup from **Globals →
 Brand & Logo**, the editor's message, and a footer with the site and privacy links. Where the

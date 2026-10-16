@@ -1,3 +1,4 @@
+import * as migration_20261015_220000_user_invitations from './20261015_220000_user_invitations'
 import * as migration_20260810_154228_initial from './20260810_154228_initial';
 import * as migration_20260818_143035_brand_global from './20260818_143035_brand_global';
 import * as migration_20260819_124926_add_user_roles from './20260819_124926_add_user_roles';
@@ -157,5 +158,10 @@ export const migrations = [
     up: migration_20261002_134700_add_media_storage_fields.up,
     down: migration_20261002_134700_add_media_storage_fields.down,
     name: '20261002_134700_add_media_storage_fields',
+  },
+  {
+    up: migration_20261015_220000_user_invitations.up,
+    down: migration_20261015_220000_user_invitations.down,
+    name: '20261015_220000_user_invitations',
   },
 ];

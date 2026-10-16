@@ -384,6 +384,7 @@ export interface Category {
  */
 export interface User {
   id: number;
+  invitationPending?: boolean | null;
   name?: string | null;
   /**
    * Admins manage users; editors manage content only.
@@ -1623,6 +1624,7 @@ export interface PartnersSelect<T extends boolean = true> {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  invitationPending?: T;
   name?: T;
   role?: T;
   updatedAt?: T;

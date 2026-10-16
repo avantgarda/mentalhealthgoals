@@ -68,12 +68,12 @@ Two things it will not give you, neither of which matters:
   URLs.
 - Blob read-write tokens and any write-capable database credential are **owner-only**. The local
   flow never needs them. Do not circulate them.
-- Set `EMAIL_OVERRIDE_RECIPIENT` to your own address before doing anything that sends mail. A
-  database synced from production carries the real notification address on the contact form, so
-  without it a test submission reaches whoever production would have reached. The override applies
-  to every message, including password resets, except a form's auto-reply: that goes to the address
-  typed into the form, so type your own. Leaving `RESEND_API_KEY` unset works too, and puts mail in
-  the console instead.
+- Set `EMAIL_OVERRIDE_RECIPIENT` to your own address before testing form mail. Team
+  notifications go there; auto-replies go to the address typed into the form, so type your own.
+  Account invitations and password resets separately require `PAYLOAD_AUTH_EMAIL_TEST_TO`, a
+  private mailbox, outside Vercel Production. Without `RESEND_API_KEY`, account mail fails
+  explicitly and form delivery is skipped; reset links are not logged. Both overrides are ignored
+  in production. See [CMS accounts and recovery](scripts/CMS-ACCOUNTS.md).
 - `pnpm sync:db` caches an unencrypted dump under `temp/neon-dumps/`. By default it holds content
   only — no users, no sessions, no form submissions. `--with-pii` includes all of them, including
   password hashes, so use it only when you actually need them and delete the cache afterwards.

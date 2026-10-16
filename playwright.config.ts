@@ -13,7 +13,8 @@ config({ path: '.env.local', quiet: true })
 
 // A dedicated port so the suite never attaches to some other project's dev
 // server that happens to be running on 3000.
-export const E2E_BASE_URL = 'http://localhost:3210'
+const port = Number(process.env.E2E_PORT || 3210)
+export const E2E_BASE_URL = `http://localhost:${port}`
 
 /**
  * CI tests a production build: ci.yml runs `pnpm build` after loading the
@@ -61,7 +62,14 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: E2E_AGAINST_BUILD ? 'pnpm start --port 3210' : 'pnpm dev --port 3210',
+    command: E2E_AGAINST_BUILD ? `pnpm start --port ${port}` : `pnpm dev --port ${port}`,
+    // Match Payload's trusted origin to this isolated server. Tests never send real mail.
+    env: {
+      NEXT_PUBLIC_SERVER_URL: E2E_BASE_URL,
+      VERCEL_ENV: '',
+      RESEND_API_KEY: '',
+      PAYLOAD_AUTH_EMAIL_TEST_TO: '',
+    },
     reuseExistingServer: !process.env.CI,
     url: E2E_BASE_URL,
   },

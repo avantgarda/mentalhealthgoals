@@ -1,3 +1,4 @@
+import { relativeMediaUrls } from '../hooks/relativeMediaUrls'
 import type { CollectionConfig } from 'payload'
 
 import {
@@ -59,6 +60,7 @@ export const Media: CollectionConfig = {
     update: authenticated,
   },
   hooks: {
+    afterRead: [relativeMediaUrls],
     beforeOperation: [dropUploadEditsOnStorageSync, attachStoredImageForEdits],
     afterChange: [revalidateMedia],
     afterDelete: [revalidateMedia],
