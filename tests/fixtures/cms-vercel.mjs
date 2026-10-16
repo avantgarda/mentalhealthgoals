@@ -79,10 +79,12 @@ if (args.includes('api')) {
     }
     if (state.uploadRefusal) {
       save()
-      process.stdout.write(
-        `${JSON.stringify(state.uploadRefusal.body)}\n${state.uploadRefusal.status}`,
-      )
-      process.exit(0)
+      // As real curl: the body (withheld by --fail), the status only when
+      // --write-out asks for it, and exit 22 under --fail or --fail-with-body.
+      const fail = args.includes('--fail') || args.includes('--fail-with-body')
+      if (!args.includes('--fail')) process.stdout.write(JSON.stringify(state.uploadRefusal.body))
+      if (flag('--write-out')) process.stdout.write(`\n${state.uploadRefusal.status}`)
+      process.exit(fail ? 22 : 0)
     }
     const [source, ...parameters] = forms
       .find((form) => form.startsWith('file=@'))

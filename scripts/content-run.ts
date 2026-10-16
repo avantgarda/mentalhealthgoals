@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path'
 import { formatFileSize } from '../src/utilities/fileLabel'
 import { argument, createCmsClient, requireCredentials, resolveDeployment } from './lib/cms-client'
 import { assessChange, checkCanary, validatePlan } from './lib/content-patch-core'
-import { assessUploads, readChange, runContentPatch } from './lib/content-patch-runner'
+import { assessUploads, readChange, runContentPatch, settled } from './lib/content-patch-runner'
 import { readUploadFile } from './lib/content-plan'
 
 const args = process.argv.slice(2)
@@ -112,7 +112,7 @@ function main() {
           backupDir: directory,
           planDir,
         })
-      : resolved
+      : settled(resolved)
     const resolvedFile = join(directory, 'resolved-plan.json')
     writeFileSync(resolvedFile, JSON.stringify(finalPlan, null, 2), { mode: 0o600 })
     const receipt = {
