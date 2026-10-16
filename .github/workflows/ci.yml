@@ -190,6 +190,10 @@ jobs:
     name: End-to-end tests
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      # The build below bakes this in, so it names the port the suite serves on
+      # (E2E_BASE_URL in playwright.config.ts) rather than the workflow's 3000.
+      NEXT_PUBLIC_SERVER_URL: http://localhost:3210
     services:
       postgres:
         image: postgres:17
@@ -216,6 +220,33 @@ jobs:
       # shaped to exercise every path the site renders. Config comes from the
       # job env, so the fixture reads .env.local only if it happens to exist.
       - run: pnpm fixture
+      # The suite runs against a production build here (playwright.config.ts
+      # starts `next start` on CI): `next dev` compiles every route on its first
+      # request and serves unminified bundles, which made this the slowest job
+      # by minutes. The build has to come after the fixture — /posts is
+      # force-static and the generateStaticParams pages are rendered now, so a
+      # build against an empty database would serve empty pages.
+      #
+      # Turbopack keeps its compiler cache in .next/cache/turbopack: the compile
+      # is ~29 s cold on a runner, and the cache cut it from 9 s to 2 s locally.
+      # Only that directory — the rest of .next/cache holds unstable_cache data,
+      # which would carry one run's content into the next build. Keyed on the
+      # lockfile alone, so it is saved once per set of dependencies rather than
+      # once per commit (~220 MB each); Turbopack recompiles what has changed.
+      - uses: actions/cache@v6
+        with:
+          path: .next/cache/turbopack
+          key: ${{ runner.os }}-next-turbopack-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm build
+      # Chromium is the same download for every run of a Playwright version, so
+      # keep it between runs; on a hit the install below only checks it is there.
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright.outputs.version }}
       # No --with-deps: it apt-installs system libraries, and apt on runners
       # can hang indefinitely. The runner image already carries Chromium's
       # system dependencies (it ships with Chrome).
