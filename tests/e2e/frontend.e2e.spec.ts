@@ -316,9 +316,9 @@ test.describe('Frontend', () => {
     // no address anybody can fetch it from either.
     //
     // The assertions are on requests and on the served file, not on the chunk.
-    // This suite runs against `next dev`, which fetches dynamic chunks eagerly;
-    // the production build is where the chunk stays put, and asserting on it
-    // here would be a test that passes for the wrong reason.
+    // Locally the suite runs against `next dev`, which fetches dynamic chunks
+    // eagerly; only the production build CI serves keeps the chunk put, so an
+    // assertion on the chunk would hold on one server and not the other.
     const artwork: string[] = []
     page.on('request', (request) => {
       if (/motif-b|\.webp/.test(request.url())) artwork.push(request.url())

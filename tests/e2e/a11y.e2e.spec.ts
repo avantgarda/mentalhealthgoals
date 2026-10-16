@@ -17,7 +17,7 @@ const personId = `#${personAnchor(FIXTURE.person.lead.name)}`
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice']
 
 const scan = async (page: Page) => {
-  // Never scan a half-rendered page (cold dev-server compiles on CI)
+  // Never scan a half-rendered page (cold dev-server compiles)
   await page.locator('#main-content').waitFor()
   // Streaming metadata can land the <title> a beat after the shell on a cold
   // server; axe's document-title rule must see the finished document.
@@ -39,10 +39,10 @@ const scan = async (page: Page) => {
     await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)))
   })
 
-  // The suite runs against `next dev`; the dev-tools overlay (<nextjs-portal>)
-  // injects itself into the page and, when it surfaces an issue badge, breaks
-  // axe's skip-link exemption for the region rule. It does not exist in
-  // production, so keep it out of the scan.
+  // Locally the suite runs against `next dev`; its dev-tools overlay
+  // (<nextjs-portal>) injects itself into the page and, when it surfaces an
+  // issue badge, breaks axe's skip-link exemption for the region rule. It does
+  // not exist in production, so keep it out of the scan.
   const { violations } = await new AxeBuilder({ page })
     .withTags(WCAG_TAGS)
     .exclude('nextjs-portal')
@@ -104,7 +104,7 @@ test.describe('axe-core WCAG 2.2 AA scans', () => {
 
   test('404 page has no violations', async ({ page }) => {
     await page.goto('/definitely-not-a-page')
-    // On a cold CI dev server the not-found boundary compiles lazily and axe
+    // On a cold dev server the not-found boundary compiles lazily and axe
     // can catch an intermediate shell — wait for the real page first.
     await expect(page.locator('#main-content h1')).toContainText('404')
     expect(await scan(page)).toEqual([])

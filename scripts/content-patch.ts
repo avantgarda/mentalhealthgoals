@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { argument, createCmsClient, requireCredentials, resolveDeployment } from './lib/cms-client'
 import { checkCanary, validatePlan } from './lib/content-patch-core'
-import { runContentPatch } from './lib/content-patch-runner'
+import { runContentPatch, settled } from './lib/content-patch-runner'
 
 const args = process.argv.slice(2)
 function main() {
@@ -27,7 +27,11 @@ function main() {
       planDir: dirname(planFile),
     })
     const output = argument(args, '--resolved-plan', false)
-    if (output) writeFileSync(output, JSON.stringify(resolved, null, 2), { mode: 0o600 })
+    // For content:verify: an apply's plan is settled already, a dry run's is not.
+    if (output)
+      writeFileSync(output, JSON.stringify(apply ? resolved : settled(resolved), null, 2), {
+        mode: 0o600,
+      })
   } finally {
     client.dispose()
   }
