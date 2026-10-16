@@ -1,19 +1,21 @@
 import { test, expect, Page } from '@playwright/test'
-import { E2E_BASE_URL } from '../../playwright.config'
+import { E2E_AGAINST_BUILD, E2E_BASE_URL } from '../../playwright.config'
 import { login } from '../helpers/login'
 import { FIXTURE } from '../fixtures/site'
 
 test.describe('Admin Panel', () => {
   // The cold-compile warm-up in beforeAll needs headroom beyond the default.
-  test.describe.configure({ timeout: 240_000 })
+  // Only `next dev` compiles anything: CI serves a production build.
+  if (!E2E_AGAINST_BUILD) test.describe.configure({ timeout: 240_000 })
 
   let page: Page
 
   test.beforeAll(async ({ browser }) => {
     // A hook keeps its own 30s budget regardless of the describe's timeout, and
-    // this one signs in and compiles the admin bundle. Raise it here or the
-    // whole suite fails on a cold `.next` before a single assertion runs.
-    test.setTimeout(240_000)
+    // on `next dev` this one signs in and compiles the admin bundle. Raise it
+    // there or the whole suite fails on a cold `.next` before a single
+    // assertion runs.
+    if (!E2E_AGAINST_BUILD) test.setTimeout(240_000)
 
     // Contexts created manually don't inherit `use` options — pass baseURL
     const context = await browser.newContext({ baseURL: E2E_BASE_URL })
@@ -22,13 +24,18 @@ test.describe('Admin Panel', () => {
     await login({ page, user: FIXTURE.admin })
 
     // Warm the admin bundle once, here, where a generous timeout is honest
-    // about what is happening: the suite runs against `next dev`, so the
-    // first visit to each admin route pays a cold compile that can exceed a
-    // single assertion's timeout. Charging it to beforeAll keeps the tests
-    // measuring the admin rather than the compiler, and stops CI leaning on
-    // its retries.
-    for (const route of ['/admin', '/admin/collections/users', '/admin/collections/pages/create']) {
-      await page.goto(route, { timeout: 180_000, waitUntil: 'domcontentloaded' })
+    // about what is happening: on `next dev` the first visit to each admin
+    // route pays a cold compile that can exceed a single assertion's timeout.
+    // Charging it to beforeAll keeps the tests measuring the admin rather than
+    // the compiler. A production build has nothing to warm.
+    if (!E2E_AGAINST_BUILD) {
+      for (const route of [
+        '/admin',
+        '/admin/collections/users',
+        '/admin/collections/pages/create',
+      ]) {
+        await page.goto(route, { timeout: 180_000, waitUntil: 'domcontentloaded' })
+      }
     }
   })
 
