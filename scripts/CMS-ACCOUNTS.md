@@ -57,6 +57,18 @@ Form notifications and branded visitor replies retain their existing routing and
 The form hook always marks its messages, including when branding fails; unmarked mail uses
 the stricter account policy. Future non-form email producers must review this policy.
 
+## Compatibility with content tools
+
+Active editors still use the existing JWT login, PDF-upload and content-update APIs. The
+preview canary helper creates an active account through the trusted Local API; its local process
+uses a localhost origin with email disabled, while its existing Neon checks select the isolated
+preview database. It does not need a preview web hostname merely to create or delete that account.
+
+Payload's explicit auth server origin also affects generated Media URLs. The Media after-read
+hook keeps this deployment's file URLs relative, including image derivatives; external storage
+URLs remain unchanged. This preserves PDF links and local image optimisation without rewriting
+stored records or files.
+
 ## Deployment and inbox verification
 
 1. Review and merge the code through normal CI. `build:deploy` applies the additive

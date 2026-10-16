@@ -22,6 +22,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { argument } from './lib/cms-client'
+import { previewEditorEnvironment } from './lib/preview-editor-environment'
 import { isCanaryAddress } from './lib/content-patch-core'
 import { NEON_PROJECT_ID, PRODUCTION_NEON_ENDPOINT_HOST } from './lib/production-identifiers'
 
@@ -80,11 +81,7 @@ async function connect(branch: Branch) {
   if (!host.endsWith('.neon.tech') || host === PRODUCTION_NEON_ENDPOINT_HOST) {
     throw new Error('Refusing: that connection string points at production or off Neon')
   }
-  process.env.DATABASE_URL = connection
-  process.env.PAYLOAD_SECRET = randomBytes(32).toString('hex')
-  process.env.PAYLOAD_DB_PUSH = '0'
-  process.env.VERCEL_ENV = 'preview'
-  delete process.env.RESEND_API_KEY
+  Object.assign(process.env, previewEditorEnvironment(connection, randomBytes(32).toString('hex')))
   const { getPayload } = await import('payload')
   const config = (await import('../src/payload.config')).default
   return getPayload({ config })
