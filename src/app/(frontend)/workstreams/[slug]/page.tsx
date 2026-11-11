@@ -7,6 +7,7 @@ import Link from 'next/link'
 
 import { PartnerGroup } from '@/components/PartnerLogo'
 import { getCachedPartners } from '@/utilities/getPartners'
+import type { Workstream } from '@/payload-types'
 
 import { notFound } from 'next/navigation'
 import React, { cache } from 'react'
@@ -37,6 +38,13 @@ export async function generateStaticParams() {
 type Args = {
   params: Promise<{ slug?: string }>
 }
+
+const partnerIds = (partners: Workstream['partners']) =>
+  new Set(
+    (partners ?? []).map((partner) =>
+      typeof partner === 'object' && partner !== null ? partner.id : partner,
+    ),
+  )
 
 const queryWorkstreamBySlug = cache(async ({ slug }: { slug: string }) => {
   const payload = await getPayload({ config: configPromise })
@@ -135,19 +143,15 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
 
   if (!workstream) notFound()
 
-  const { title, summary, description, deliveredBy, boundaryStatement, partners, resources } =
-    workstream
-  // The workstream query runs at depth 0, so `partners` arrives as IDs — and
-  // raising the depth far enough to reach each partner's logo would pull the
-  // whole graph for every workstream page. Resolve them from the cached
-  // partner list instead, which the footer has already warmed, keeping the
-  // curated order rather than the relationship's.
-  const partnerIds = new Set(
-    (partners ?? []).map((p) => (typeof p === 'object' && p !== null ? p.id : p)),
+  const { title, summary, description, deliveredBy, boundaryStatement, resources } = workstream
+  // Resolve both groups from the same ordered partner list used by the footer.
+  const leadPartnerIds = partnerIds(workstream.leadPartners)
+  const deliveryPartnerIds = partnerIds(workstream.partners)
+  const partners = leadPartnerIds.size || deliveryPartnerIds.size ? await getCachedPartners() : []
+  const leadPartners = partners.filter((partner) => leadPartnerIds.has(partner.id))
+  const deliveryPartners = partners.filter(
+    (partner) => deliveryPartnerIds.has(partner.id) && !leadPartnerIds.has(partner.id),
   )
-  const workstreamPartners = partnerIds.size
-    ? (await getCachedPartners()).filter((p) => partnerIds.has(p.id))
-    : []
   const all = await queryAllWorkstreams()
   const team = await queryWorkstreamLeads({
     id: workstream.id,
@@ -182,12 +186,7 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
             </span>
             <div className="flex flex-col gap-1.5">
               <span className="eyebrow">Delivered by</span>
-              {/* Institutions stay as text, deliberately. A workstream's
-                  delivery list is a set of co-equal institutions, and we only
-                  hold cleared artwork for one of them — showing King's as a
-                  logo above four plain university names would invent a
-                  hierarchy the programme does not claim. Logos belong where
-                  the set is complete: the footer band and curated rows. */}
+              {/* Keep the text credit consistent with the workstream index. */}
               <ul className="flex flex-col gap-1 text-[0.95rem] leading-snug">
                 {deliveredBy
                   .split('·')
@@ -277,9 +276,13 @@ export default async function WorkstreamPage({ params: paramsPromise }: Args) {
               </p>
             )}
 
-            {workstreamPartners.length > 0 && (
-              <div className="partner-plate border-y border-border px-5 py-6" data-reveal>
-                <PartnerGroup label="Delivered with" partners={workstreamPartners} />
+            {(leadPartners.length > 0 || deliveryPartners.length > 0) && (
+              <div
+                className="partner-plate flex flex-col gap-6 border-y border-border px-5 py-6"
+                data-reveal
+              >
+                <PartnerGroup label="Led by" partners={leadPartners} />
+                <PartnerGroup label="Delivered with" partners={deliveryPartners} />
               </div>
             )}
 

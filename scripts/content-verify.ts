@@ -10,8 +10,8 @@
  * description must sit in the document head, long passages that were removed
  * must be gone, links that moved must have moved, and a record whose
  * slug changed must answer at the new path and 404 at the old one. A file the
- * plan uploaded must be in Media under its name and served as a PDF of the
- * reviewed size. With a login
+ * plan uploaded must be in Media under its name and served with the reviewed
+ * type and size. With a login
  * it also confirms each record is found under its new name and carries a
  * version — the proof that the write went through Payload and is reversible.
  *
@@ -22,10 +22,12 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
+import { personAnchor } from '../src/utilities/personAnchor'
 import { argument, createCmsClient, resolveDeployment } from './lib/cms-client'
 import {
   assessChange,
   checkCanary,
+  creationImages,
   isUnpublishedDraft,
   matchValues,
   validatePlan,
@@ -37,8 +39,9 @@ import {
   linkedMediaIds,
   visibleText,
   type HeadPassage,
+  type MediaFile,
 } from './lib/content-plan'
-import { mediaFilePath, readMedia } from './lib/content-patch-runner'
+import { mediaFilePath, readMedia, readPerson } from './lib/content-patch-runner'
 
 const args = process.argv.slice(2)
 const deployment = resolveDeployment(argument(args, '--deployment'))
@@ -60,6 +63,22 @@ const report = (ok: boolean, line: string) => {
   if (!ok) failed++
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${line}`)
 }
+const tags = (html: string, tag: string) =>
+  html.match(new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, 'g')) ?? []
+const attr = (tag: string, name: string) => tag.match(new RegExp(`\\s${name}="([^"]*)"`))?.[1] ?? ''
+const showsImage = (html: string, media: MediaFile, alt?: string) => {
+  const filenames = [
+    media.filename,
+    ...Object.values(media.sizes ?? {}).map((size) => size?.filename),
+  ]
+  return (html.match(/<img\b[^>]*>/g) ?? []).some((tag) => {
+    const src = attr(tag, 'src')
+    return (
+      filenames.some((filename) => filename && src.includes(encodeURIComponent(filename))) &&
+      (alt === undefined || visibleText(attr(tag, 'alt')) === alt)
+    )
+  })
+}
 
 try {
   // A link to a file in Media renders with the file's type and size after its
@@ -74,6 +93,7 @@ try {
   // Each uploaded file: its record, then the file as a reader gets it. One
   // byte is enough to read the type and the full size from the headers.
   const uploads = plan.uploadMedia ?? []
+  const attached = creationImages(plan)
   const records = readMedia(
     client,
     uploads.map((upload) => upload.id!),
@@ -92,6 +112,7 @@ try {
       record?.filename === upload.filename &&
       record.mimeType === upload.mimeType &&
       record.filesize === upload.filesize &&
+      (!attached.has(upload.id!) || record.alt === upload.alt) &&
       (served.status === 206 || served.status === 200) &&
       contentType === upload.mimeType &&
       size === upload.filesize
@@ -112,6 +133,85 @@ try {
       `${served.status} ${path} → ${contentType ?? '?'}, ${Number.isFinite(size) ? size : '?'} bytes` +
         (ok ? '' : `  — want media #${upload.id}, ${upload.mimeType}, ${upload.filesize} bytes`),
     )
+  }
+  if (plan.createPeople?.length) {
+    const page = client.page('/people')
+    const cards = tags(page.html, 'li')
+    for (const person of plan.createPeople) {
+      const { name, role, organisation, photo } = person.data
+      const matches = cards.filter((card) => attr(card.split('>')[0], 'id') === personAnchor(name))
+      const card = matches[0] ?? ''
+      const renderedName = card.match(/<span data-person-name[^>]*>([\s\S]*?)<\/span>/)?.[1]
+      const file = records.find((record) => record.id === photo)
+      const alt = uploads.find((upload) => upload.id === photo)?.alt
+      const doc = readPerson(client, person)
+      const ok =
+        !!doc &&
+        page.status === 200 &&
+        matches.length === 1 &&
+        visibleText(renderedName ?? '') === name &&
+        tags(card, 'p').some((p) => visibleText(p).trim() === role) &&
+        tags(card, 'p').some((p) => visibleText(p).trim() === organisation) &&
+        !!file &&
+        showsImage(card, file, alt)
+      results.push({ path: '/people', person: name, id: doc?.id, photo, ok })
+      report(ok, `Team profile and headshot — ${name}`)
+    }
+  }
+  for (const change of plan.changes) {
+    if (change.collection !== 'workstreams' || !Array.isArray(change.after.leadPartners)) continue
+    const lead = change.after.leadPartners as number[]
+    const delivery = (change.after.partners as number[] | undefined)?.filter(
+      (id) => !lead.includes(id),
+    )
+    const ids = [...new Set([...lead, ...(delivery ?? [])])]
+    const query = new URLSearchParams({
+      depth: '1',
+      limit: String(ids.length),
+      'where[id][in]': ids.join(','),
+    })
+    const partners = ids.length
+      ? (client.api(`/api/partners?${query}`).docs as {
+          id: number
+          name: string
+          url?: string | null
+          logo?: MediaFile | null
+        }[])
+      : []
+    const path = `/workstreams/${change.after.slug ?? change.match.value}`
+    const page = client.page(path)
+    for (const [label, groupIds] of [
+      ['led-by', lead],
+      ['delivered-with', delivery],
+    ] as const) {
+      if (!groupIds) continue
+      const group = tags(page.html, 'ul').find(
+        (list) => attr(list.split('>')[0], 'aria-labelledby') === `partners-${label}`,
+      )
+      const items = group ? tags(group, 'li') : []
+      const ok =
+        page.status === 200 &&
+        items.length === groupIds.length &&
+        groupIds.every((id) => {
+          const partner = partners.find((doc) => doc.id === id)
+          if (!partner) return false
+          const index = items.findIndex(
+            (item) =>
+              (!partner.url ||
+                tags(item, 'a').some(
+                  (a) => visibleText(attr(a.split('>')[0], 'href')) === partner.url,
+                )) &&
+              (partner.logo
+                ? showsImage(item, partner.logo)
+                : visibleText(item).includes(partner.name)),
+          )
+          if (index < 0) return false
+          items.splice(index, 1)
+          return true
+        })
+      results.push({ path, partners: groupIds, group: label, ok })
+      report(ok, `${path} partner row — ${label}`)
+    }
   }
   for (const change of plan.changes) {
     const placements = imagePlacements(change)
