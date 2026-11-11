@@ -53,14 +53,15 @@ if (args.includes('api')) {
   } else if (path.startsWith('/api/media/file/')) {
     // Payload's file route: ranged GETs answer 206 with the full size in
     // Content-Range.
-    const stored = state.files?.[decodeURIComponent(path.slice('/api/media/file/'.length))]
+    const filename = decodeURIComponent(path.slice('/api/media/file/'.length))
+    const stored = state.files?.[filename]
     const bytes = stored === undefined ? undefined : Buffer.from(stored, 'base64')
     const ranged = bytes && flag('--range') === '0-0'
     const status = !bytes ? 404 : ranged ? 206 : 200
     const headers = [`HTTP/2 ${status}`]
     if (bytes)
       headers.push(
-        'content-type: application/pdf',
+        `content-type: ${state.collections.media.find((doc) => doc.filename === filename)?.mimeType ?? 'application/pdf'}`,
         ranged ? `content-range: bytes 0-0/${bytes.length}` : `content-length: ${bytes.length}`,
       )
     if (flag('--dump-header'))
@@ -106,7 +107,7 @@ if (args.includes('api')) {
     state.files = { ...state.files, [filename]: bytes.toString('base64') }
     const doc = {
       ...payload,
-      id: 77,
+      id: Math.max(76, ...state.collections.media.map(({ id }) => id)) + 1,
       filename,
       mimeType: parameter('type'),
       filesize: bytes.length,
@@ -126,8 +127,17 @@ if (args.includes('api')) {
       save()
       out({ totalDocs: 1, docs: [{ id: 1 }] })
     } else if (method === 'POST') {
-      const doc = { ...data, id: 99, updatedAt: 'created' }
+      const doc = {
+        ...data,
+        id: Math.max(98, ...docs.map(({ id }) => id)) + 1,
+        updatedAt: 'created',
+      }
       docs.push(doc)
+      if (collection === 'people' && state.losePersonResponse) {
+        state.losePersonResponse = false
+        save()
+        process.exit(22)
+      }
       save()
       out({ doc })
     } else if (method === 'PATCH') {
@@ -166,9 +176,16 @@ if (args.includes('api')) {
           )
         : docs
       save()
+      const selected = hits.slice(0, Number(url.searchParams.get('limit') ?? 500))
       out({
         totalDocs: hits.length,
-        docs: hits.slice(0, Number(url.searchParams.get('limit') ?? 500)),
+        docs:
+          collection === 'partners' && url.searchParams.get('depth') === '1'
+            ? selected.map((doc) => ({
+                ...doc,
+                logo: state.collections.media.find(({ id }) => id === doc.logo),
+              }))
+            : selected,
       })
     }
   } else {
@@ -211,9 +228,38 @@ if (args.includes('api')) {
         .map(([key, entry]) => (key === 'url' ? `<a href="${entry}">Link</a>` : walk(entry, key)))
         .join(' ')
     }
+    const image = (id) => {
+      const file = state.collections.media.find((doc) => doc.id === id)
+      return file ? `<img src="${file.url}" alt="${file.alt}">` : ''
+    }
+    const people =
+      path === '/people'
+        ? state.collections.people
+            .filter((doc) => doc.group === 'delivery')
+            .map(
+              (doc) =>
+                `<li id="${doc.name.toLowerCase().replaceAll(' ', '-')}">${image(doc.photo)}<span data-person-name="true">${doc.name}</span><p>${doc.role}</p><p>${doc.organisation}</p></li>`,
+            )
+            .join('')
+        : ''
+    const workstream = state.collections.workstreams.find(
+      (doc) => path === `/workstreams/${doc.slug}`,
+    )
+    const row = (label, ids) =>
+      ids?.length
+        ? `<ul aria-labelledby="partners-${label}">${ids
+            .map((id) => {
+              const doc = state.collections.partners.find((partner) => partner.id === id)
+              return doc ? `<li><a href="${doc.url}">${image(doc.logo) || doc.name}</a></li>` : ''
+            })
+            .join('')}</ul>`
+        : ''
+    const credits = workstream
+      ? row('led-by', workstream.leadPartners) + row('delivered-with', workstream.partners)
+      : ''
     const html = state.badPage
       ? '<p>Missing revised copy</p>'
-      : `<p>${walk(Object.entries(state.collections).flatMap(([name, docs]) => (name === 'media' ? [] : docs)))}</p>`
+      : `<p>${walk(Object.entries(state.collections).flatMap(([name, docs]) => (name === 'media' ? [] : docs)))}</p>${people}${credits}`
     save()
     process.stdout.write(`${html}\n${status}`)
   }

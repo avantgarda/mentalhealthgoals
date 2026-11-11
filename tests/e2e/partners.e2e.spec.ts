@@ -117,12 +117,16 @@ test.describe('Partner logos', () => {
     expect(lum(bg)).toBeGreaterThan(lum(fg))
   })
 
-  test('a workstream with a complete partner set shows it in the body', async ({ page }) => {
+  test('a workstream shows lead and delivery partners in separate rows', async ({ page }) => {
     await page.goto(`/workstreams/${FIXTURE.workstream.withPartners.slug}`)
-    const row = page.locator('.partner-plate').first()
-    await expect(row.getByText('Delivered with')).toBeVisible()
+    const article = page.locator('article')
+    const leads = article.getByRole('list', { name: 'Led by', exact: true })
+    const delivery = article.getByRole('list', { name: 'Delivered with', exact: true })
+    const lead = { name: new RegExp(FIXTURE.partner.pageOnly.name) }
+    await expect(leads.getByRole('img', lead)).toBeVisible()
+    await expect(delivery.getByRole('img', lead)).toHaveCount(0)
     await expect(
-      row.getByRole('img', { name: new RegExp(FIXTURE.partner.external.name) }),
+      delivery.getByRole('img', { name: new RegExp(FIXTURE.partner.external.name) }),
     ).toBeVisible()
   })
 
@@ -141,5 +145,6 @@ test.describe('Partner logos', () => {
       .locator('xpath=ancestor::div[1]')
     await expect(deliveredBy.getByText(firstInstitution)).toBeVisible()
     await expect(deliveredBy.getByRole('img')).toHaveCount(0)
+    await expect(page.locator('article').getByRole('list', { name: 'Led by' })).toHaveCount(0)
   })
 })

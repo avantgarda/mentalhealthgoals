@@ -129,6 +129,131 @@ describe('single-command CMS handoff', () => {
     )
   }, 30_000)
 
+  it('publishes both partner rows and a Delivery Team profile with their reviewed images', async () => {
+    const f = fixture()
+    const state = f.state()
+    state.collections.workstreams.push({
+      id: 30,
+      slug: 'example',
+      leadPartners: [],
+      partners: [],
+      updatedAt: 'baseline',
+    })
+    const statePath = join(f.dir, 'state.json')
+    writeFileSync(statePath, JSON.stringify(state))
+    const sharp = (await import('sharp')).default
+    const bytes = await sharp({
+      create: { width: 24, height: 24, channels: 3, background: 'blue' },
+    })
+      .png()
+      .toBuffer()
+    const upload = (reference: string, filename: string, alt: string) => {
+      writeFileSync(join(f.dir, filename), bytes)
+      return {
+        reference,
+        filename,
+        alt,
+        file: filename,
+        mimeType: 'image/png',
+        filesize: bytes.length,
+        sha256: createHash('sha256').update(bytes).digest('hex'),
+      }
+    }
+    const logo = upload('__MEDIA_LOGO__', 'example-logo.png', 'Example delivery')
+    const photo = upload('__MEDIA_PHOTO__', 'example-person.png', 'Alex Example')
+    const lead = {
+      reference: '__PARTNER_LEAD__',
+      data: {
+        name: 'Example lead',
+        url: 'https://lead.example.org/',
+        role: 'delivery',
+        usageNote: 'Text credit.',
+        showInFooter: false,
+      },
+    }
+    const delivery = {
+      reference: '__PARTNER_DELIVERY__',
+      data: {
+        name: 'Example delivery',
+        url: 'https://delivery.example.org/',
+        role: 'partner',
+        logo: logo.reference,
+        logoScale: 0.85,
+        usageNote: 'Artwork reviewed.',
+        showInFooter: false,
+      },
+    }
+    const person = {
+      aliases: ['Alexander Example'],
+      data: {
+        name: 'Alex Example',
+        role: 'Project Officer',
+        organisation: 'Example lead',
+        group: 'delivery',
+        workstreams: [30],
+        photo: photo.reference,
+      },
+    }
+    const authored = {
+      ...plan,
+      createPartners: [lead, delivery],
+      createPeople: [person],
+      uploadMedia: [logo, photo],
+      changes: [
+        {
+          collection: 'workstreams',
+          match: { field: 'slug', value: 'example' },
+          before: { leadPartners: [], partners: [] },
+          after: { leadPartners: [lead.reference], partners: [delivery.reference] },
+        },
+      ],
+    }
+    writeFileSync(f.planFile, JSON.stringify(authored))
+    const input = 'editor@example.org\noffline-password\n'
+    const apply = () => f.run(['--apply', '--allow-production'], input)
+    const put = (updated: unknown) => writeFileSync(statePath, JSON.stringify(updated))
+    state.collections.people.push({ id: 21, name: 'Alexander Example', role: 'Existing' })
+    put(state)
+    const conflict = apply()
+    expect(conflict.status).not.toBe(0)
+    expect(conflict.stderr).toContain('Existing person differs from reviewed profile')
+    expect(
+      f
+        .state()
+        .requests.some(
+          ({ path, method }: { path: string; method: string }) =>
+            method === 'POST' && !path.startsWith('/api/users/'),
+        ),
+    ).toBe(false)
+    state.collections.people.pop()
+    state.losePersonResponse = true
+    put(state)
+    const interrupted = apply()
+    expect(interrupted.status).not.toBe(0)
+    expect(f.state().collections.people[1]).toMatchObject({ ...person.data, photo: 78 })
+    const first = apply()
+    expect(first.status, first.stdout + first.stderr).toBe(0)
+    expect(first.stdout).toContain('already exists: people/Alex Example')
+    expect(first.stdout).toContain('Team profile and headshot — Alex Example')
+    expect(first.stdout).toContain('partner row — led-by')
+    expect(first.stdout).toContain('partner row — delivered-with')
+    const live = f.state()
+    expect(live.collections.workstreams[0]).toMatchObject({ leadPartners: [99], partners: [100] })
+    expect(live.collections.partners[1]).toMatchObject({ logo: 77, logoScale: 0.85 })
+    expect(live.collections.people[1]).toMatchObject({ ...person.data, photo: 78 })
+    const second = apply()
+    expect(second.status, second.stdout + second.stderr).toBe(0)
+    const repeated = f.state()
+    expect(repeated.collections.media).toHaveLength(3)
+    expect(repeated.collections.partners).toHaveLength(2)
+    expect(repeated.collections.people).toHaveLength(2)
+    repeated.collections.media.find(({ id }: { id: number }) => id === 78).alt = 'Wrong alt'
+    put(repeated)
+    const changedAlt = apply()
+    expect(changedAlt.status).not.toBe(0)
+    expect(changedAlt.stderr).toContain('Alt text differs from reviewed image')
+  }, 30_000)
+
   it('requires the production flag before login, and preview still requires a canary', () => {
     const f = fixture()
     const result = f.run(['--apply'])
