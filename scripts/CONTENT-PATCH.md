@@ -67,9 +67,8 @@ in migrations.
    Without `--apply` it is a dry run. `--verify-only` checks an already-applied
    plan without content writes. `--deployment <exact-host>.vercel.app` selects
    another deployment; previews still require the isolation canary. `--reverse`
-   reverses reviewed updates, with the same fences, and leaves created partners
-   and uploaded files in place. Never delete a partner or file automatically
-   during reversal.
+   restores reviewed fields with the same fences. Created partners, people and
+   uploaded files stay in the CMS.
 
 5. **Review the live website after the user runs the command.** Follow the
    checklist below and record dated evidence in `qa.md`. Browser use is useful
@@ -95,13 +94,11 @@ and `qa.md` record what actually happened.
 | `pnpm content:verify`         | Check rendered pages and exact authenticated fields/version history                          |
 | `pnpm content:editor`         | Temporary editor used only for isolated preview testing                                      |
 
-The maintained runner supports copy fields listed below, **existing-person name
-corrections**, **workstream partner relationships**, page partner blocks through
-`layout`, **explicit new programme partner declarations**, **links to PDFs in
-Media** and **declared PDF, JPEG and PNG uploads to Media** (up to 4 MB each). It does not add
-Team members, delete or replace records or files, upload other file
-types, edit a file's details in Media, alter publishing status or edit
-navigation globals. Describe any manual Media/Partners admin steps precisely in
+The maintained runner supports reviewed copy and existing-person name corrections,
+both workstream partner rows, page partner blocks, new partners with declared
+logos, and new Delivery Team profiles with declared headshots. It links to PDFs
+and uploads declared PDF, JPEG and PNG files to Media (up to 4 MB each). Other
+CMS operations require their own workflow. Describe any manual CMS steps precisely in
 `RUN.md`, with the file, target record/field and whether to do them before or
 after the command. Do not call them impossible just because this tool lacks the
 operation. Extend the mechanism only when the requested scope actually needs it.
@@ -109,9 +106,9 @@ operation. Extend the mechanism only when the requested scope actually needs it.
 ### Declaring a new programme partner
 
 Add optional `createPartners` to the same version-1 plan. Use a unique reference
-as a whole entry in an `after.partners` array: a workstream's `partners` field or
-a `partnerLogos` block's `partners` field. It cannot be used in prose, another
-relationship or `before`. Example using invented content:
+as a whole entry in a workstream's `after.leadPartners` or `after.partners` array,
+or the `partners` array in a `partnerLogos` block. Each new partner needs at least
+one such placement.
 
 ```json
 {
@@ -121,21 +118,39 @@ relationship or `before`. Example using invented content:
     "url": "https://example.org/",
     "role": "partner",
     "showInFooter": false,
-    "usageNote": "Text recognition only; artwork and permission pending.",
+    "usageNote": "Text credit while artwork approval is pending.",
     "order": 40
   }
 }
 ```
 
-`name`, HTTPS `url`, `role: "partner"`, `showInFooter: false` and `usageNote` are
-required; `strapline` and finite `order` are optional. Logos/funder/footer
-changes are outside this creation allowlist. Each declaration must be referenced
-by a reviewed update. Pass declarations as the fifth argument to `writePlan`
-(after optional review status). Every supplied field is checked on an existing
-record with the same name; a mismatch or duplicate stops before writes. A rerun
-reuses an identical existing record. Creation is not transactional across
-records: if another editor races creation, duplicate detection/readback stops
-the run and the receipt needs inspection.
+`name`, HTTPS `url`, `role`, `showInFooter: false` and `usageNote` are required.
+Use `role: "partner"` for programme partners and `role: "delivery"` for a new
+delivery organisation credited exclusively in `leadPartners`. Optional fields
+are `strapline`, numeric `order`, and `logo` referencing a declared JPEG or PNG
+upload. With a logo, `logoScale` accepts 0.5 to 2. Record the artwork source and
+permission in `usageNote`. Pass `{ createPartners, uploadMedia }` as the fifth
+argument to `writePlan`. A matching existing partner is reused. An unexpected
+value or duplicate stops the run.
+
+### Adding Delivery Team profiles
+
+Use `createPeople` alongside `uploadMedia` in the plan or in the options to
+`writePlan`. Each declaration contains `data` with `name`, `role`,
+`organisation`, `group: "delivery"`, one or more reviewed workstream IDs in
+`workstreams` and `photo` referencing a declared JPEG or PNG. Use optional
+`aliases` for known alternate names. The runner also checks common variants
+with and without Dr or Prof. It rejects name conflicts and verifies that the
+workstreams exist before any writes. These profiles use blank biographies.
+The review includes every name, title, affiliation, workstream and portrait.
+
+The runner verifies uploaded bytes and alt text, creates the partners, updates
+workstream fields, then creates the Team profiles. A retry reuses matching files
+and records. If another editor creates a matching name during the run, inspect
+the receipt before retrying. The verifier checks the rendered workstream partner
+rows and Team cards. Reversal restores updated fields. Created partners, people
+and files remain in the CMS. For a partial apply, use the receipt to determine
+what landed before choosing how to recover.
 
 ### Linking text to a PDF in Media
 
@@ -351,25 +366,22 @@ wrong. Neither check can be switched off.
   _baseline_ value;
 - `before` and `after` — the same set of fields, from this allowlist:
 
-  | collection    | fields                                                                                                                                     |
-  | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-  | `pages`       | `layout`, `hero`, `meta`                                                                                                                   |
-  | `posts`       | `content`                                                                                                                                  |
-  | `workstreams` | `slug`, `title`, `summary`, `description`, `boundaryStatement`, `primaryFocus`, `keyQuestions`, `differentiators`, `resources`, `partners` |
-  | `people`      | `name`, `role`, `bio`                                                                                                                      |
+  | collection    | fields                                                                                                                                                     |
+  | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `pages`       | `layout`, `hero`, `meta`                                                                                                                                   |
+  | `posts`       | `content`                                                                                                                                                  |
+  | `workstreams` | `slug`, `title`, `summary`, `description`, `boundaryStatement`, `primaryFocus`, `keyQuestions`, `differentiators`, `resources`, `leadPartners`, `partners` |
+  | `people`      | `name`, `role`, `bio`                                                                                                                                      |
 
 - `generatedIds` — IDs the plan minted for rows that do not exist yet. Payload
   assigns its own on insert; the comparison tolerates exactly that substitution
   and nothing else.
 
-- `uploadMedia` and `createPartners` — optional declared creations, as above.
+- `uploadMedia`, `createPartners` and `createPeople` — optional declared creations.
   A resolved plan carries each upload's Media `id`.
 
-Existing records are updated, with only explicitly declared programme partners
-created and declared PDFs uploaded, as described above. No deletes or
-replacements, Team additions, publish status changes or navigation globals. A page's URL is out of
-reach because pages carry the navigation and inbound links; a workstream's
-`slug` may move with its title, pre-launch, and the tool then finds the record
+The tool supports the edits in the allowlist and the explicit creation
+operations above. A workstream's `slug` may move with its title, pre-launch, and the tool then finds the record
 under either name so a re-run or a reversal still works. Nothing redirects an
 old path — check for links to it (posts, in practice) and re-point them in the
 same plan.
@@ -390,8 +402,8 @@ without one. Everything else in a record has to match exactly.
   detected.
 - **A record already matching `after` is skipped**, so a re-run after a failure
   is inert for what landed and completes what did not.
-- **Each write is fenced by `updatedAt`** at the API and read back and compared
-  before the next begins.
+- **Updates are fenced by `updatedAt`** at the API. Creations recheck the reviewed
+  identity immediately before writing. Every write is read back before the next begins.
 - **Declared files are uploaded first**, and each is read back and hashed
   before any record links to it. A file already in Media under the same name
   is reused only if it is the same bytes; anything else stops the run.
@@ -401,8 +413,8 @@ without one. Everything else in a record has to match exactly.
   record before rerunning or reversing. (This exists because a read-back failure
   once produced a receipt claiming nothing had changed.)
 - **Reversal:** `--reverse` swaps `before` and `after` and runs the same checks,
-  refusing to overwrite later edits. It never deletes a created partner or an
-  uploaded file. Every editable collection also keeps version history, so a
+  refusing to overwrite later edits. Created partners, people and uploads stay
+  in the CMS. Every editable collection also keeps version history, so a
   single record can be restored in the admin.
 
 Writes are sequential; timing depends on the deployment, and there is no cross-record

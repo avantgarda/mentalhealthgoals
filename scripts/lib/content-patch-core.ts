@@ -13,16 +13,30 @@ export type PartnerCreation = {
   data: {
     name: string
     url: string
-    role: 'partner'
+    role: 'partner' | 'delivery'
     showInFooter: false
     usageNote: string
     strapline?: string
     order?: number
+    logo?: string | number
+    logoScale?: number
+  }
+}
+export type PersonCreation = {
+  /** Other reviewed names that must not produce a duplicate profile. */
+  aliases?: string[]
+  data: {
+    name: string
+    role: string
+    organisation: string
+    group: 'delivery'
+    workstreams: number[]
+    photo: string | number
   }
 }
 /** A file the run uploads to Media before it changes any record. */
 export type MediaUpload = {
-  /** A placeholder used only as the file a reviewed rich-text link picks. */
+  /** A placeholder used only in a reviewed media relationship. */
   reference: string
   /** The local file, relative to the plan's directory. */
   file: string
@@ -44,6 +58,7 @@ export type ContentPlan = {
   name: string
   changes: ContentChange[]
   createPartners?: PartnerCreation[]
+  createPeople?: PersonCreation[]
   uploadMedia?: MediaUpload[]
 }
 
@@ -73,6 +88,36 @@ export const isMediaReference = (value: unknown): value is string =>
 /** A path that stays inside the plan's directory. */
 const isPlanRelative = (path: string) =>
   path.split(/[\\/]/).every((part) => part && part !== '.' && part !== '..')
+
+const textField = (value: unknown): value is string =>
+  typeof value === 'string' && Boolean(value.trim()) && !/^__(PARTNER|MEDIA)_/.test(value)
+
+const positiveId = (id: unknown): id is number =>
+  typeof id === 'number' && Number.isSafeInteger(id) && id > 0
+
+export function personNames(person: PersonCreation): string[] {
+  return [
+    ...new Set(
+      [person.data.name, ...(person.aliases ?? [])].flatMap((name) => {
+        const bare = name.replace(/^(?:dr\.?|prof\.?|professor)\s+/i, '')
+        return [
+          name,
+          bare,
+          ...['Dr', 'Dr.', 'Prof.', 'Prof', 'Professor'].map((p) => `${p} ${bare}`),
+        ]
+      }),
+    ),
+  ]
+}
+
+export function creationImages(plan: ContentPlan): Set<string | number> {
+  return new Set([
+    ...(plan.createPartners ?? []).flatMap(({ data }) =>
+      data.logo === undefined ? [] : [data.logo],
+    ),
+    ...(plan.createPeople ?? []).map(({ data }) => data.photo),
+  ])
+}
 
 function validateUpload(upload: MediaUpload, filenames: Set<string>) {
   const name = typeof upload?.filename === 'string' ? upload.filename : '?'
@@ -141,6 +186,7 @@ const allowedFields: Record<ContentChange['collection'], string[]> = {
     'differentiators',
     'resources',
     'partners',
+    'leadPartners',
   ],
   people: ['name', 'role', 'bio'],
 }
@@ -185,17 +231,25 @@ export function checkCanary(environment: 'preview' | 'production', email: string
 
 export function validatePlan(value: unknown): ContentPlan {
   const plan = value as ContentPlan
-  if (plan?.version !== 1 || !plan.name || !Array.isArray(plan.changes) || !plan.changes.length) {
+  if (
+    plan?.version !== 1 ||
+    !plan.name ||
+    !Array.isArray(plan.changes) ||
+    (!plan.changes.length && !plan.createPeople?.length)
+  ) {
     throw new Error('Invalid content plan')
   }
   const seen = new Set<string>()
   if (
     Object.keys(plan).some(
-      (key) => !['version', 'name', 'changes', 'createPartners', 'uploadMedia'].includes(key),
+      (key) =>
+        !['version', 'name', 'changes', 'createPartners', 'createPeople', 'uploadMedia'].includes(
+          key,
+        ),
     )
   )
     throw new Error('Unsupported content plan option')
-  const references = new Set<string>()
+  const partners = new Map<string, PartnerCreation>()
   const partnerNames = new Set<string>()
   if (plan.createPartners !== undefined && !Array.isArray(plan.createPartners))
     throw new Error('Invalid partner creations')
@@ -203,29 +257,43 @@ export function validatePlan(value: unknown): ContentPlan {
     const data = partner?.data
     if (
       !/^__PARTNER_[A-Z0-9_]+__$/.test(partner?.reference ?? '') ||
-      references.has(partner.reference) ||
+      partners.has(partner.reference) ||
       Object.keys(partner).some((key) => !['reference', 'data'].includes(key)) ||
       !data ||
-      typeof data.name !== 'string' ||
-      !data.name.trim() ||
+      !textField(data.name) ||
       typeof data.url !== 'string' ||
       typeof data.usageNote !== 'string' ||
       !data.usageNote.trim() ||
-      data.role !== 'partner' ||
+      (data.role !== 'partner' && data.role !== 'delivery') ||
       data.showInFooter !== false ||
       Object.keys(data).some(
         (key) =>
-          !['name', 'url', 'role', 'showInFooter', 'usageNote', 'strapline', 'order'].includes(key),
+          ![
+            'name',
+            'url',
+            'role',
+            'showInFooter',
+            'usageNote',
+            'strapline',
+            'order',
+            'logo',
+            'logoScale',
+          ].includes(key),
       ) ||
       (data.strapline !== undefined && typeof data.strapline !== 'string') ||
       (data.order !== undefined && !Number.isFinite(data.order)) ||
+      (data.logoScale !== undefined &&
+        (data.logo === undefined ||
+          !Number.isFinite(data.logoScale) ||
+          data.logoScale < 0.5 ||
+          data.logoScale > 2)) ||
       partnerNames.has(data.name)
     )
       throw new Error('Invalid or duplicate programme partner creation')
     const url = new URL(data.url)
     if (url.protocol !== 'https:' || url.username || url.password)
       throw new Error('Partner URL must be an HTTPS website without credentials')
-    references.add(partner.reference)
+    partners.set(partner.reference, partner)
     partnerNames.add(data.name)
   }
   if (plan.uploadMedia !== undefined && !Array.isArray(plan.uploadMedia))
@@ -239,6 +307,49 @@ export function validatePlan(value: unknown): ContentPlan {
     uploads.set(upload.reference, upload)
   }
   const usedReferences = new Set<string>()
+  const checkCreationImage = (id: unknown, label: string) => {
+    const upload =
+      typeof id === 'string'
+        ? uploads.get(id)
+        : positiveId(id)
+          ? [...uploads.values()].find((file) => file.id === id)
+          : undefined
+    if (!upload?.mimeType.startsWith('image/'))
+      throw new Error(`Invalid ${label} creation: select a declared JPEG or PNG upload`)
+    usedReferences.add(upload.reference)
+  }
+  for (const { data } of partners.values())
+    if (data.logo !== undefined) checkCreationImage(data.logo, 'partner logo')
+
+  const newPersonNames = new Set<string>()
+  if (plan.createPeople !== undefined && !Array.isArray(plan.createPeople))
+    throw new Error('Invalid person creations')
+  for (const person of plan.createPeople ?? []) {
+    const data = person?.data
+    if (
+      !data ||
+      Object.keys(person).some((key) => !['aliases', 'data'].includes(key)) ||
+      Object.keys(data).some(
+        (key) => !['name', 'role', 'organisation', 'group', 'workstreams', 'photo'].includes(key),
+      ) ||
+      !textField(data.name) ||
+      !textField(data.role) ||
+      !textField(data.organisation) ||
+      data.group !== 'delivery' ||
+      !Array.isArray(data.workstreams) ||
+      !data.workstreams.length ||
+      !data.workstreams.every(positiveId) ||
+      new Set(data.workstreams).size !== data.workstreams.length ||
+      (person.aliases !== undefined &&
+        (!Array.isArray(person.aliases) || !person.aliases.every(textField)))
+    )
+      throw new Error('Invalid delivery team person creation')
+    const names = new Set(personNames(person).map((name) => name.toLowerCase()))
+    if ([...names].some((name) => newPersonNames.has(name)))
+      throw new Error(`Duplicate person creation: ${data.name}`)
+    for (const name of names) newPersonNames.add(name)
+    checkCreationImage(data.photo, 'person photo')
+  }
   for (const change of plan.changes) {
     const fields = allowedFields[change.collection]
     if (
@@ -258,17 +369,24 @@ export function validatePlan(value: unknown): ContentPlan {
       throw new Error('Unapproved content field')
     // New partner placeholders must be whole array entries in an actual
     // partner relationship, never a word in copy or a different relationship.
-    // A new file's placeholder is only ever the file an internal link picks:
-    // `fields.doc.value` under `linkType: 'internal'`, `relationTo: 'media'`.
+    // Upload references in changes are confined to rich-text links and image fields.
     const inspect = (
       item: unknown,
       side: 'before' | 'after',
-      slot?: 'partners' | 'media' | 'image',
+      slot?: 'partners' | 'leadPartners' | 'media' | 'image',
       parent?: Record<string, unknown>,
     ) => {
       if (typeof item === 'string' && item.startsWith('__PARTNER_')) {
-        if (side !== 'after' || slot !== 'partners' || !references.has(item))
-          throw new Error('Partner reference must be declared and used only in after.partners')
+        const partner = partners.get(item)
+        if (
+          side !== 'after' ||
+          !partner ||
+          (slot !== 'partners' && slot !== 'leadPartners') ||
+          (partner.data.role === 'delivery' && slot !== 'leadPartners')
+        )
+          throw new Error(
+            'Partner reference must be declared and used in a reviewed partner relationship',
+          )
         usedReferences.add(item)
       } else if (isMediaReference(item)) {
         if (side !== 'after' || !['media', 'image'].includes(slot ?? '') || !uploads.has(item))
@@ -279,7 +397,9 @@ export function validatePlan(value: unknown): ContentPlan {
           throw new Error('Media reference has the wrong type for its placement')
         usedReferences.add(item)
       } else if (Array.isArray(item)) {
-        item.forEach((entry) => inspect(entry, side, slot === 'partners' ? slot : undefined))
+        item.forEach((entry) =>
+          inspect(entry, side, slot === 'partners' || slot === 'leadPartners' ? slot : undefined),
+        )
       } else if (item && typeof item === 'object') {
         const obj = item as Record<string, unknown>
         const imageSlot = (key: string) =>
@@ -301,9 +421,14 @@ export function validatePlan(value: unknown): ContentPlan {
               ? 'partners'
               : imageSlot(key)
                 ? 'image'
-                : key === 'value' && linkedFile
-                  ? 'media'
-                  : undefined,
+                : key === 'leadPartners' &&
+                    Array.isArray(entry) &&
+                    item === change[side] &&
+                    change.collection === 'workstreams'
+                  ? 'leadPartners'
+                  : key === 'value' && linkedFile
+                    ? 'media'
+                    : undefined,
             obj,
           ),
         )
@@ -311,15 +436,15 @@ export function validatePlan(value: unknown): ContentPlan {
     }
     inspect(change.before, 'before')
     inspect(change.after, 'after')
-    if ('partners' in change.after) {
+    for (const relationship of ['partners', 'leadPartners']) {
+      if (!(relationship in change.after)) continue
       for (const side of ['before', 'after'] as const) {
-        const ids = change[side].partners
+        const ids = change[side][relationship]
         if (
           !Array.isArray(ids) ||
           ids.some(
             (id) =>
-              !(typeof id === 'number' && Number.isSafeInteger(id) && id > 0) &&
-              !(side === 'after' && typeof id === 'string' && references.has(id)),
+              !positiveId(id) && !(side === 'after' && typeof id === 'string' && partners.has(id)),
           ) ||
           new Set(ids).size !== ids.length
         )
@@ -352,11 +477,13 @@ export function validatePlan(value: unknown): ContentPlan {
 
     for (const value of matchValues(change)) {
       const identity = `${change.collection}/${value}`
+      if (change.collection === 'people' && newPersonNames.has(value.toLowerCase()))
+        throw new Error(`A person creation also targets an existing record: ${value}`)
       if (seen.has(identity)) throw new Error(`Duplicate content target: ${identity}`)
       seen.add(identity)
     }
   }
-  if ([...references].some((reference) => !usedReferences.has(reference)))
+  if ([...partners.keys()].some((reference) => !usedReferences.has(reference)))
     throw new Error('Every new partner must be referenced by a reviewed change')
   // A resolved plan carries each file's Media ID in place of its placeholder.
   for (const upload of uploads.values())
@@ -379,6 +506,10 @@ export function resolveReferences(
     ...change,
     after: JSON.parse(JSON.stringify(change.after), (_key, value) => ids.get(value) ?? value),
   }))
+  const image = (ref: string | number) => (typeof ref === 'string' ? (ids.get(ref) ?? ref) : ref)
+  for (const { data } of out.createPartners ?? [])
+    if (data.logo !== undefined) data.logo = image(data.logo)
+  for (const { data } of out.createPeople ?? []) data.photo = image(data.photo)
   if (out.uploadMedia)
     out.uploadMedia = out.uploadMedia.map((upload) => {
       const id = ids.get(upload.reference)
