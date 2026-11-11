@@ -1,12 +1,17 @@
 /** Offline Vercel/Payload transport for CLI regression tests. Invented content
  * only; this process never opens a network or database connection. */
-import { readFileSync, writeFileSync, statSync } from 'node:fs'
+import { readFileSync, renameSync, writeFileSync, statSync } from 'node:fs'
 
 const file = process.env.MHG_TEST_CMS_STATE
 if (!file) throw new Error('Offline CMS state required')
 const state = JSON.parse(readFileSync(file, 'utf8'))
 const args = process.argv.slice(2)
-const save = () => writeFileSync(file, JSON.stringify(state))
+const save = () => {
+  // The cancellation test polls this file while the mock records requests.
+  const pending = `${file}.${process.pid}.tmp`
+  writeFileSync(pending, JSON.stringify(state))
+  renameSync(pending, file)
+}
 const out = (value) => process.stdout.write(JSON.stringify(value))
 if (args.includes('api')) {
   if (args[0] !== '--scope' || args[1] !== 'team_fixture') process.exit(2)
