@@ -160,7 +160,10 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
       ref={ref}
       {...(overHero ? { 'data-theme': 'dark' } : {})}
     >
-      <div className="container flex h-[4.25rem] items-center justify-between gap-6 text-foreground lg:h-[4.75rem]">
+      {/* The gap is only a minimum: justify-between already spreads the logo
+          and the menu apart. On a phone the full 24px pushed the Menu button
+          past the edge of a 320px screen, and into the side padding at 360px. */}
+      <div className="container flex h-[4.25rem] items-center justify-between gap-3 text-foreground sm:gap-6 lg:h-[4.75rem]">
         <Link href="/" className="shrink-0">
           <Logo
             loading="eager"
