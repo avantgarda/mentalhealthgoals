@@ -32,12 +32,15 @@ export const MobileMenu: React.FC<{ data: HeaderType }> = ({ data }) => {
     return () => document.removeEventListener('keydown', onKey)
   }, [open])
 
+  // Below 360px the logo leaves no room for the word, so the button shows the
+  // icon alone — still named "Menu" or "Close" for screen readers — and widens
+  // its padding to keep a 44px tap target.
   return (
     <div className="xl:hidden">
       <button
         aria-controls={panelId}
         aria-expanded={open}
-        className="inline-flex h-10 items-center gap-2 rounded-[2px] px-2 text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-current hover:bg-foreground/[0.06]"
+        className="inline-flex h-10 items-center gap-2 rounded-[2px] px-2 text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-current hover:bg-foreground/[0.06] max-[360px]:px-3"
         onClick={() => setOpen((v) => !v)}
         type="button"
       >
@@ -61,7 +64,7 @@ export const MobileMenu: React.FC<{ data: HeaderType }> = ({ data }) => {
             ].join(' ')}
           />
         </span>
-        {open ? 'Close' : 'Menu'}
+        <span className="max-[360px]:sr-only">{open ? 'Close' : 'Menu'}</span>
       </button>
 
       <div

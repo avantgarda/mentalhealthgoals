@@ -29,6 +29,8 @@ const renderDefaultLink = defaultLinks.link as (
  *
  * - A link to an uploaded file (Media) goes to the file and says what it is:
  *   "Slides (PDF, 2.3 MB)". Editors pick the file; they never type the size.
+ *   The bracketed label never wraps, so a phone shows "(PDF, 340 KB)"
+ *   together rather than breaking it after the comma.
  * - An internal link whose target did not arrive — the document was deleted,
  *   or the page was read too shallow to fetch it — keeps its words and drops
  *   the link, rather than pointing at `/undefined`.
@@ -55,7 +57,12 @@ export const linkConverters: JSXConverters<SerializedAutoLinkNode | SerializedLi
         target={node.fields.newTab ? '_blank' : undefined}
       >
         {children}
-        {label && ` (${label})`}
+        {label && (
+          <>
+            {' '}
+            <span className="whitespace-nowrap">({label})</span>
+          </>
+        )}
       </a>
     )
   },
