@@ -117,13 +117,24 @@ export const Workstreams: CollectionConfig = {
       },
     },
     {
+      name: 'leadPartners',
+      type: 'relationship',
+      relationTo: 'partners',
+      hasMany: true,
+      label: 'Led by (organisations)',
+      admin: {
+        description:
+          'Optional separate credit for organisations that lead this workstream. Leave empty to use the standard text credit above.',
+      },
+    },
+    {
       name: 'partners',
       type: 'relationship',
       relationTo: 'partners',
       hasMany: true,
       admin: {
         description:
-          'Organisations this workstream is delivered with, shown as a logo row in the body. Use it only where the set is complete — the institutions in “Delivered by” stay as text, because showing a logo for one of several co-equal universities would imply a hierarchy the programme does not claim.',
+          'Organisations this workstream is delivered with, shown as a logo row in the body. Use this when the full set of delivery partners can be credited.',
       },
     },
 

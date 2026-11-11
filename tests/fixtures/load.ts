@@ -279,8 +279,10 @@ async function load(): Promise<void> {
           : {}),
         ...(isPartnered
           ? {
+              leadPartners: [partnerId['westmoor-university']],
               partners: [
                 partnerId['national-delivery-body'],
+                partnerId['westmoor-university'],
                 partnerId['harbour-data-trust'],
                 partnerId['meridian-studies-network'],
               ],
