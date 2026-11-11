@@ -189,7 +189,7 @@ describe('validatePlan', () => {
     expect(() => validatePlan(post({ populatedAuthors: [] }))).toThrow(/field/)
   })
 
-  it('supports existing-person name corrections without opening Team creation', () => {
+  it('supports existing-person name corrections and rejects an undeclared Team profile', () => {
     const person = {
       collection: 'people',
       match: { field: 'name', value: 'Dr Example' },
@@ -198,7 +198,7 @@ describe('validatePlan', () => {
     }
     expect(validatePlan({ ...plan, changes: [person] })).toBeTruthy()
     expect(() => validatePlan({ ...plan, changes: [person], createPeople: [{}] })).toThrow(
-      /Unsupported/,
+      /Invalid delivery team person creation/,
     )
     expect(() =>
       validatePlan({ ...plan, changes: [{ ...person, after: { name: 'Prof. Example' } }] }),
