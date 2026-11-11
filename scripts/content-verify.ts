@@ -32,6 +32,7 @@ import {
 } from './lib/content-patch-core'
 import {
   deriveExpectations,
+  imagePlacements,
   headText,
   linkedMediaIds,
   visibleText,
@@ -111,6 +112,29 @@ try {
       `${served.status} ${path} → ${contentType ?? '?'}, ${Number.isFinite(size) ? size : '?'} bytes` +
         (ok ? '' : `  — want media #${upload.id}, ${upload.mimeType}, ${upload.filesize} bytes`),
     )
+  }
+  for (const change of plan.changes) {
+    const placements = imagePlacements(change)
+    if (!placements.length) continue
+    const slug = change.match.value === 'home' ? '' : change.match.value
+    const path = change.collection === 'posts' ? `/posts/${slug}` : `/${slug}`
+    const page = client.page(path)
+    const images = page.html.match(/<img\b[^>]*>/g) ?? []
+    for (const placement of placements) {
+      const [file] = readMedia(client, [placement.id])
+      const filename = file?.filename
+      const ok =
+        page.status === 200 &&
+        Boolean(
+          filename &&
+          file?.mimeType?.startsWith('image/') &&
+          images.some(
+            (tag) => tag.includes(filename) || tag.includes(encodeURIComponent(filename)),
+          ),
+        )
+      report(ok, `image ${path} ${placement.path} → ${filename ?? placement.id}`)
+      results.push({ image: placement, path, filename, ok })
+    }
   }
   for (const e of deriveExpectations(plan, { media })) {
     // A record's words may render on more than one page (a workstream's summary

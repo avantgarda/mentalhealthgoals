@@ -491,6 +491,42 @@ describe('files a plan uploads', () => {
   }
   const uploadOptions = () => ({ ...options(), planDir: planDir() })
 
+  it('uploads a JPEG with caption, places it and safely reuses it on rerun', async () => {
+    const sharp = (await import('sharp')).default
+    const bytes = await sharp({
+      create: { width: 32, height: 24, channels: 3, background: 'blue' },
+    })
+      .jpeg()
+      .toBuffer()
+    const opts = uploadOptions()
+    writeFileSync(join(opts.planDir, 'meeting.jpg'), bytes)
+    const photo = {
+      ...upload,
+      file: 'meeting.jpg',
+      filename: 'meeting.jpg',
+      mimeType: 'image/jpeg' as const,
+      captionText: 'Forum discussion',
+      filesize: bytes.length,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+    }
+    const plan: ContentPlan = {
+      ...uploading,
+      uploadMedia: [photo],
+      changes: [
+        {
+          ...uploading.changes[0],
+          after: { layout: [{ blockType: 'mediaBlock', media: reference }] },
+        },
+      ],
+    }
+    const f = fixture()
+    const resolved = runContentPatch(f.client, deployment, plan, opts)
+    expect(resolved.changes[0].after.layout).toEqual([{ blockType: 'mediaBlock', media: 77 }])
+    expect(f.writes).toEqual(['upload media', 'pages'])
+    runContentPatch(f.client, deployment, plan, opts)
+    expect(f.writes).toEqual(['upload media', 'pages'])
+  })
+
   it('dry runs: names the upload and writes nothing', () => {
     const f = fixture()
     const log = vi.fn()

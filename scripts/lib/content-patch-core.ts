@@ -29,7 +29,8 @@ export type MediaUpload = {
   /** The name Media serves it under: `/api/media/file/<filename>`. */
   filename: string
   alt: string
-  mimeType: 'application/pdf'
+  captionText?: string
+  mimeType: 'application/pdf' | 'image/jpeg' | 'image/png'
   /** The reviewed bytes: a file swapped after review is refused, and a file
    * already in Media under this name is reused only if it is these bytes. */
   filesize: number
@@ -49,11 +50,21 @@ export type ContentPlan = {
 /** Uploads go through a Vercel function, whose request limit is 4.5 MB. A
  * 4 MB file leaves room for the rest of the request. */
 export const MAX_UPLOAD_BYTES = 4_000_000
-const UPLOAD_KEYS = ['reference', 'file', 'filename', 'alt', 'mimeType', 'filesize', 'sha256', 'id']
+const UPLOAD_KEYS = [
+  'reference',
+  'file',
+  'filename',
+  'alt',
+  'mimeType',
+  'filesize',
+  'sha256',
+  'id',
+  'captionText',
+]
 const MEDIA_REFERENCE = /^__MEDIA_[A-Z0-9_]+__$/
 /** Lowercase words joined by hyphens: Media serves it unchanged, and it reads
  * plainly in an address. */
-export const UPLOAD_FILENAME = /^[a-z0-9]+(?:-[a-z0-9]+)*\.pdf$/
+export const UPLOAD_FILENAME = /^[a-z0-9]+(?:-[a-z0-9]+)*\.(pdf|jpg|jpeg|png)$/
 
 /** A placeholder for a file the plan uploads, before the run resolves it. */
 export const isMediaReference = (value: unknown): value is string =>
@@ -78,8 +89,20 @@ function validateUpload(upload: MediaUpload, filenames: Set<string>) {
     throw new Error(
       `Upload filename must be lowercase words joined by hyphens, ending .pdf: ${name}`,
     )
+  if (
+    upload.captionText !== undefined &&
+    (upload.mimeType === 'application/pdf' ||
+      typeof upload.captionText !== 'string' ||
+      !upload.captionText.trim())
+  )
+    throw new Error('Image caption must be non-empty plain text')
   if (filenames.has(name)) throw new Error(`Duplicate media upload: ${name}`)
-  if (upload.mimeType !== 'application/pdf') throw new Error(`Only PDFs are uploaded: ${name}`)
+  if (
+    !{ 'application/pdf': /\.pdf$/, 'image/jpeg': /\.jpe?g$/, 'image/png': /\.png$/ }[
+      upload.mimeType
+    ]?.test(name)
+  )
+    throw new Error(`Only PDFs, JPEGs and PNGs with matching extensions are uploaded: ${name}`)
   if (typeof upload.alt !== 'string' || !upload.alt.trim())
     throw new Error(`Upload needs alt text: ${name}`)
   if (
@@ -106,7 +129,7 @@ const allowedFields: Record<ContentChange['collection'], string[]> = {
   pages: ['layout', 'hero', 'meta'],
   // Body only. A post is dated news, so its title and URL stay put; the case for
   // editing one at all is a link or a fact that has since gone wrong.
-  posts: ['content'],
+  posts: ['content', 'heroImage'],
   workstreams: [
     'slug',
     'title',
@@ -240,7 +263,7 @@ export function validatePlan(value: unknown): ContentPlan {
     const inspect = (
       item: unknown,
       side: 'before' | 'after',
-      slot?: 'partners' | 'media',
+      slot?: 'partners' | 'media' | 'image',
       parent?: Record<string, unknown>,
     ) => {
       if (typeof item === 'string' && item.startsWith('__PARTNER_')) {
@@ -248,15 +271,23 @@ export function validatePlan(value: unknown): ContentPlan {
           throw new Error('Partner reference must be declared and used only in after.partners')
         usedReferences.add(item)
       } else if (isMediaReference(item)) {
-        if (side !== 'after' || slot !== 'media' || !uploads.has(item))
+        if (side !== 'after' || !['media', 'image'].includes(slot ?? '') || !uploads.has(item))
           throw new Error(
             'Media reference must be declared and used only as the file a link picks, in after',
           )
+        if ((slot === 'image') !== (uploads.get(item)!.mimeType !== 'application/pdf'))
+          throw new Error('Media reference has the wrong type for its placement')
         usedReferences.add(item)
       } else if (Array.isArray(item)) {
         item.forEach((entry) => inspect(entry, side, slot === 'partners' ? slot : undefined))
       } else if (item && typeof item === 'object') {
         const obj = item as Record<string, unknown>
+        const imageSlot = (key: string) =>
+          (key === 'heroImage' && item === change[side] && change.collection === 'posts') ||
+          (key === 'media' &&
+            change.collection === 'pages' &&
+            ((item === change[side].hero && obj.type === 'mediumImpact') ||
+              obj.blockType === 'mediaBlock'))
         const linkedFile =
           obj.relationTo === 'media' && parent?.linkType === 'internal' && parent.doc === obj
         Object.entries(obj).forEach(([key, entry]) =>
@@ -268,9 +299,11 @@ export function validatePlan(value: unknown): ContentPlan {
               (obj.blockType === 'partnerLogos' ||
                 (item === change[side] && change.collection === 'workstreams'))
               ? 'partners'
-              : key === 'value' && linkedFile
-                ? 'media'
-                : undefined,
+              : imageSlot(key)
+                ? 'image'
+                : key === 'value' && linkedFile
+                  ? 'media'
+                  : undefined,
             obj,
           ),
         )
@@ -432,4 +465,29 @@ function matchesContent(
       matchesContent(a[k], e[k], generatedIds, e.type === 'block' && k === 'fields'),
     )
   )
+}
+
+/** Plain-text image captions use the CMS rich-text representation. */
+export function uploadCaption(text: string) {
+  return {
+    root: {
+      type: 'root',
+      version: 1,
+      format: '',
+      indent: 0,
+      direction: null,
+      children: [
+        {
+          type: 'paragraph',
+          version: 1,
+          format: '',
+          indent: 0,
+          direction: null,
+          children: [
+            { type: 'text', version: 1, mode: 'normal', style: '', detail: 0, format: 0, text },
+          ],
+        },
+      ],
+    },
+  }
 }

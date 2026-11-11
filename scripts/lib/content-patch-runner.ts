@@ -1,3 +1,4 @@
+import { uploadCaption } from './content-patch-core'
 /** Reviewed API writes shared by the low-level patcher and the user handoff.
  * No connection to a production database, and no task-specific content. */
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -6,7 +7,13 @@ import { isDeepStrictEqual } from 'node:util'
 
 import { formatFileSize } from '../../src/utilities/fileLabel'
 import type { CmsClient, Deployment } from './cms-client'
-import { linkedMediaIds, readUploadFile, sha256, type MediaFile } from './content-plan'
+import {
+  imagePlacements,
+  linkedMediaIds,
+  readUploadFile,
+  sha256,
+  type MediaFile,
+} from './content-plan'
 import {
   assessChange,
   isMediaReference,
@@ -139,6 +146,14 @@ function compareFile(
   file: MediaFile,
   upload: MediaUpload,
 ): { same: boolean; unserved?: string; served?: string } {
+  if (
+    upload.captionText &&
+    !isDeepStrictEqual(
+      (file as MediaFile & { caption?: unknown }).caption,
+      uploadCaption(upload.captionText),
+    )
+  )
+    return { same: false }
   if (file.mimeType !== upload.mimeType || file.filesize !== upload.filesize) return { same: false }
   let bytes: Buffer
   try {
@@ -214,6 +229,14 @@ export function assessUploads(
  * would leave the link's words with no link, and nothing else would notice.
  * A file the run has yet to upload is checked once it is uploaded. */
 function checkLinkedMedia(client: CmsClient, plan: ContentPlan, log: (message: string) => void) {
+  for (const placement of plan.changes.flatMap((c) => imagePlacements(c))) {
+    if (isMediaReference(placement.id)) continue
+    const [file] = readMedia(client, [placement.id])
+    if (!file?.mimeType?.startsWith('image/'))
+      throw new Error(
+        `Image placement ${placement.path} does not reference an image: #${placement.id}`,
+      )
+  }
   const ids = linkedMediaIds(plan.changes.map((change) => change.after)).filter(
     (id) => !isMediaReference(id),
   )
@@ -330,7 +353,10 @@ export function runContentPatch(
         result = client.upload(
           '/api/media?depth=0',
           { bytes: bytes!, filename: upload.filename, mimeType: upload.mimeType },
-          { alt: upload.alt },
+          {
+            alt: upload.alt,
+            ...(upload.captionText ? { caption: uploadCaption(upload.captionText) } : {}),
+          },
         )
       } catch (error) {
         throw new Error(
