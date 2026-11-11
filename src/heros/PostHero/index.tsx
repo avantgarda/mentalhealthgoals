@@ -74,7 +74,8 @@ export const PostHero: React.FC<{
             size={SIZE_FULL_BLEED}
           />
         )}
-        <div className="absolute pointer-events-none left-0 bottom-0 w-full h-1/2 bg-linear-to-t from-black to-transparent" />
+        {/* On phones, wrapped titles push the category and first lines higher over the photo. */}
+        <div className="absolute pointer-events-none left-0 bottom-0 w-full h-1/2 bg-linear-to-t from-black to-transparent max-md:h-[74%] max-md:bg-[linear-gradient(to_top,black,rgb(0_0_0_/_78%)_60%,transparent)]" />
       </div>
     </div>
   )
