@@ -176,8 +176,10 @@ relinkToMedia(layout, planned) // a typed /api/media/file/example-slides.pdf lin
 writePlan(dir, name, changes, undefined, { uploadMedia: [slides] })
 ```
 
-- **Only PDFs, at most 4 MB.** Uploads go through a Vercel function with a
-  4.5 MB request limit; compress a larger file, or link to it elsewhere.
+- **At most 4 MB.** Uploads go through a Vercel function with a
+  4.5 MB request limit; compress a larger file, or link to it elsewhere. This
+  section covers PDFs; JPEG and PNG photographs are under
+  [Reviewed photographs](#reviewed-photographs).
 - **`filename`** is what the site serves, `/api/media/file/<filename>`:
   lowercase words joined by hyphens, ending `.pdf`. It must not be in Media
   already; `withUploads` refuses one the snapshot has. Link to that file
@@ -186,7 +188,7 @@ writePlan(dir, name, changes, undefined, { uploadMedia: [slides] })
 - **`file`** is relative to the plan's directory and stays inside it.
   `declareUpload` records the file's size and SHA-256 in `plan.json`: the
   run refuses a file that has changed since the review.
-- **`reference`** (`__MEDIA_…__`) may appear only as the file an internal link
+- **`reference`** (`__MEDIA_…__`) of a PDF may appear only as the file an internal link
   picks — `fields.doc.value` with `relationTo: 'media'` — in `after`, and every
   declared upload must be linked from a reviewed change. `relinkToMedia` with
   `withUploads` writes exactly that from a typed address.

@@ -87,7 +87,7 @@ function validateUpload(upload: MediaUpload, filenames: Set<string>) {
     throw new Error(`Upload file must be a path inside the plan's directory: ${name}`)
   if (!UPLOAD_FILENAME.test(name))
     throw new Error(
-      `Upload filename must be lowercase words joined by hyphens, ending .pdf: ${name}`,
+      `Upload filename must be lowercase words joined by hyphens, ending .pdf, .jpg, .jpeg or .png: ${name}`,
     )
   if (
     upload.captionText !== undefined &&

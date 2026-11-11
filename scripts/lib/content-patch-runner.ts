@@ -1,4 +1,3 @@
-import { uploadCaption } from './content-patch-core'
 /** Reviewed API writes shared by the low-level patcher and the user handoff.
  * No connection to a production database, and no task-specific content. */
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -21,6 +20,7 @@ import {
   matchValues,
   resolveReferences,
   sameDocument,
+  uploadCaption,
   validatePlan,
   type ContentChange,
   type ContentPlan,
