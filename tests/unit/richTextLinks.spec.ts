@@ -42,9 +42,9 @@ const render = (link: unknown) =>
   )
 
 describe('rich-text links to uploaded files', () => {
-  it('go to the file and say its type and size', () => {
+  it('go to the file and say its type and size, kept on one line', () => {
     expect(render(internal('media', slides))).toContain(
-      '<a href="/api/media/file/opening-slides.pdf">Opening slides (PDF, 2.3 MB)</a>',
+      '<a href="/api/media/file/opening-slides.pdf">Opening slides <span class="whitespace-nowrap">(PDF, 2.3 MB)</span></a>',
     )
   })
 
