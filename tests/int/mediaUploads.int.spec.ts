@@ -2,6 +2,9 @@
 import { getPayload, type Payload } from 'payload'
 import config from '@/payload.config'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import sharp from 'sharp'
+import { readFile } from 'node:fs/promises'
+import { uploadCaption } from '../../scripts/lib/content-patch-core'
 
 let payload: Payload
 const ids: number[] = []
@@ -13,7 +16,7 @@ const svgFile = (markup: string) => {
   return { data, mimetype: 'image/svg+xml', name: `upload-test-${run}.svg`, size: data.length }
 }
 
-describe('SVG logo uploads', () => {
+describe('reviewed media uploads', () => {
   beforeAll(async () => {
     payload = await getPayload({ config })
   })
@@ -58,4 +61,36 @@ describe('SVG logo uploads', () => {
       },
     })
   })
+
+  it.each(['jpeg', 'png'] as const)(
+    'preserves reviewed %s bytes and caption on readback',
+    async (format) => {
+      const data = await sharp({
+        create: { width: 1600, height: 1000, channels: 3, background: '#2457ad' },
+      })
+        [format]()
+        .toBuffer()
+      const caption = uploadCaption('Forum launch — discussion & collaboration.')
+      const doc = await payload.create({
+        collection: 'media',
+        context,
+        data: { alt: 'Reviewed forum image', caption },
+        file: {
+          data,
+          mimetype: `image/${format}`,
+          name: `reviewed-${run}.${format}`,
+          size: data.length,
+        },
+      })
+      ids.push(doc.id)
+      const saved = await payload.findByID({ collection: 'media', id: doc.id, depth: 0 })
+      expect(saved.caption).toEqual(caption)
+      expect(saved.alt).toBe('Reviewed forum image')
+      expect(saved.mimeType).toBe(`image/${format}`)
+      expect([saved.width, saved.height]).toEqual([1600, 1000])
+      expect(await readFile(`public/media/${saved.filename}`)).toEqual(data)
+      expect(saved.sizes?.thumbnail?.filename).toBeTruthy()
+      expect(saved.sizes?.og?.filename).toBeTruthy()
+    },
+  )
 })

@@ -473,7 +473,7 @@ export function uploadCaption(text: string) {
     root: {
       type: 'root',
       version: 1,
-      format: '',
+      format: '' as const,
       indent: 0,
       direction: null,
       children: [
