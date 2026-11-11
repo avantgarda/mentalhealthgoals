@@ -11,6 +11,8 @@
 import { readFileSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs'
 import { createHash, randomBytes } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
+import { execFileSync } from 'node:child_process'
+import { createRequire } from 'node:module'
 import { join } from 'node:path'
 
 import { fileLabel, formatFileSize } from '../../src/utilities/fileLabel'
@@ -62,7 +64,7 @@ export function loadSources(dir: string): Sources {
 
 /** What a plan script declares; `declareUpload` adds the reviewed size and hash. */
 export type MediaUploadInput = Omit<MediaUpload, 'filesize' | 'sha256' | 'id' | 'mimeType'> & {
-  mimeType?: 'application/pdf'
+  mimeType?: MediaUpload['mimeType']
 }
 
 export const sha256 = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex')
@@ -91,7 +93,26 @@ export function readUploadFile(
   // cross-reference table in the last 1 KB. A file failing it would pass review
   // and then be refused partway through the run's uploads.
   const tail = bytes.subarray(Math.max(bytes.length - 1024, 0)).toString('latin1')
-  if (
+  if (/\.(jpg|jpeg|png)$/.test(upload.filename)) {
+    const sharpPath = createRequire(import.meta.url).resolve('sharp')
+    const expected = upload.filename.endsWith('.png') ? 'png' : 'jpeg'
+    try {
+      execFileSync(
+        process.execPath,
+        [
+          '-e',
+          `const sharp = require(process.argv[1]); const chunks=[]; process.stdin.on('data', b=>chunks.push(b)); process.stdin.on('end', async()=>{try {const image=sharp(Buffer.concat(chunks), {limitInputPixels:40000000, failOn:'warning'}); const m=await image.metadata(); if(m.format!==process.argv[2] || !m.width || !m.height || (m.pages||1)!==1 || (m.orientation && m.orientation!==1)) throw Error('Unsupported image'); await image.raw().toBuffer();} catch {process.exitCode=1;}});`,
+          sharpPath,
+          expected,
+        ],
+        { input: bytes, stdio: ['pipe', 'pipe', 'pipe'] },
+      )
+    } catch {
+      throw new Error(
+        `${upload.file} is not a valid, orientation-normalised JPEG/PNG image (maximum 40 megapixels)`,
+      )
+    }
+  } else if (
     bytes.subarray(0, 5).toString('latin1') !== '%PDF-' ||
     !tail.includes('%%EOF') ||
     !tail.includes('xref')
@@ -112,7 +133,13 @@ export function declareUpload(dir: string, input: MediaUploadInput): MediaUpload
   const bytes = readUploadFile(dir, input)
   return {
     ...input,
-    mimeType: input.mimeType ?? 'application/pdf',
+    mimeType:
+      input.mimeType ??
+      (input.filename.endsWith('.png')
+        ? 'image/png'
+        : /\.jpe?g$/.test(input.filename)
+          ? 'image/jpeg'
+          : 'application/pdf'),
     filesize: bytes.length,
     sha256: sha256(bytes),
   }
@@ -364,6 +391,29 @@ export function links(node: unknown, sources: Sources = {}): string[] {
   return out
 }
 
+/** Image relationships supported by the reviewed placement workflow. */
+export function imagePlacements(
+  change: ContentChange,
+  side: 'before' | 'after' = 'after',
+): { path: string; id: number | string }[] {
+  const data = change[side] as {
+    heroImage?: unknown
+    hero?: { type?: string; media?: unknown }
+    layout?: { blockType?: string; media?: unknown }[]
+  }
+  const out: { path: string; id: number | string }[] = []
+  const add = (path: string, id: unknown) => {
+    if (typeof id === 'number' || typeof id === 'string') out.push({ path, id })
+  }
+  if (change.collection === 'posts') add('heroImage', data.heroImage)
+  if (change.collection === 'pages') {
+    if (data.hero?.type === 'mediumImpact') add('hero.media', data.hero.media)
+    for (const [i, block] of (data.layout ?? []).entries())
+      if (block.blockType === 'mediaBlock') add(`layout[${i}].media`, block.media)
+  }
+  return out
+}
+
 /** Every Media ID linked from rich text under a value, once each. */
 export function linkedMediaIds(value: unknown): (number | string)[] {
   const out = new Set<number | string>()
@@ -563,12 +613,14 @@ export function renderReview(plan: ContentPlan, status?: string, snapshot: Sourc
     'Publishing status, page URLs and navigation globals are outside what the tool can write.\n\n'
   for (const upload of plan.uploadMedia ?? []) {
     out += `## New file in Media: ${upload.filename}\n\n`
+    if (upload.mimeType.startsWith('image/')) out += `![Reviewed image](${upload.file})\n\n`
     out +=
       'Uploaded before any record changes, and served at ' +
       `\`/api/media/file/${upload.filename}\`. Links below show it as \`media:${upload.filename}\`.\n\n` +
       `- File: \`${upload.file}\`\n` +
       `- Size: ${formatFileSize(upload.filesize)} (${upload.filesize.toLocaleString('en-GB')} bytes)\n` +
       `- Alt text: ${upload.alt}\n` +
+      (upload.captionText ? `- Caption: ${upload.captionText}\n` : '') +
       `- SHA-256: \`${upload.sha256}\`\n` +
       `- Reference: \`${upload.reference}\`\n\n`
   }
@@ -585,6 +637,11 @@ export function renderReview(plan: ContentPlan, status?: string, snapshot: Sourc
   }
   for (const c of plan.changes) {
     out += `## ${c.collection}/${c.match.value}\n\n`
+    for (const side of ['before', 'after'] as const)
+      for (const placement of imagePlacements(c, side)) {
+        const file = sources.media?.find((f) => String(f.id) === String(placement.id))
+        out += `${side}: image at ${placement.path} → ${file?.filename ?? placement.id}\n\n`
+      }
     for (const key of Object.keys(c.after)) {
       if (key === 'slug' && renamedSlug(c)) continue // already shown as a URL change
       const ops = diff(

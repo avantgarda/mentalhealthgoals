@@ -98,8 +98,8 @@ and `qa.md` record what actually happened.
 The maintained runner supports copy fields listed below, **existing-person name
 corrections**, **workstream partner relationships**, page partner blocks through
 `layout`, **explicit new programme partner declarations**, **links to PDFs in
-Media** and **declared PDF uploads to Media** (up to 4 MB each). It does not add
-Team members, delete or replace records or files, upload images or other file
+Media** and **declared PDF, JPEG and PNG uploads to Media** (up to 4 MB each). It does not add
+Team members, delete or replace records or files, upload other file
 types, edit a file's details in Media, alter publishing status or edit
 navigation globals. Describe any manual Media/Partners admin steps precisely in
 `RUN.md`, with the file, target record/field and whether to do them before or
@@ -462,3 +462,25 @@ Fixtures contain invented data and an offline Vercel/Payload transport; these
 tests cannot write to a live CMS. Run the separate real `--preflight` too before
 a handoff. A fresh-session trial checks instruction following, not permission
 to apply content.
+
+## Reviewed photographs
+
+`declareUpload` accepts `.jpg`, `.jpeg` and `.png` (matching MIME types inferred
+from the filename). The 4 MB limit applies to each file. Prepare web copies first:
+normalise EXIF orientation, remove unnecessary metadata and resize/compress before
+review. Original photos remain untouched. Validation fully decodes each image,
+rejects mismatched types, non-normal orientation and images over 40 megapixels.
+WebP, animated formats and SVG uploads are outside this workflow.
+
+Provide required `alt` and optional plain-text `captionText`. Captions become CMS
+rich text. Use the declared reference in a page's medium-impact `hero.media`, a
+page layout `mediaBlock.media`, or a post's `heroImage`. PDF references remain
+restricted to PDF links. High-impact heroes do not render CMS images.
+
+Review output embeds the prepared file and lists image placements. The runner
+retains byte-for-byte original verification, duplicate protection and safe reruns;
+reversal restores references and keeps uploaded files. Verification checks that
+referenced images appear in rendered HTML. This does not certify composition:
+check every placement, caption, alt text and mobile crop manually afterwards,
+plus the generated social preview and thumbnail. No production schema change or
+website deployment is needed for this script extension.
