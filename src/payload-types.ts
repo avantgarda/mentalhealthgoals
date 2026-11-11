@@ -946,7 +946,11 @@ export interface Workstream {
    */
   leads?: (number | Person)[] | null;
   /**
-   * Organisations this workstream is delivered with, shown as a logo row in the body. Use it only where the set is complete — the institutions in “Delivered by” stay as text, because showing a logo for one of several co-equal universities would imply a hierarchy the programme does not claim.
+   * Optional separate credit for organisations that lead this workstream. Leave empty to use the standard text credit above.
+   */
+  leadPartners?: (number | Partner)[] | null;
+  /**
+   * Organisations this workstream is delivered with, shown as a logo row in the body. Use this when the full set of delivery partners can be credited.
    */
   partners?: (number | Partner)[] | null;
   /**
@@ -1571,6 +1575,7 @@ export interface WorkstreamsSelect<T extends boolean = true> {
         id?: T;
       };
   leads?: T;
+  leadPartners?: T;
   partners?: T;
   resources?:
     | T
