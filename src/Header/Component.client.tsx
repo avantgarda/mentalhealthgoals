@@ -161,13 +161,14 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ brand, data }) => {
       {...(overHero ? { 'data-theme': 'dark' } : {})}
     >
       <div className="container flex h-[4.25rem] items-center justify-between gap-6 text-foreground lg:h-[4.75rem]">
-        <Link href="/" className="shrink-0" aria-label="Mental Health Goals — home">
+        <Link href="/" className="shrink-0">
           <Logo
             loading="eager"
             priority="high"
             showTagline={brand.showTagline}
             variant={brand.variant}
           />
+          <span className="sr-only"> — home</span>
         </Link>
         <HeaderNav className="hidden xl:flex" data={data} />
         <MobileMenu data={data} />
