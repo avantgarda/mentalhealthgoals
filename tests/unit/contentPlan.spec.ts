@@ -518,7 +518,7 @@ describe('files a plan uploads', () => {
     expect(review).toContain('- Alt text: Invented slides')
     expect(review).toContain('> [New slides](media:example-new-slides.pdf)')
     expect(readFileSync(join(dir, 'qa.md'), 'utf8')).toContain(
-      '`/api/media/file/example-new-slides.pdf` opens the reviewed document',
+      '`/api/media/file/example-new-slides.pdf` serves the reviewed file',
     )
     writeFileSync(join(dir, 'files/New slides v3.pdf'), Buffer.concat([pdf, Buffer.from(' ')]))
     try {

@@ -25,6 +25,7 @@ import {
   type ContentPlan,
   type MediaUpload,
   type PartnerCreation,
+  type PersonCreation,
 } from './content-patch-core'
 
 type Collection = ContentChange['collection']
@@ -38,6 +39,7 @@ export type MediaFile = {
   filesize?: number | null
   url?: string | null
   alt?: string | null
+  sizes?: Record<string, { filename?: string | null } | null>
 }
 export type Sources = Partial<Record<Collection, Doc[]>> & { media?: MediaFile[] }
 
@@ -521,7 +523,11 @@ export function change(
 
 /** What a plan creates besides its updates. A bare array is partners, as
  * plan scripts written before uploads existed pass it. */
-export type Creations = { createPartners?: PartnerCreation[]; uploadMedia?: MediaUpload[] }
+export type Creations = {
+  createPartners?: PartnerCreation[]
+  createPeople?: PersonCreation[]
+  uploadMedia?: MediaUpload[]
+}
 
 export function writePlan(
   dir: string,
@@ -530,14 +536,15 @@ export function writePlan(
   status?: string,
   creations?: PartnerCreation[] | Creations,
 ): ContentPlan {
-  const { createPartners, uploadMedia } = Array.isArray(creations)
-    ? { createPartners: creations, uploadMedia: undefined }
+  const { createPartners, createPeople, uploadMedia } = Array.isArray(creations)
+    ? { createPartners: creations }
     : (creations ?? {})
   const plan = validatePlan({
     version: 1 as const,
     name,
     changes,
     ...(createPartners ? { createPartners } : {}),
+    ...(createPeople?.length ? { createPeople } : {}),
     ...(uploadMedia?.length ? { uploadMedia } : {}),
   })
   // The file reviewed is the file the run will upload.
@@ -606,11 +613,8 @@ export function renderReview(plan: ContentPlan, status?: string, snapshot: Sourc
   let out = `# ${plan.name}\n\nGenerated from a snapshot of the target environment.\n\n`
   out += `**Status: ${status ?? 'not yet applied or verified.'}**\n\n`
   out +=
-    '## What this plan cannot change\n\n' +
-    'Only the listed content fields, partner relationships and existing-person corrections ' +
-    'are updated. New programme partners are created, and files uploaded to Media, only when ' +
-    'listed below. No records or files are deleted or replaced, and no Team members added. ' +
-    'Publishing status, page URLs and navigation globals are outside what the tool can write.\n\n'
+    '## Scope\n\n' +
+    'The plan covers the fields, partner records, Delivery Team profiles and Media files listed below.\n\n'
   for (const upload of plan.uploadMedia ?? []) {
     out += `## New file in Media: ${upload.filename}\n\n`
     if (upload.mimeType.startsWith('image/')) out += `![Reviewed image](${upload.file})\n\n`
@@ -628,6 +632,15 @@ export function renderReview(plan: ContentPlan, status?: string, snapshot: Sourc
     out += `## New programme partner: ${partner.data.name}\n\n`
     out += `Reference: \`${partner.reference}\`\n\n`
     out += `\`\`\`json\n${JSON.stringify(partner.data, null, 2)}\n\`\`\`\n\n`
+  }
+  for (const { data, aliases } of plan.createPeople ?? []) {
+    const photo = byId(sources.media, data.photo)
+    const workstreams = data.workstreams.map((id) => byId(sources.workstreams, id)?.title ?? id)
+    out += `## New Delivery Team profile for ${data.name}\n\n`
+    out += `- Role — ${data.role}\n- Organisation — ${data.organisation}\n`
+    out += `- Workstreams — ${workstreams.join(', ')}\n- Photo — ${photo?.filename ?? data.photo}\n`
+    if (aliases?.length) out += `- Names checked for existing records — ${aliases.join(', ')}\n`
+    out += '\n'
   }
   for (const c of plan.changes.filter(renamedSlug)) {
     const [base] = recordPaths(c.collection, '')
@@ -659,10 +672,11 @@ export function renderReview(plan: ContentPlan, status?: string, snapshot: Sourc
         }
         return out
       }
-      const beforeRel =
-        key === 'partners' ? { partners: c.before[key] } : relationships(c.before[key], key)
-      const afterRel =
-        key === 'partners' ? { partners: c.after[key] } : relationships(c.after[key], key)
+      const isPartnerField = key === 'partners' || key === 'leadPartners'
+      const beforeRel = isPartnerField
+        ? { [key]: c.before[key] }
+        : relationships(c.before[key], key)
+      const afterRel = isPartnerField ? { [key]: c.after[key] } : relationships(c.after[key], key)
       const relPaths = [...new Set([...Object.keys(beforeRel), ...Object.keys(afterRel)])].filter(
         (path) => !isDeepStrictEqual(beforeRel[path], afterRel[path]),
       )
@@ -682,14 +696,15 @@ export function renderReview(plan: ContentPlan, status?: string, snapshot: Sourc
 /** A durable handoff checklist; automated success never ticks visual review. */
 export function renderChecklist(plan: ContentPlan): string {
   const paths = [
-    ...new Set(
-      plan.changes.flatMap((change) =>
+    ...new Set([
+      ...plan.changes.flatMap((change) =>
         recordPaths(
           change.collection,
           String(change.after[change.match.field] ?? change.match.value),
         ),
       ),
-    ),
+      ...(plan.createPeople?.length ? ['/people'] : []),
+    ]),
   ]
   return (
     `# ${plan.name} — completion review\n\n` +
@@ -703,7 +718,7 @@ export function renderChecklist(plan: ContentPlan): string {
     (plan.uploadMedia ?? [])
       .map(
         (upload) =>
-          `- [ ] \`/api/media/file/${upload.filename}\` opens the reviewed document; its alt text in Media is right.\n`,
+          `- [ ] \`/api/media/file/${upload.filename}\` serves the reviewed file with the correct Media alt text.\n`,
       )
       .join('') +
     (linkedMediaIds(plan.changes.map((change) => change.after)).length

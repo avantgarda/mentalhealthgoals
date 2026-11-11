@@ -16,7 +16,7 @@ The default handoff is: investigate and read the current content, prepare `plan.
 
 Routine CMS-only updates do not need a Git branch, push, deployment, database reset or canary account. Use the separate preview workflow only for a concrete need described in the runbook; explain that need before adding infrastructure steps. Browser use is appropriate for read-only live website verification.
 
-Reuse the maintained tools. They support reviewed copy, existing-person name corrections, partner relationships and explicitly declared new programme partners. Identify unsupported actions and missing assets during preparation, state the exact manual steps and their order in `RUN.md`, and include them in the review. An unsupported action is a limit of this tool, not proof the CMS cannot do it. Keep scope exclusions specific to the user's current request.
+Reuse the maintained tools. They support reviewed copy, existing-person name corrections, both workstream partner relationships, new partners with declared logos, and new Delivery Team profiles with declared headshots. Identify unsupported actions and missing assets during preparation, state the exact manual steps and their order in `RUN.md`, and include them in the review. An unsupported action is a limit of this tool, not proof the CMS cannot do it. Keep scope exclusions specific to the user's current request.
 
 After the user runs the command, review the live result and related content using the runbook checklist. Automated success does not complete visual or editorial review. Check a person's name, role, full bio and photo alt text together, and check every affected partner placement and link on desktop and mobile. Report what was checked and anything still pending.
 

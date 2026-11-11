@@ -1,4 +1,3 @@
-import { uploadCaption } from './content-patch-core'
 /** Reviewed API writes shared by the low-level patcher and the user handoff.
  * No connection to a production database, and no task-specific content. */
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -16,16 +15,20 @@ import {
 } from './content-plan'
 import {
   assessChange,
+  creationImages,
   isMediaReference,
   isUnpublishedDraft,
   matchValues,
+  personNames,
   resolveReferences,
   sameDocument,
+  uploadCaption,
   validatePlan,
   type ContentChange,
   type ContentPlan,
   type MediaUpload,
   type PartnerCreation,
+  type PersonCreation,
 } from './content-patch-core'
 
 type Doc = Record<string, unknown> & { id: number | string; updatedAt: string }
@@ -79,6 +82,35 @@ function readPartner(client: CmsClient, partner: PartnerCreation): Doc | undefin
   )
     throw new Error(`Existing partner differs from reviewed identity: ${partner.data.name}`)
   return doc
+}
+
+export function readPerson(client: CmsClient, person: PersonCreation): Doc | undefined {
+  const query = new URLSearchParams({ depth: '0', limit: '2' })
+  personNames(person).forEach((name, i) => query.set(`where[or][${i}][name][equals]`, name))
+  const result = client.api(`/api/people?${query}`)
+  if (result.totalDocs > 1) throw new Error(`Duplicate person records: ${person.data.name}`)
+  if (!result.totalDocs) return undefined
+  const doc = result.docs?.[0] as Doc | undefined
+  if (
+    !doc?.id ||
+    doc.bio ||
+    Object.entries(person.data).some(([key, value]) => !isDeepStrictEqual(doc[key], value))
+  )
+    throw new Error(`Existing person differs from reviewed profile: ${person.data.name}`)
+  return doc
+}
+
+function checkPersonWorkstreams(client: CmsClient, people: PersonCreation[]) {
+  const ids = [...new Set(people.flatMap(({ data }) => data.workstreams))]
+  if (!ids.length) return
+  const query = new URLSearchParams({
+    depth: '0',
+    limit: String(ids.length),
+    'where[id][in]': ids.join(','),
+  })
+  const docs = client.api(`/api/workstreams?${query}`).docs as Doc[]
+  if (ids.some((id) => !docs?.some((doc) => doc.id === id)))
+    throw new Error('A workstream in a reviewed Team profile is missing')
 }
 
 /** The files in Media with these IDs, as the deployment has them. Media is
@@ -186,6 +218,7 @@ export function assessUploads(
   options: { planDir?: string; reverse?: boolean; log?: (message: string) => void } = {},
 ): UploadState[] {
   const log = options.log ?? console.log
+  const attached = creationImages(plan)
   return (plan.uploadMedia ?? []).map((upload) => {
     const doc = readMediaByFilename(client, upload.filename)
     const label = `media/${upload.filename}`
@@ -211,8 +244,11 @@ export function assessUploads(
           `A different file named ${upload.filename} is already in Media (#${doc.id}). ` +
             'Nothing was written. Choose another filename, or link to that file instead.',
         )
-      if (doc.alt !== upload.alt)
+      if (doc.alt !== upload.alt) {
+        if (attached.has(upload.reference) || attached.has(doc.id))
+          throw new Error(`Alt text differs from reviewed image: ${upload.filename}`)
         log(`note: ${label} keeps the alt text it has in Media, not the plan's`)
+      }
       log(`already in Media: ${label} (#${doc.id}), the reviewed file`)
       return { upload, doc }
     }
@@ -265,6 +301,10 @@ export function runContentPatch(
 ): ContentPlan {
   const template = validatePlan(input)
   const log = options.log ?? console.log
+  if (options.reverse && !template.changes.length)
+    throw new Error(
+      'This plan only creates records and files. Reversal only restores updated fields.',
+    )
   if (deployment.environment === 'production' && options.apply && !options.allowProduction)
     throw new Error('Production writes require --allow-production after content approval')
   if (options.apply && !options.backupDir) throw new Error('Apply requires a backup directory')
@@ -273,12 +313,25 @@ export function runContentPatch(
     reverse: options.reverse,
     log,
   })
-  const partners = (template.createPartners ?? []).map((partner) => ({
+  const ids = new Map<string, number | string>()
+  for (const { upload, doc } of uploads) if (doc) ids.set(upload.reference, doc.id)
+  const partial = resolveReferences(template, ids)
+  const partners = (partial.createPartners ?? []).map((partner) => ({
     partner,
     doc: readPartner(client, partner),
   }))
-  const ids = new Map<string, number | string>()
-  for (const { upload, doc } of uploads) if (doc) ids.set(upload.reference, doc.id)
+  const people = options.reverse
+    ? []
+    : (partial.createPeople ?? []).map((person) => ({
+        person,
+        doc: readPerson(client, person),
+      }))
+  checkPersonWorkstreams(
+    client,
+    people.map(({ person }) => person),
+  )
+  for (const { person, doc } of people)
+    log(`${doc ? 'already exists' : 'ready to create'}: people/${person.data.name}`)
   for (const { partner, doc } of partners) {
     if (doc) ids.set(partner.reference, doc.id)
     else if (options.reverse)
@@ -287,7 +340,8 @@ export function runContentPatch(
   }
   const resolvedPlan = () => {
     const resolved = resolveReferences(template, ids)
-    if (options.reverse)
+    if (options.reverse) {
+      delete resolved.createPeople
       resolved.changes = resolved.changes.map((change) => {
         // Rows the plan removed come back on reversal, and Payload gives a row
         // re-inserted under an ID the record no longer holds a new one, just
@@ -307,6 +361,7 @@ export function runContentPatch(
           ...(generatedIds.length ? { generatedIds } : {}),
         }
       })
+    }
     return resolved
   }
   let plan = resolvedPlan()
@@ -332,10 +387,40 @@ export function runContentPatch(
     state: 'applying',
     originals,
     partners,
+    people,
     uploads: uploads.map(({ upload, doc }) => ({ ...upload, existing: doc?.id ?? null })),
     writes: [] as Write[],
   }
   const save = () => writeFileSync(backupFile, JSON.stringify(receipt, null, 2), { mode: 0o600 })
+  const create = (
+    collection: 'partners' | 'people',
+    data: PartnerCreation['data'] | PersonCreation['data'],
+    read: () => Doc | undefined,
+  ) => {
+    if (read()) throw new Error(`${collection} changed during this run: ${data.name}`)
+    const write: Write = { collection, target: data.name, status: 'in flight' }
+    receipt.writes.push(write)
+    save()
+    const result = client.api(`/api/${collection}?depth=0`, 'POST', data)
+    if (!result.doc?.id)
+      throw new Error(
+        `${collection} creation returned no record; inspect the receipt before retrying`,
+      )
+    write.id = result.doc.id
+    write.status = 'written'
+    save()
+    const saved = read()
+    if (!saved || saved.id !== write.id)
+      throw new Error(`${collection} read-back failed: ${data.name}`)
+    write.status = 'verified'
+    write.updatedAt = saved.updatedAt
+    save()
+    log(
+      `Verified new ${collection === 'people' ? 'person' : 'partner'}: ${data.name} (${saved.id})`,
+    )
+    return saved
+  }
+  const attached = creationImages(template)
   save()
   log(`Backup: ${backupFile}`)
   try {
@@ -392,7 +477,11 @@ export function runContentPatch(
             `address serves a different file (${check.served}): most likely a stale cached ` +
             'copy of an earlier file of that name. Nothing links to it. Upload it under a new filename.',
         )
-      if (!saved || !check.same)
+      if (
+        !saved ||
+        !check.same ||
+        ((attached.has(upload.reference) || attached.has(saved.id)) && saved.alt !== upload.alt)
+      )
         throw new Error(
           `Upload read-back failed: ${upload.filename} (#${write.id}) in Media is not the ` +
             'reviewed file. Nothing links to it; inspect it in Media before retrying.',
@@ -404,31 +493,12 @@ export function runContentPatch(
     }
     // There is no cross-record transaction. Refuse duplicates before creation;
     // a lost response is recoverable by matching the reviewed identity on rerun.
-    for (const { partner, doc } of partners) {
+    const partnersWithMedia = resolveReferences(template, ids).createPartners ?? []
+    for (const [index, { doc }] of partners.entries()) {
       if (doc || options.reverse) continue
-      if (readPartner(client, partner))
-        throw new Error(`Partner list changed during this run: ${partner.data.name}`)
-      const write: Write = {
-        collection: 'partners',
-        target: partner.data.name,
-        status: 'in flight',
-      }
-      receipt.writes.push(write)
-      save()
-      const result = client.api('/api/partners?depth=0', 'POST', partner.data)
-      if (!result.doc?.id)
-        throw new Error('Partner creation returned no record; inspect the receipt before retrying')
-      write.id = result.doc.id
-      write.status = 'written'
-      save()
-      const saved = readPartner(client, partner)
-      if (!saved || saved.id !== write.id)
-        throw new Error(`Partner read-back failed: ${partner.data.name}`)
+      const partner = partnersWithMedia[index]
+      const saved = create('partners', partner.data, () => readPartner(client, partner))
       ids.set(partner.reference, saved.id)
-      write.status = 'verified'
-      write.updatedAt = saved.updatedAt
-      save()
-      log(`Verified new partner: ${partner.data.name} (${saved.id})`)
     }
     plan = resolvedPlan()
     // Creations have been resolved. Reversal never deletes partners or files.
@@ -479,6 +549,10 @@ export function runContentPatch(
       write.updatedAt = saved.updatedAt
       save()
       log(`Verified: ${change.collection}/${change.match.value}`)
+    }
+    for (const [index, person] of (plan.createPeople ?? []).entries()) {
+      if (people[index].doc) continue
+      create('people', person.data, () => readPerson(client, person))
     }
     receipt.state = 'applied'
     save()
