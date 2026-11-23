@@ -76,7 +76,7 @@
     "dotenv": "18.0.10",
     "geist": "^1.9.2",
     "graphql": "^16.15.0",
-    "lucide-react": "1.72.0",
+    "lucide-react": "1.77.0",
     "next": "16.4.6",
     "next-sitemap": "^4.2.3",
     "payload": "3.93.0",
@@ -85,11 +85,11 @@
     "react-dom": "19.3.1",
     "react-hook-form": "7.92.0",
     "sharp": "0.35.5",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
-    "@playwright/test": "1.65.0",
+    "@playwright/test": "1.65.1",
     "@tailwindcss/postcss": "^4.3.5",
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/react": "16.3.3",
@@ -100,14 +100,14 @@
     "@types/react-dom": "19.3.0",
     "@vercel/blob": "2.9.0",
     "@vitejs/plugin-react": "5.2.0",
-    "autoprefixer": "^10.6.2",
+    "autoprefixer": "^10.7.0",
     "eslint": "^9.16.0",
     "eslint-config-next": "16.4.6",
     "husky": "^9.1.7",
     "jsdom": "31.0.1",
-    "lint-staged": "^17.6.0",
+    "lint-staged": "^17.6.1",
     "pg": "8.23.1",
-    "postcss": "^8.5.32",
+    "postcss": "^8.5.33",
     "prettier": "^3.10.1",
     "tailwindcss": "^4.3.5",
     "tsx": "4.23.15",
@@ -115,7 +115,7 @@
     "typescript": "5.9.3",
     "vite": "7.3.8",
     "vite-tsconfig-paths": "6.1.1",
-    "vitest": "5.1.0"
+    "vitest": "5.1.1"
   },
   "engines": {
     "node": "^24.21.0",
